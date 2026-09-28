@@ -1,16 +1,107 @@
 // JOKI.IN Workplace Admin - Core Web Application
-import {
-  getSupabase,
-  isOrderSupervisor,
-  canManageAdminBalances,
-  canAccessPromos,
-  canManagePromos,
-  canChangeOrder,
-  allowedOrderStatusTargets,
-  profileNickname,
-  ORDER_STATUSES,
-  ESTIMATE_OPTIONS
-} from './supabaseClient.js';
+
+// ========================================================
+// Supabase Client & Permissions
+// ========================================================
+const SUPABASE_URL = 'https://xdbnwjvxqtpkoaigedsk.supabase.co';
+const SUPABASE_PUBLISHABLE_KEY = 'sb_publishable_WuihnHZo0ZJbVGCMe1sWJg_QVdRKw4z';
+
+let supabaseClient = null;
+
+async function ensureSupabaseLoaded() {
+  if (window.supabase && typeof window.supabase.createClient === 'function') {
+    return window.supabase;
+  }
+  return new Promise((resolve) => {
+    let attempts = 0;
+    const interval = setInterval(() => {
+      attempts++;
+      if (window.supabase && typeof window.supabase.createClient === 'function') {
+        clearInterval(interval);
+        resolve(window.supabase);
+      } else if (attempts > 30) {
+        clearInterval(interval);
+        resolve(null);
+      }
+    }, 100);
+  });
+}
+
+async function getSupabase() {
+  if (supabaseClient) return supabaseClient;
+
+  const sb = await ensureSupabaseLoaded();
+  if (sb && typeof sb.createClient === 'function') {
+    supabaseClient = sb.createClient(SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY, {
+      auth: {
+        persistSession: true,
+        autoRefreshToken: true,
+        detectSessionInUrl: true,
+        storage: window.localStorage
+      }
+    });
+    return supabaseClient;
+  }
+  throw new Error('Supabase client SDK tidak dapat dimuat.');
+}
+
+const USER_MANAGEMENT_ADMIN_IDS = new Set([
+  '92e7a1cb-2136-496a-913b-00cd402c04f5', // Kayla
+  '73a14e88-9421-4936-ba99-745768343a13'  // Riski
+]);
+
+function isOrderSupervisor(profile) {
+  return profile && profile.role === 'admin' && USER_MANAGEMENT_ADMIN_IDS.has(profile.id);
+}
+
+function canManageAdminBalances(profile) {
+  return profile && profile.role === 'admin' && USER_MANAGEMENT_ADMIN_IDS.has(profile.id);
+}
+
+function canAccessPromos(profile) {
+  return profile && profile.role === 'admin';
+}
+
+function canManagePromos(profile) {
+  return isOrderSupervisor(profile);
+}
+
+function canChangeOrder(profile, order) {
+  return isOrderSupervisor(profile) || (order.assigned_to && order.assigned_to === profile?.id);
+}
+
+const ORDER_STATUSES = ['pending', 'processing', 'revision', 'completed', 'cancelled'];
+
+function allowedOrderStatusTargets(profile, order) {
+  const current = order.status || 'pending';
+  if (isOrderSupervisor(profile)) {
+    return ORDER_STATUSES.filter(s => !(current === 'processing' && s === 'pending'));
+  }
+  if (!canChangeOrder(profile, order)) return [];
+  if (current === 'processing') return ['revision', 'completed'];
+  if (current === 'revision') return ['completed'];
+  return [];
+}
+
+function profileNickname(profile) {
+  if (!profile) return 'Admin';
+  const identity = (profile.name || profile.email || '').trim();
+  const lower = identity.toLowerCase();
+  if (lower === 'kaylafisika24@gmail.com') return 'Kayla';
+  if (lower === 'gamingyoga14@gmail.com') return 'Yoga';
+
+  const base = identity.split('@')[0].split(' ')[0];
+  if (!base) return 'Admin';
+  return base.charAt(0).toUpperCase() + base.slice(1);
+}
+
+const ESTIMATE_OPTIONS = [
+  { hours: 12, label: '<12 jam' },
+  { hours: 24, label: '1 hari' },
+  { hours: 48, label: '2 hari' },
+  { hours: 72, label: '3 hari' },
+  { hours: 96, label: '4 hari' }
+];
 
 // Application State
 const state = {
@@ -45,15 +136,36 @@ const PERFORMANCE_LAUNCH_AT = new Date('2026-09-27T10:35:00Z');
 // ========================================================
 // Initialization
 // ========================================================
-window.addEventListener('DOMContentLoaded', async () => {
-  setupEventListeners();
+let appInitialized = false;
 
-  // Show splash for 1.2s then evaluate session
+function initApp() {
+  if (appInitialized) return;
+  appInitialized = true;
+
+  try {
+    setupEventListeners();
+  } catch (err) {
+    console.error('Setup listeners error:', err);
+  }
+
+  // Evaluate session and reveal login or dashboard
   setTimeout(async () => {
-    await checkInitialSession();
-    hideSplash();
-  }, 1200);
-});
+    try {
+      await checkInitialSession();
+    } catch (err) {
+      console.warn('Initial session check error:', err);
+      showLoginView();
+    } finally {
+      hideSplash();
+    }
+  }, 900);
+}
+
+if (document.readyState === 'loading') {
+  document.addEventListener('DOMContentLoaded', initApp);
+} else {
+  initApp();
+}
 
 function hideSplash() {
   const splash = document.getElementById('splash-screen');
@@ -1431,6 +1543,15 @@ function setupEventListeners() {
     googleBtn.addEventListener('click', async () => {
       const errorBox = document.getElementById('login-error-box');
       if (errorBox) errorBox.style.display = 'none';
+
+      if (window.location.protocol === 'file:') {
+        if (errorBox) {
+          errorBox.textContent = 'Login Google memerlukan web server aktif. Jalankan START-SERVER.bat lalu buka http://localhost:3000, atau masuk menggunakan Email & Password.';
+          errorBox.style.display = 'block';
+        }
+        return;
+      }
+
       try {
         const supabase = await getSupabase();
         localStorage.setItem('password_login_at', Date.now().toString());

@@ -786,14 +786,29 @@
     <source src="data:audio/wav;base64,UklGRnoGAABXQVZFZm10IBAAAAABAAEAQB8AAEAfAAABAAgAZGF0YQoGAACBhYqFbF1fdJivrJBhNjVgodDbq2EcBj+a2/LDciUFLI7L8M98KAUkg8vwz3woBSyPy/DPfCgFLI/L8M98KAUkg8vwz3woBSyPy/DPfCgFLI/L8M98KAUkg8vwz3woBSyPy/DPfCgFLI/L8M98KAUkg8vwz3woBSyPy/DPfCg=" type="audio/wav">
   </audio>
 
-  <!-- Application Main Script -->
-  <script type="module" src="./js/app.js"></script>
+  <!-- Application Main Script (Universal script for file://, localhost, & cloud hosting) -->
+  <script src="./js/app.js"></script>
 
-  <!-- Register Service Worker -->
+  <!-- Failsafe Watchdog & Service Worker -->
   <script>
-    if ('serviceWorker' in navigator) {
-      window.addEventListener('load', () => {
-        navigator.serviceWorker.register('./service-worker.js').catch(err => {
+    // Watchdog: Ensure loading screen never hangs permanently
+    setTimeout(function() {
+      var splash = document.getElementById('splash-screen');
+      if (splash && splash.style.display !== 'none' && !splash.classList.contains('hidden')) {
+        splash.classList.add('hidden');
+        setTimeout(function() { splash.style.display = 'none'; }, 400);
+        var login = document.getElementById('login-view');
+        var shell = document.getElementById('app-shell');
+        if (login && (!shell || shell.style.display !== 'block')) {
+          login.style.display = 'flex';
+        }
+      }
+    }, 2000);
+
+    // Register Service Worker only on HTTP/HTTPS
+    if ('serviceWorker' in navigator && window.location.protocol.startsWith('http')) {
+      window.addEventListener('load', function() {
+        navigator.serviceWorker.register('./service-worker.js').catch(function(err) {
           console.log('SW registration error:', err);
         });
       });
