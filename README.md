@@ -1,5 +1,7 @@
 # JOKI.IN Workplace Admin Web & iOS Safari PWA
 
+Untuk deployment GitHub Pages Workplace dan perbaikan login Google, ikuti [OAUTH-SETUP.md](OAUTH-SETUP.md). Panduan tersebut memakai repo yang sudah ada dan menjadi acuan menggantikan opsi deployment umum di bawah.
+
 Aplikasi Web Admin & Progressive Web App (PWA) resmi untuk sistem manajemen operasional **JOKI.IN Workplace**. Dirancang khusus dengan tampilan mobile-first yang responsif, navigasi swipe geser layar yang halus, dukungan penuh untuk **Safari di iPhone (iOS)**, browser Android, dan desktop.
 
 ---

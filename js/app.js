@@ -4,6 +4,7 @@
 // Supabase Client & Permissions
 // ========================================================
 const SUPABASE_URL = 'https://xdbnwjvxqtpkoaigedsk.supabase.co';
+const WORKPLACE_REDIRECT_URL = 'https://jokitugasbykay.github.io/Jokiin-workplace.github.io/';
 const SUPABASE_PUBLISHABLE_KEY = 'sb_publishable_WuihnHZo0ZJbVGCMe1sWJg_QVdRKw4z';
 
 let supabaseClient = null;
@@ -208,7 +209,7 @@ async function checkInitialSession() {
           startLiveUpdates();
           return;
         } else {
-          await supabase.auth.signOut();
+          await supabase.auth.signOut({ scope: 'local' });
           localStorage.removeItem('password_login_at');
           const errorBox = document.getElementById('login-error-box');
           if (errorBox) {
@@ -283,7 +284,7 @@ async function handleLogin(email, password, rememberMe) {
       .single();
 
     if (profError || !profile || profile.role !== 'admin') {
-      await supabase.auth.signOut();
+      await supabase.auth.signOut({ scope: 'local' });
       throw new Error('Akun ini tidak memiliki akses admin.');
     }
 
@@ -312,7 +313,7 @@ async function handleLogin(email, password, rememberMe) {
 async function handleLogout() {
   stopLiveUpdates();
   const supabase = await getSupabase();
-  await supabase.auth.signOut();
+  await supabase.auth.signOut({ scope: 'local' });
   localStorage.removeItem('password_login_at');
   state.admin = null;
   closeDrawer();
@@ -1558,7 +1559,7 @@ function setupEventListeners() {
         const { error } = await supabase.auth.signInWithOAuth({
           provider: 'google',
           options: {
-            redirectTo: window.location.origin + window.location.pathname
+            redirectTo: WORKPLACE_REDIRECT_URL
           }
         });
         if (error) throw error;

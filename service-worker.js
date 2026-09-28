@@ -1,4 +1,4 @@
-const CACHE_NAME = 'jokiin-admin-v1';
+const CACHE_NAME = 'jokiin-admin-v2';
 const ASSETS_TO_CACHE = [
   './',
   './index.html',
@@ -28,7 +28,7 @@ self.addEventListener('activate', (event) => {
     caches.keys().then((keys) => {
       return Promise.all(
         keys.map((key) => {
-          if (key !== CACHE_NAME) {
+          if (key.startsWith('jokiin-admin-') && key !== CACHE_NAME) {
             return caches.delete(key);
           }
         })
