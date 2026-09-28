@@ -2409,7 +2409,16 @@ function setupEventListeners() {
   });
 
   document.getElementById('inv-print')?.addEventListener('click', () => {
+    const originalTitle = document.title;
+    const invNumber = document.getElementById('inv-number')?.value.trim();
+    const clientName = document.getElementById('inv-client')?.value.trim();
+    const cleanTitle = (invNumber && clientName) ? `Invoice ${invNumber} - ${clientName}` : (invNumber ? `Invoice ${invNumber}` : 'Invoice JOKI.IN');
+
+    document.title = cleanTitle;
     window.print();
+    setTimeout(() => {
+      document.title = originalTitle;
+    }, 1200);
   });
 
   document.getElementById('btn-invoice-load-order')?.addEventListener('click', () => {

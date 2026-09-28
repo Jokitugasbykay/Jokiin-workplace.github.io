@@ -2029,16 +2029,18 @@ input:checked + .toggle-slider:before {
 
 @media print {
   @page {
-    size: A4;
-    margin: 16mm;
+    size: A4 portrait;
+    margin: 0; /* Menghilangkan header (tanggal, judul) dan footer (URL, halaman) bawaan browser */
   }
   :root {
     background: #FFFFFF !important;
     -webkit-print-color-adjust: exact;
     print-color-adjust: exact;
   }
-  body {
+  html, body {
     background: #FFFFFF !important;
+    margin: 0 !important;
+    padding: 0 !important;
   }
   .top-bar,
   .top-header,
@@ -2061,34 +2063,35 @@ input:checked + .toggle-slider:before {
   #login-view {
     display: none !important;
   }
-  #app-shell {
-    display: block !important;
-  }
-  .content-area {
-    padding: 0 !important;
-    margin: 0 !important;
-  }
-  .app-container {
-    max-width: none !important;
-    box-shadow: none !important;
-    border: none !important;
-    padding: 0 !important;
-  }
+  #app-shell,
+  #app-container,
+  .app-container,
+  .content-area,
   #view-invoice {
     display: block !important;
-    padding: 0 !important;
+    width: 100% !important;
+    max-width: none !important;
+    min-width: 0 !important;
     margin: 0 !important;
+    padding: 0 !important;
+    background: transparent !important;
+    background-color: transparent !important;
+    box-shadow: none !important;
+    border: none !important;
   }
   .tab-view:not(#view-invoice) {
     display: none !important;
   }
   .invoice-sheet {
     max-width: none !important;
+    width: 100% !important;
     min-height: 0 !important;
     margin: 0 !important;
-    padding: 0 !important;
+    padding: 18mm 16mm 16mm !important;
     border: 0 !important;
     box-shadow: none !important;
+    box-sizing: border-box !important;
+    background: #FFFFFF !important;
   }
   .invoice-btn-remove,
   .invoice-field.is-empty,
@@ -2097,7 +2100,7 @@ input:checked + .toggle-slider:before {
   }
   .invoice-fields {
     gap: 12px 25px;
-    margin: 20px 0;
+    margin: 23px 0;
   }
   /* Hide all calendar picker icons and indicators in print */
   input[type="date"]::-webkit-calendar-picker-indicator,
@@ -2132,11 +2135,12 @@ input:checked + .toggle-slider:before {
   }
   .invoice-table th,
   .invoice-table td {
-    padding: 8px 6px !important;
+    padding: 9px 6px !important;
   }
   .invoice-table-wrap {
     overflow: visible !important;
-    border: 1px solid #DBE5DE !important;
+    border: 0 !important;
+    border-radius: 0 !important;
   }
   .invoice-table {
     min-width: 0 !important;
