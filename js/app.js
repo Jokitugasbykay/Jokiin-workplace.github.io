@@ -131,6 +131,8 @@ const state = {
   countdownTimer: null
 };
 
+window.state = state;
+
 const SESSION_DURATION = 24 * 60 * 60 * 1000; // 24 hours
 const PERFORMANCE_LAUNCH_AT = new Date('2026-09-27T10:35:00Z');
 
@@ -249,11 +251,20 @@ function showAppShell() {
   document.getElementById('drawer-admin-role').textContent = isOrderSupervisor(state.admin) ? 'Supervisor' : 'Admin';
   document.getElementById('drawer-avatar').textContent = nickname.charAt(0).toUpperCase();
 
+  const headerAvatarLetter = document.getElementById('header-avatar-letter');
+  if (headerAvatarLetter) {
+    headerAvatarLetter.textContent = nickname.charAt(0).toUpperCase();
+  }
+
   // Supervisor tabs visibility
   const isSupervisor = isOrderSupervisor(state.admin);
   document.getElementById('drawer-tab-performance').style.display = isSupervisor ? 'flex' : 'none';
   document.getElementById('drawer-tab-users').style.display = isSupervisor ? 'flex' : 'none';
+
+  // Initialize active tab and bottom nav pill
+  switchTab(state.activeTab || 'home');
 }
+window.showAppShell = showAppShell;
 
 async function handleLogin(email, password, rememberMe) {
   const errorBox = document.getElementById('login-error-box');
@@ -470,15 +481,52 @@ function switchTab(tabName, forcedDirection = null) {
     btn.classList.toggle('active', btn.dataset.tab === tabName);
   });
 
+  // Update Bottom Nav Fluid Sliding Pill
+  const pill = document.getElementById('nav-active-pill');
+  const bottomTabs = ['home', 'orders', 'services', 'payments'];
+  const tabIndex = bottomTabs.indexOf(tabName);
+  if (pill) {
+    if (tabIndex !== -1) {
+      pill.style.opacity = '1';
+      pill.style.transform = `translateX(${tabIndex * 100}%)`;
+    } else {
+      pill.style.opacity = '0';
+    }
+  }
+
+  // Hide Bottom Navigation on secondary tabs: ulasan, produk & promo, folder lampiran, peforma tim, daftar pengguna, invoice
+  const HIDE_NAVBAR_TABS = ['reviews', 'products', 'task-files', 'performance', 'users', 'invoice'];
+  const shouldHideNav = HIDE_NAVBAR_TABS.includes(tabName);
+
+  const bottomNavContainer = document.querySelector('.bottom-nav-container');
+  if (bottomNavContainer) {
+    bottomNavContainer.classList.toggle('nav-hidden', shouldHideNav);
+  }
+
+  const appContainer = document.getElementById('app-container');
+  if (appContainer) {
+    appContainer.classList.toggle('nav-hidden', shouldHideNav);
+  }
+
+  // Header Back Button & Drawer Button toggle
+  const headerBackBtn = document.getElementById('btn-header-back');
+  const headerDrawerBtn = document.getElementById('btn-open-drawer');
+  if (headerBackBtn) {
+    headerBackBtn.style.display = shouldHideNav ? 'inline-flex' : 'none';
+  }
+  if (headerDrawerBtn) {
+    headerDrawerBtn.style.display = shouldHideNav ? 'none' : 'inline-flex';
+  }
+
   // Update Drawer Nav
   document.querySelectorAll('.drawer-item').forEach(btn => {
     btn.classList.toggle('active', btn.dataset.tab === tabName);
   });
 
-  // Show/Hide Tab Views with slide animation
+  // Show/Hide Tab Views with slide/fade animation
   document.querySelectorAll('.tab-view').forEach(view => {
     view.style.display = 'none';
-    view.classList.remove('slide-right', 'slide-left');
+    view.classList.remove('slide-right', 'slide-left', 'fade-in');
   });
 
   const activeView = document.getElementById(`view-${tabName}`);
@@ -486,12 +534,14 @@ function switchTab(tabName, forcedDirection = null) {
     activeView.style.display = 'block';
     if (direction) {
       activeView.classList.add(direction === 'left' ? 'slide-left' : 'slide-right');
+    } else {
+      activeView.classList.add('fade-in');
     }
   }
 
   // Toggle Search Section visibility
   const searchSec = document.getElementById('search-section');
-  if (tabName === 'home' || tabName === 'performance' || tabName === 'products' || tabName === 'task-files') {
+  if (tabName === 'home' || tabName === 'performance' || tabName === 'products' || tabName === 'task-files' || tabName === 'invoice') {
     searchSec.style.display = 'none';
   } else {
     searchSec.style.display = 'block';
@@ -503,6 +553,7 @@ function switchTab(tabName, forcedDirection = null) {
 
   renderActiveTab();
 }
+window.switchTab = switchTab;
 
 function renderActiveTab() {
   switch (state.activeTab) {
@@ -532,6 +583,9 @@ function renderActiveTab() {
       break;
     case 'users':
       renderUsers();
+      break;
+    case 'invoice':
+      renderInvoice();
       break;
   }
 }
@@ -880,6 +934,18 @@ function openOrderDetail(orderId) {
     linksContainer.innerHTML = '<span style="font-size: 12px; color: var(--ink-muted);">Belum ada lampiran.</span>';
   }
 
+  // Invoice button in order detail modal for paid orders
+  const invoiceBtn = document.getElementById('btn-order-create-invoice');
+  if (invoiceBtn) {
+    const isPaid = (order.payment_status || '').toLowerCase() === 'paid' || (order.status || '').toLowerCase() === 'completed';
+    invoiceBtn.style.display = isPaid ? 'flex' : 'none';
+    invoiceBtn.onclick = () => {
+      closeModal('modal-order-detail');
+      loadOrderIntoInvoice(order);
+      switchTab('invoice');
+    };
+  }
+
   openModal('modal-order-detail');
 }
 
@@ -939,7 +1005,7 @@ function renderServices() {
   container.innerHTML = '';
 
   const q = state.searchQuery.toLowerCase();
-  const filtered = state.services.filter(s => s.name.toLowerCase().includes(q));
+  const filtered = state.services.filter(s => (s.name || s.title || '').toLowerCase().includes(q));
 
   document.getElementById('services-count-label').textContent = `Data dari server • ${filtered.length} data`;
 
@@ -958,7 +1024,7 @@ function renderServices() {
     card.innerHTML = `
       <div style="display: flex; justify-content: space-between; align-items: flex-start; gap: 14px;">
         <div style="flex: 1; min-width: 0;">
-          <h4 style="font-size: 16px; font-weight: 700; word-break: break-word;">${escapeHtml(srv.name)}</h4>
+          <h4 style="font-size: 16px; font-weight: 700; word-break: break-word;">${escapeHtml(srv.name || srv.title || 'Layanan')}</h4>
           <p style="font-size: 13px; color: var(--ink-secondary); margin-top: 4px; line-height: 1.4; word-break: break-word;">${escapeHtml(srv.description || '-')}</p>
         </div>
         <label class="toggle-switch">
@@ -1118,25 +1184,156 @@ function renderPerformance() {
 
   const paidOrders = periodOrders.filter(o => (o.payment_status || '').toLowerCase() === 'paid' || o.status === 'completed');
   const gross = paidOrders.reduce((sum, o) => sum + (o.total_price || 0), 0);
-  const gatewayCut = paidOrders.reduce((sum, o) => sum + (o.payment_fee || 0), 0);
-  const devCut = gross * 0.10;
+  const gatewayCut = Math.round(gross * 0.01);
+  const devCut = Math.round(gross * 0.10);
   const net = Math.max(0, gross - gatewayCut - devCut);
 
   const completedCount = periodOrders.filter(o => o.status === 'completed').length;
 
-  document.getElementById('perf-net-revenue').textContent = formatRupiah(net);
-  document.getElementById('perf-completed-orders').textContent = `${completedCount} pesanan selesai`;
+  // Count-Up KPI Metrics Cards Animations (CodeFronts Component)
+  animateCountUp('perf-net-revenue', net, 950, true);
+  animateCountUp('perf-completed-orders', completedCount, 750, false);
+
+  const revPill = document.getElementById('perf-pill-revenue');
+  if (revPill) {
+    revPill.textContent = net > 0 ? '+Aktif' : 'Netto';
+    revPill.className = `ac-12__pill ${net > 0 ? 'ac-12__pill--up' : 'ac-12__pill--flat'}`;
+  }
+
+  const orderPill = document.getElementById('perf-pill-orders');
+  if (orderPill) {
+    orderPill.textContent = completedCount > 0 ? `+${completedCount} order` : '0 order';
+    orderPill.className = `ac-12__pill ${completedCount > 0 ? 'ac-12__pill--up' : 'ac-12__pill--flat'}`;
+  }
+
+  updateKpiSparkline(periodOrders, state.perfRange, state.perfMonthOffset);
+  updateKpiBars(periodOrders, state.perfRange, state.perfMonthOffset);
 
   document.getElementById('breakdown-gross').textContent = formatRupiah(gross);
   document.getElementById('breakdown-gateway').textContent = `− ${formatRupiah(gatewayCut)}`;
   document.getElementById('breakdown-dev').textContent = `− ${formatRupiah(devCut)}`;
   document.getElementById('breakdown-net').textContent = formatRupiah(net);
 
-  // SVG Chart
-  renderCombinedChart(periodOrders, state.perfRange, state.perfMonthOffset);
-
   // Admin Team Stats
   renderAdminTeamStats(periodOrders);
+}
+
+// ========================================================
+// CodeFronts KPI Card Helpers: Count-Up, Sparkline & Bars
+// ========================================================
+function animateCountUp(elementId, targetValue, duration = 850, isFormattedRupiah = false) {
+  const el = document.getElementById(elementId);
+  if (!el) return;
+
+  const startValue = parseInt((el.dataset.currentValue || '0').replace(/[^0-9]/g, ''), 10) || 0;
+  el.dataset.currentValue = targetValue.toString();
+
+  if (targetValue === startValue && targetValue === 0) {
+    el.textContent = '0';
+    return;
+  }
+
+  const startTime = performance.now();
+
+  function step(currentTime) {
+    const elapsed = currentTime - startTime;
+    const progress = Math.min(elapsed / duration, 1);
+    const ease = 1 - Math.pow(1 - progress, 3.5);
+    const current = Math.round(startValue + (targetValue - startValue) * ease);
+
+    el.textContent = isFormattedRupiah ? current.toLocaleString('id-ID') : current.toString();
+
+    if (progress < 1) {
+      requestAnimationFrame(step);
+    } else {
+      el.textContent = isFormattedRupiah ? targetValue.toLocaleString('id-ID') : targetValue.toString();
+    }
+  }
+
+  requestAnimationFrame(step);
+}
+
+function updateKpiSparkline(periodOrders, range, monthOffset) {
+  const path = document.getElementById('perf-sparkline-path');
+  if (!path) return;
+
+  path.style.animation = 'none';
+  path.offsetHeight;
+  path.style.animation = null;
+
+  const points = [];
+  const now = new Date();
+  const numSteps = 7;
+
+  if (range === 'today') {
+    const currentHour = now.getHours();
+    for (let i = 0; i < numSteps; i++) {
+      const h = Math.round((currentHour / (numSteps - 1)) * i);
+      const match = periodOrders.filter(o => {
+        const d = new Date(o.created_at);
+        return d.toDateString() === now.toDateString() && d.getHours() <= h;
+      });
+      const amt = match.filter(o => o.status === 'completed' || o.payment_status === 'paid').reduce((s, o) => s + (o.total_price || 0), 0);
+      points.push(amt);
+    }
+  } else if (range === 'week') {
+    for (let i = 6; i >= 0; i--) {
+      const day = new Date(now.getTime() - i * 24 * 3600 * 1000);
+      const match = periodOrders.filter(o => new Date(o.created_at).toDateString() === day.toDateString());
+      const amt = match.filter(o => o.status === 'completed' || o.payment_status === 'paid').reduce((s, o) => s + (o.total_price || 0), 0);
+      points.push(amt);
+    }
+  } else {
+    const targetMonth = new Date(now.getFullYear(), now.getMonth() + monthOffset, 1);
+    const daysInMonth = new Date(targetMonth.getFullYear(), targetMonth.getMonth() + 1, 0).getDate();
+    for (let i = 0; i < numSteps; i++) {
+      const dayNum = Math.max(1, Math.min(daysInMonth, Math.round(1 + (daysInMonth - 1) * (i / (numSteps - 1)))));
+      const day = new Date(targetMonth.getFullYear(), targetMonth.getMonth(), dayNum);
+      const match = periodOrders.filter(o => new Date(o.created_at) <= day);
+      const amt = match.filter(o => o.status === 'completed' || o.payment_status === 'paid').reduce((s, o) => s + (o.total_price || 0), 0);
+      points.push(amt);
+    }
+  }
+
+  const maxVal = Math.max(...points, 1000);
+  const minVal = Math.min(...points, 0);
+  const rangeVal = Math.max(1, maxVal - minVal);
+
+  const coords = points.map((val, idx) => {
+    const x = Math.round((120 / (numSteps - 1)) * idx);
+    const norm = (val - minVal) / rangeVal;
+    const y = Math.round(28 - norm * 24);
+    return `${x} ${y}`;
+  });
+
+  const d = `M${coords[0]} ` + coords.slice(1).map(c => `L${c}`).join(' ');
+  path.setAttribute('d', d);
+}
+
+function updateKpiBars(periodOrders, range, monthOffset) {
+  const container = document.getElementById('perf-animated-bars');
+  if (!container) return;
+
+  const now = new Date();
+  const counts = [];
+
+  for (let i = 6; i >= 0; i--) {
+    const day = new Date(now.getTime() - i * 24 * 3600 * 1000);
+    const match = periodOrders.filter(o => new Date(o.created_at).toDateString() === day.toDateString());
+    counts.push(match.length);
+  }
+
+  const maxCount = Math.max(...counts, 1);
+  const bars = container.querySelectorAll('i');
+
+  bars.forEach((bar, idx) => {
+    const count = counts[idx] || 0;
+    const heightPercent = count > 0 ? Math.max(25, Math.round((count / maxCount) * 100)) : 18;
+    bar.style.setProperty('--ac-12-h', `${heightPercent}%`);
+    bar.style.animation = 'none';
+    bar.offsetHeight;
+    bar.style.animation = null;
+  });
 }
 
 function renderCombinedChart(orders, range, monthOffset) {
@@ -1260,8 +1457,9 @@ function renderAdminTeamStats(periodOrders) {
     const completedOrders = periodOrders.filter(o => o.assigned_to === w.id && o.status === 'completed');
     const netEarned = completedOrders.reduce((sum, o) => {
       const total = o.total_price || 0;
-      const fee = o.payment_fee || 0;
-      return sum + Math.max(0, total - fee - total * 0.10);
+      const gatewayFee = Math.round(total * 0.01);
+      const devFee = Math.round(total * 0.10);
+      return sum + Math.max(0, total - gatewayFee - devFee);
     }, 0);
 
     const balance = w.admin_balance || 0;
@@ -1472,6 +1670,221 @@ function renderUsers() {
 }
 
 // ========================================================
+// Tab: Generator Invoice JOKI.IN
+// ========================================================
+function priceValue(val) {
+  const n = Number(String(val).replace(/[^0-9]/g, ''));
+  return Number.isFinite(n) && n > 0 ? n : 0;
+}
+
+function recalculateInvoice() {
+  let subtotal = 0;
+  const rows = document.querySelectorAll('#inv-items tr');
+  rows.forEach(row => {
+    const qInput = row.querySelector('.inv-quantity');
+    const pInput = row.querySelector('.inv-price');
+    const dInput = row.querySelector('.inv-description');
+    const qty = Number(qInput ? qInput.value : 0) || 0;
+    const price = priceValue(pInput ? pInput.value : 0);
+    const amount = Math.round(qty * price);
+    row.classList.toggle('is-empty', (!dInput || !dInput.value.trim()) && price === 0);
+    const lineTotal = row.querySelector('.inv-line-total');
+    if (lineTotal) lineTotal.textContent = formatRupiah(amount);
+    subtotal += amount;
+  });
+
+  const taxInput = document.getElementById('inv-tax');
+  const taxRate = Math.min(100, Number(taxInput ? taxInput.value : 0) || 0);
+  const tax = Math.round(subtotal * taxRate / 100);
+
+  const subtotalEl = document.getElementById('inv-subtotal');
+  const taxValueEl = document.getElementById('inv-tax-value');
+  const taxLabelEl = document.getElementById('inv-tax-label');
+  const grandEl = document.getElementById('inv-grand');
+
+  if (taxLabelEl) taxLabelEl.textContent = `Nilai PPN (${taxRate}%)`;
+  if (subtotalEl) subtotalEl.textContent = formatRupiah(subtotal);
+  if (taxValueEl) taxValueEl.textContent = formatRupiah(tax);
+  if (grandEl) grandEl.textContent = formatRupiah(subtotal + tax);
+
+  document.querySelectorAll('.invoice-field').forEach(field => {
+    const input = field.querySelector('input');
+    field.classList.toggle('is-empty', input ? !input.value.trim() : false);
+  });
+}
+
+function addInvoiceRow(desc = '', qty = 1, price = 0) {
+  const items = document.getElementById('inv-items');
+  if (!items) return;
+
+  const row = document.createElement('tr');
+  const formattedPrice = formatRupiah(price);
+  const amount = Math.round((Number(qty) || 1) * (Number(price) || 0));
+
+  row.innerHTML = `
+    <td><input class="inv-description" placeholder="Uraian layanan" value="${escapeHtml(desc)}" aria-label="Deskripsi"></td>
+    <td><input class="inv-quantity" type="number" min="0" step="1" value="${qty}" inputmode="numeric" aria-label="Jumlah"></td>
+    <td><input class="inv-price" type="text" value="${formattedPrice}" inputmode="numeric" aria-label="Harga satuan"></td>
+    <td class="invoice-money inv-line-total">${formatRupiah(amount)}</td>
+    <td class="no-print"><button class="invoice-btn-remove" type="button" aria-label="Hapus baris">Hapus</button></td>
+  `;
+  items.appendChild(row);
+  recalculateInvoice();
+}
+
+function populateInvoiceOrderPicker(selectedOrderId = null) {
+  const picker = document.getElementById('invoice-order-picker');
+  if (!picker) return;
+
+  picker.innerHTML = '<option value="">-- Pilih Pesanan (Status: Paid) --</option>';
+
+  // Find all orders that are paid or completed
+  const paidOrders = state.orders.filter(o => 
+    (o.payment_status || '').toLowerCase() === 'paid' || 
+    (o.status || '').toLowerCase() === 'completed'
+  );
+
+  paidOrders.forEach(o => {
+    const code = o.order_code || o.order_id || ('#' + o.id);
+    const client = getCustomerName(o);
+    const total = formatRupiah(o.total_price || 0);
+    const opt = document.createElement('option');
+    opt.value = o.id;
+    opt.textContent = `${code} - ${client} (${total})`;
+    if (selectedOrderId && String(o.id) === String(selectedOrderId)) {
+      opt.selected = true;
+    }
+    picker.appendChild(opt);
+  });
+}
+
+function loadOrderIntoInvoice(order) {
+  if (!order) return;
+
+  // 1. Nama Admin yang mengambil pesanan
+  const freelancerInput = document.getElementById('inv-freelancer');
+  if (freelancerInput) {
+    let adminName = '';
+    if (order.assigned_to) {
+      const assigned = state.profiles.find(p => p.id === order.assigned_to);
+      if (assigned) {
+        adminName = profileNickname(assigned);
+      }
+    }
+    if (!adminName && state.admin) {
+      adminName = profileNickname(state.admin);
+    }
+    freelancerInput.value = adminName || 'Admin JOKI.IN';
+  }
+
+  // 2. Nama Klien
+  const clientInput = document.getElementById('inv-client');
+  if (clientInput) {
+    clientInput.value = getCustomerName(order);
+  }
+
+  // 3. Nomor Invoice
+  const numberInput = document.getElementById('inv-number');
+  if (numberInput) {
+    numberInput.value = order.order_code || `INV-${String(order.order_id || order.id).replace(/[^a-zA-Z0-9]/g, '')}`;
+  }
+
+  // 4. Tanggal Invoice (format YYYY-MM-DD)
+  const dateInput = document.getElementById('inv-date');
+  if (dateInput) {
+    let invDate = '';
+    if (order.created_at) {
+      try {
+        invDate = new Date(order.created_at).toISOString().split('T')[0];
+      } catch(e) {}
+    }
+    dateInput.value = invDate || new Date().toISOString().split('T')[0];
+  }
+
+  // 5. Tanggal Deadline (format YYYY-MM-DD)
+  const dueInput = document.getElementById('inv-due');
+  if (dueInput) {
+    let deadlineDate = '';
+    if (order.estimated_completion) {
+      try {
+        deadlineDate = new Date(order.estimated_completion).toISOString().split('T')[0];
+      } catch(e) {}
+    } else if (order.task?.deadline) {
+      try {
+        const parsed = new Date(order.task.deadline);
+        if (!isNaN(parsed.getTime())) {
+          deadlineDate = parsed.toISOString().split('T')[0];
+        }
+      } catch(e) {}
+    }
+    dueInput.value = deadlineDate;
+  }
+
+  // 6. Deskripsi, Jumlah, Harga Satuan, Subtotal
+  const itemsContainer = document.getElementById('inv-items');
+  if (itemsContainer) {
+    itemsContainer.innerHTML = '';
+    const orderItems = Array.isArray(order.items) && order.items.length > 0 ? order.items : [];
+    if (orderItems.length > 0) {
+      orderItems.forEach(it => {
+        const desc = it.name || it.title || it.service_name || it.description || 'Layanan Tugas';
+        const qty = Number(it.quantity || it.qty) || 1;
+        const price = Number(it.price || it.unit_price) || 0;
+        addInvoiceRow(desc, qty, price);
+      });
+    } else {
+      const desc = order.service_title || order.task?.title || 'Layanan Tugas Mahasiswa';
+      const qty = 1;
+      const price = Number(order.total_price) || 0;
+      addInvoiceRow(desc, qty, price);
+    }
+  }
+
+  // 7. PPN Non-PKP (0%) saat status pemesanan paid
+  const taxInput = document.getElementById('inv-tax');
+  if (taxInput) {
+    taxInput.value = '0';
+  }
+
+  // Sync picker dropdown
+  const picker = document.getElementById('invoice-order-picker');
+  if (picker) {
+    picker.value = order.id;
+  }
+
+  recalculateInvoice();
+}
+
+function renderInvoice() {
+  populateInvoiceOrderPicker();
+
+  const itemsTable = document.getElementById('inv-items');
+  const freelancerInput = document.getElementById('inv-freelancer');
+
+  // If the invoice is completely unpopulated, check if there is a paid order in state.orders
+  if (itemsTable && itemsTable.rows.length === 0 && (!freelancerInput || !freelancerInput.value.trim())) {
+    const paidOrders = state.orders.filter(o => 
+      (o.payment_status || '').toLowerCase() === 'paid' || 
+      (o.status || '').toLowerCase() === 'completed'
+    );
+    if (paidOrders.length > 0) {
+      // Automatically load the latest paid order
+      loadOrderIntoInvoice(paidOrders[0]);
+    } else {
+      // Default empty invoice row
+      addInvoiceRow('Layanan JOKI.IN', 1, 0);
+      if (document.getElementById('inv-date')) {
+        document.getElementById('inv-date').value = new Date().toISOString().split('T')[0];
+      }
+      if (freelancerInput && state.admin) {
+        freelancerInput.value = profileNickname(state.admin);
+      }
+      recalculateInvoice();
+    }
+  }
+}
+
+// ========================================================
 // Modals & Action Sheet Management
 // ========================================================
 function openModal(modalId) {
@@ -1572,19 +1985,20 @@ function setupEventListeners() {
     });
   }
 
-  // Top Bar Refresh
-  document.getElementById('btn-refresh').addEventListener('click', () => {
-    loadData();
+  // Header Actions
+  document.getElementById('btn-header-avatar')?.addEventListener('click', openDrawer);
+  document.getElementById('btn-header-back')?.addEventListener('click', () => {
+    switchTab('home', 'left');
   });
 
   // Drawer Controls
-  document.getElementById('btn-open-drawer').addEventListener('click', openDrawer);
-  document.getElementById('drawer-overlay').addEventListener('click', closeDrawer);
-  document.getElementById('btn-drawer-refresh').addEventListener('click', () => {
+  document.getElementById('btn-open-drawer')?.addEventListener('click', openDrawer);
+  document.getElementById('drawer-overlay')?.addEventListener('click', closeDrawer);
+  document.getElementById('btn-drawer-refresh')?.addEventListener('click', () => {
     closeDrawer();
     loadData();
   });
-  document.getElementById('btn-drawer-logout').addEventListener('click', handleLogout);
+  document.getElementById('btn-drawer-logout')?.addEventListener('click', handleLogout);
 
   // Bottom Navigation Click
   document.querySelectorAll('.nav-tab-btn').forEach(btn => {
@@ -1662,32 +2076,64 @@ function setupEventListeners() {
     }
   });
 
-  // Product Navigation Subsections
-  document.getElementById('btn-goto-promos').addEventListener('click', () => {
-    document.getElementById('product-menu-section').style.display = 'none';
-    document.getElementById('product-promo-section').style.display = 'block';
+  // Product Navigation Subsections (Smooth Animated Push & Pop Transitions)
+  function openProductSubView(targetId) {
+    const menuSec = document.getElementById('product-menu-section');
+    const targetSec = document.getElementById(targetId);
+    if (!menuSec || !targetSec) return;
+
+    menuSec.classList.remove('subview-push-enter', 'subview-pop-enter', 'subview-push-exit', 'subview-pop-exit');
+    targetSec.classList.remove('subview-push-enter', 'subview-pop-enter', 'subview-push-exit', 'subview-pop-exit');
+
+    menuSec.classList.add('subview-push-exit');
+    setTimeout(() => {
+      menuSec.style.display = 'none';
+      menuSec.classList.remove('subview-push-exit');
+
+      targetSec.style.display = 'block';
+      targetSec.classList.add('subview-push-enter');
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    }, 120);
+  }
+
+  function closeProductSubView(currentId) {
+    const currentSec = document.getElementById(currentId);
+    const menuSec = document.getElementById('product-menu-section');
+    if (!currentSec || !menuSec) return;
+
+    currentSec.classList.remove('subview-push-enter', 'subview-pop-enter', 'subview-push-exit', 'subview-pop-exit');
+    menuSec.classList.remove('subview-push-enter', 'subview-pop-enter', 'subview-push-exit', 'subview-pop-exit');
+
+    currentSec.classList.add('subview-pop-exit');
+    setTimeout(() => {
+      currentSec.style.display = 'none';
+      currentSec.classList.remove('subview-pop-exit');
+
+      menuSec.style.display = 'block';
+      menuSec.classList.add('subview-pop-enter');
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    }, 120);
+  }
+
+  document.getElementById('btn-goto-promos')?.addEventListener('click', () => {
+    openProductSubView('product-promo-section');
   });
-  document.getElementById('btn-back-to-prod-menu').addEventListener('click', () => {
-    document.getElementById('product-promo-section').style.display = 'none';
-    document.getElementById('product-menu-section').style.display = 'block';
+  document.getElementById('btn-back-to-prod-menu')?.addEventListener('click', () => {
+    closeProductSubView('product-promo-section');
   });
 
-  document.getElementById('btn-goto-discounts').addEventListener('click', () => {
-    document.getElementById('product-menu-section').style.display = 'none';
-    document.getElementById('product-discount-section').style.display = 'block';
+  document.getElementById('btn-goto-discounts')?.addEventListener('click', () => {
+    openProductSubView('product-discount-section');
   });
-  document.getElementById('btn-back-to-prod-menu-2').addEventListener('click', () => {
-    document.getElementById('product-discount-section').style.display = 'none';
-    document.getElementById('product-menu-section').style.display = 'block';
+  document.getElementById('btn-back-to-prod-menu-2')?.addEventListener('click', () => {
+    closeProductSubView('product-discount-section');
   });
 
-  document.getElementById('btn-goto-prices').addEventListener('click', () => {
-    document.getElementById('product-menu-section').style.display = 'none';
-    document.getElementById('product-price-section').style.display = 'block';
+  document.getElementById('btn-goto-prices')?.addEventListener('click', () => {
+    openProductSubView('product-price-section');
   });
-  document.getElementById('btn-back-to-prod-menu-3').addEventListener('click', () => {
-    document.getElementById('product-price-section').style.display = 'none';
-    document.getElementById('product-menu-section').style.display = 'block';
+  document.getElementById('btn-back-to-prod-menu-3')?.addEventListener('click', () => {
+    closeProductSubView('product-price-section');
   });
 
   // Modal Close Buttons
@@ -1955,6 +2401,69 @@ function setupEventListeners() {
     }
   });
 
+  // ========================================================
+  // Invoice Generator Listeners
+  // ========================================================
+  document.getElementById('inv-add-row')?.addEventListener('click', () => {
+    addInvoiceRow('', 1, 0);
+  });
+
+  document.getElementById('inv-print')?.addEventListener('click', () => {
+    window.print();
+  });
+
+  document.getElementById('btn-invoice-load-order')?.addEventListener('click', () => {
+    const picker = document.getElementById('invoice-order-picker');
+    const orderId = picker ? picker.value : null;
+    if (orderId) {
+      const order = state.orders.find(o => String(o.id) === String(orderId));
+      if (order) {
+        loadOrderIntoInvoice(order);
+      }
+    }
+  });
+
+  document.getElementById('invoice-order-picker')?.addEventListener('change', (e) => {
+    const orderId = e.target.value;
+    if (orderId) {
+      const order = state.orders.find(o => String(o.id) === String(orderId));
+      if (order) {
+        loadOrderIntoInvoice(order);
+      }
+    }
+  });
+
+  const invItems = document.getElementById('inv-items');
+  if (invItems) {
+    invItems.addEventListener('input', (event) => {
+      if (event.target.classList.contains('inv-price')) {
+        const val = priceValue(event.target.value);
+        event.target.value = formatRupiah(val);
+      }
+      recalculateInvoice();
+    });
+
+    invItems.addEventListener('focusin', (event) => {
+      if (event.target.classList.contains('inv-price')) {
+        event.target.select();
+      }
+    });
+
+    invItems.addEventListener('click', (event) => {
+      const rmBtn = event.target.closest('.invoice-btn-remove');
+      if (rmBtn) {
+        const row = rmBtn.closest('tr');
+        if (row) {
+          row.remove();
+          recalculateInvoice();
+        }
+      }
+    });
+  }
+
+  document.getElementById('inv-tax')?.addEventListener('input', recalculateInvoice);
+  document.querySelector('.invoice-fields')?.addEventListener('input', recalculateInvoice);
+
   // Tab Swipe Gestures (Mobile Safari & Touchscreens)
   setupSwipeGestures();
 }
@@ -1971,57 +2480,110 @@ function setupSwipeGestures() {
   let startTime = 0;
   let isTracking = false;
 
-  container.addEventListener('touchstart', (e) => {
+  const handleStart = (clientX, clientY, target) => {
     // Ignore if drawer is open or modal is active
     if (document.getElementById('drawer-panel')?.classList.contains('open')) return;
     if (document.querySelector('.modal-overlay.open')) return;
 
-    const target = e.target;
     // Don't intercept inputs, toggles, buttons, chart or selector pills
-    if (target.closest('input, textarea, select, button, label.toggle-switch, .toggle-switch, .countdown-row, #perf-chart-svg-wrapper, .mode-selector')) {
+    if (target.closest('input, textarea, select, button, label.toggle-switch, .toggle-switch, .countdown-row, #perf-chart-svg-wrapper, .mode-selector, .search-container')) {
       return;
     }
 
-    const touch = e.touches[0];
-    // Avoid iOS Safari edge swipe back navigation conflict
-    if (touch.clientX < 24) return;
-
-    startX = touch.clientX;
-    startY = touch.clientY;
+    startX = clientX;
+    startY = clientY;
     startTime = Date.now();
     isTracking = true;
-  }, { passive: true });
+  };
 
-  container.addEventListener('touchend', (e) => {
+  const handleEnd = (clientX, clientY) => {
     if (!isTracking || !startTime) return;
     isTracking = false;
 
-    const touch = e.changedTouches[0];
-    const dx = touch.clientX - startX;
-    const dy = touch.clientY - startY;
+    const dx = clientX - startX;
+    const dy = clientY - startY;
     const duration = Date.now() - startTime;
     startTime = 0;
 
-    // Must be quick (< 550ms), horizontal enough (> 48px), and horizontal movement dominates vertical
-    if (duration < 550 && Math.abs(dx) > 48 && Math.abs(dx) > Math.abs(dy) * 1.35) {
+    // Must be reasonably quick (< 650ms), horizontal enough (> 40px), horizontal movement dominates vertical
+    if (duration < 650 && Math.abs(dx) > 40 && Math.abs(dx) > Math.abs(dy) * 1.15) {
       const currentTab = state.activeTab;
+
+      // Geser ke kanan pada beranda -> buka menu drawer!
+      if (currentTab === 'home') {
+        if (dx > 40) {
+          openDrawer();
+          return;
+        } else if (dx < -40) {
+          switchTab('orders', 'right');
+          return;
+        }
+      }
+
       const idx = BOTTOM_TABS.indexOf(currentTab);
       if (idx !== -1) {
-        if (dx < -48 && idx < BOTTOM_TABS.length - 1) {
+        if (dx < -40 && idx < BOTTOM_TABS.length - 1) {
           // Swiped left -> move to next tab on the right
           switchTab(BOTTOM_TABS[idx + 1], 'right');
-        } else if (dx > 48 && idx > 0) {
+        } else if (dx > 40 && idx > 0) {
           // Swiped right -> move to previous tab on the left
           switchTab(BOTTOM_TABS[idx - 1], 'left');
         }
+      } else {
+        // On hidden-nav tabs (reviews, products, task-files, performance, users): swipe right returns to home
+        if (dx > 45) {
+          switchTab('home', 'left');
+        }
       }
     }
+  };
+
+  // Touch event listeners
+  container.addEventListener('touchstart', (e) => {
+    const touch = e.touches[0];
+    handleStart(touch.clientX, touch.clientY, e.target);
+  }, { passive: true });
+
+  container.addEventListener('touchend', (e) => {
+    if (!e.changedTouches || !e.changedTouches.length) return;
+    const touch = e.changedTouches[0];
+    handleEnd(touch.clientX, touch.clientY);
   }, { passive: true });
 
   container.addEventListener('touchcancel', () => {
     isTracking = false;
     startTime = 0;
   }, { passive: true });
+
+  // Swipe left on drawer panel to close it
+  const drawerPanel = document.getElementById('drawer-panel');
+  if (drawerPanel) {
+    let dStartX = 0;
+    let dStartY = 0;
+    let dTracking = false;
+
+    drawerPanel.addEventListener('touchstart', (e) => {
+      const touch = e.touches[0];
+      dStartX = touch.clientX;
+      dStartY = touch.clientY;
+      dTracking = true;
+    }, { passive: true });
+
+    drawerPanel.addEventListener('touchend', (e) => {
+      if (!dTracking || !e.changedTouches || !e.changedTouches.length) return;
+      dTracking = false;
+      const touch = e.changedTouches[0];
+      const dx = touch.clientX - dStartX;
+      const dy = touch.clientY - dStartY;
+      if (dx < -45 && Math.abs(dx) > Math.abs(dy) * 1.2) {
+        closeDrawer();
+      }
+    }, { passive: true });
+
+    drawerPanel.addEventListener('touchcancel', () => {
+      dTracking = false;
+    }, { passive: true });
+  }
 }
 
 // ========================================================
