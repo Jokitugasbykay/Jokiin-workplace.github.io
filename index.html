@@ -1,0 +1,803 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+  <title>JOKI.IN Workplace Admin</title>
+
+  <!-- iOS Safari PWA Meta Tags -->
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="JOKI.IN Admin">
+  <meta name="format-detection" content="telephone=no">
+
+  <!-- Favicon & Touch Icons -->
+  <link rel="apple-touch-icon" href="./assets/apple-touch-icon.png">
+  <link rel="icon" type="image/png" href="./assets/icon-192.png">
+  <link rel="manifest" href="./manifest.json">
+  <meta name="theme-color" content="#000000">
+
+  <!-- Stylesheet -->
+  <link rel="stylesheet" href="./css/style.css">
+
+  <!-- Supabase JS Library -->
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+</head>
+<body>
+
+  <!-- Splash Screen / Intro -->
+  <div id="splash-screen">
+    <div class="splash-logo-container">
+      <img src="./assets/wordmark.png" alt="JOKI.IN Workplace" class="splash-wordmark">
+      <div class="splash-spinner"></div>
+    </div>
+  </div>
+
+  <!-- Login View -->
+  <div id="login-view" class="login-view" style="display: none;">
+    <div class="login-card">
+      <div class="login-header">
+        <img src="./assets/logo-white.png" alt="JOKI.IN" class="login-logo">
+        <h1 class="login-title">Masuk Admin</h1>
+        <p class="login-subtitle">JOKI.IN Workplace Management System</p>
+      </div>
+
+      <div id="returning-admin-section" style="display: none; text-align: center;">
+        <h2 id="returning-admin-greeting" style="font-size: 18px; font-weight: 700; margin-bottom: 12px;">Halo Admin</h2>
+        <button id="btn-enter-session" class="btn-primary">
+          <span>Masuk ke Dashboard</span>
+        </button>
+        <button id="btn-switch-account" class="btn-outline" style="margin-top: 10px;">
+          <span>Ganti Akun Lain</span>
+        </button>
+      </div>
+
+      <form id="login-form">
+        <div class="form-group">
+          <label class="form-label" for="login-email">Email Admin</label>
+          <input type="email" id="login-email" class="form-input" placeholder="admin@jokiin.com" required autocomplete="username">
+        </div>
+        <div class="form-group" style="margin-top: 12px;">
+          <label class="form-label" for="login-password">Password</label>
+          <input type="password" id="login-password" class="form-input" placeholder="••••••••" required autocomplete="current-password">
+        </div>
+        <div style="display: flex; align-items: center; gap: 8px; margin-top: 14px;">
+          <input type="checkbox" id="remember-me" checked style="width: 18px; height: 18px; accent-color: #000;">
+          <label for="remember-me" style="font-size: 13px; color: var(--ink-secondary);">Tetap masuk selama 24 jam di perangkat ini</label>
+        </div>
+
+        <div id="login-error-box" style="display: none; padding: 12px; background: #FFEDEE; border-radius: 12px; color: #B42332; font-size: 13px; margin-top: 14px;"></div>
+
+        <button type="submit" id="btn-login-submit" class="btn-primary" style="margin-top: 18px;">
+          <span id="login-btn-text">Masuk</span>
+          <div id="login-btn-spinner" class="dots-loader" style="display: none;">
+            <span></span><span></span><span></span>
+          </div>
+        </button>
+
+        <div class="login-divider">
+          <span>atau</span>
+        </div>
+
+        <button type="button" id="btn-login-google" class="btn-google">
+          <svg width="18" height="18" viewBox="0 0 24 24">
+            <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/>
+            <path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/>
+            <path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.06H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.94l2.85-2.22.81-.63z"/>
+            <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.06l3.66 2.84c.87-2.6 3.3-4.52 6.16-4.52z"/>
+          </svg>
+          <span>Masuk dengan Google</span>
+        </button>
+      </form>
+    </div>
+  </div>
+
+  <!-- Main App Shell -->
+  <div id="app-shell" style="display: none;">
+    <div id="app-container">
+      
+      <!-- Top App Bar -->
+      <header class="top-bar">
+        <div class="top-bar-content">
+          <button id="btn-open-drawer" class="brand-icon-btn" aria-label="Buka Menu">
+            <img src="./assets/logo-white.png" alt="Menu" class="brand-logo-img">
+          </button>
+          <div class="top-bar-titles">
+            <h1 class="top-bar-title">JOKI.IN Workplace</h1>
+            <span class="top-bar-subtitle">Sistem manajemen pesanan</span>
+          </div>
+          <div class="top-bar-actions">
+            <button id="btn-refresh" class="action-icon-btn" aria-label="Segarkan">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M21.5 2v6h-6M21.34 15.57a10 10 0 1 1-.57-8.38l5.67-5.19"/>
+              </svg>
+            </button>
+          </div>
+        </div>
+      </header>
+
+      <!-- Welcome Banner -->
+      <div class="welcome-card" style="margin: 14px 16px 0;">
+        <h2 id="welcome-admin-name" class="welcome-title">Halo, Kak Admin</h2>
+        <p class="welcome-subtitle">Semangat kelola orderan hari ini</p>
+      </div>
+
+      <!-- Search Field (Hidden on Home, Performance, Products) -->
+      <div id="search-section" style="padding: 10px 16px 0; display: none;">
+        <div class="search-container">
+          <svg class="search-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <circle cx="11" cy="11" r="8"></circle>
+            <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+          </svg>
+          <input type="text" id="global-search-input" class="search-input" placeholder="Cari...">
+        </div>
+      </div>
+
+      <!-- Main Content Views Container -->
+      <main class="content-area">
+        
+        <!-- View: Beranda (Home) -->
+        <section id="view-home" class="tab-view">
+          <!-- Saldo Card -->
+          <div class="admin-balance-card">
+            <div class="balance-icon-box">Rp</div>
+            <div class="balance-content">
+              <span id="balance-title" class="balance-label">Saldo Admin</span>
+              <span id="home-admin-balance" class="balance-amount">Rp0</span>
+              <span class="balance-subtext">Saldo pribadi akun ini</span>
+            </div>
+          </div>
+
+          <!-- KPI Stat Grid -->
+          <div class="stat-grid" style="margin-top: 14px;">
+            <div class="stat-card blue">
+              <div class="stat-icon-box">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                  <polyline points="22 12 16 12 14 15 10 15 8 12 2 12"></polyline>
+                  <path d="M5.45 5.11 2 12v6a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2v-6l-3.45-6.89A2 2 0 0 0 16.76 4H7.24a2 2 0 0 0-1.79 1.11z"></path>
+                </svg>
+              </div>
+              <div class="stat-content">
+                <span id="stat-pending" class="stat-amount">0</span>
+                <span class="stat-label">Order baru</span>
+              </div>
+            </div>
+            <div class="stat-card green">
+              <div class="stat-icon-box">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                  <path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"></path>
+                  <rect x="8" y="2" width="8" height="4" rx="1" ry="1"></rect>
+                </svg>
+              </div>
+              <div class="stat-content">
+                <span id="stat-processing" class="stat-amount">0</span>
+                <span class="stat-label">Diproses</span>
+              </div>
+            </div>
+            <div class="stat-card purple">
+              <div class="stat-icon-box">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                  <polyline points="20 6 9 17 4 12"></polyline>
+                </svg>
+              </div>
+              <div class="stat-content">
+                <span id="stat-completed" class="stat-amount">0</span>
+                <span class="stat-label">Selesai</span>
+              </div>
+            </div>
+            <div class="stat-card orange">
+              <div class="stat-icon-box">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                  <circle cx="12" cy="12" r="10"></circle>
+                  <line x1="12" y1="8" x2="12" y2="12"></line>
+                  <line x1="12" y1="16" x2="12.01" y2="16"></line>
+                </svg>
+              </div>
+              <div class="stat-content">
+                <span id="stat-waiting-payment" class="stat-amount">0</span>
+                <span class="stat-label">Menunggu bayar</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Recent Orders Section -->
+          <div class="section-header" style="margin-top: 18px;">
+            <h3 class="section-title">Order terbaru</h3>
+            <button id="btn-see-all-orders" class="section-action-btn">Lihat semua</button>
+          </div>
+          <div id="home-recent-orders-list" style="display: flex; flex-direction: column; gap: 10px; margin-top: 8px;">
+            <!-- Rendered dynamically -->
+          </div>
+
+          <!-- Recent Site Orders -->
+          <div id="home-site-orders-section" style="margin-top: 18px; display: none;">
+            <h3 class="section-title" style="margin-bottom: 8px;">Checkout situs terbaru</h3>
+            <div id="home-recent-site-orders" style="display: flex; flex-direction: column; gap: 10px;"></div>
+          </div>
+        </section>
+
+        <!-- View: Pesanan (Orders) -->
+        <section id="view-orders" class="tab-view" style="display: none;">
+          <div class="mode-selector">
+            <button id="mode-process-btn" class="mode-btn active">Proses</button>
+            <button id="mode-history-btn" class="mode-btn">Riwayat</button>
+          </div>
+
+          <div id="orders-count-label" style="font-size: 13px; color: var(--ink-secondary); margin: 6px 0;">Data dari server • 0 data</div>
+
+          <div id="orders-list-container" style="display: flex; flex-direction: column; gap: 12px;">
+            <!-- Rendered dynamically -->
+          </div>
+
+          <!-- Pagination Bar -->
+          <div id="orders-pagination" class="pagination-bar" style="display: none;"></div>
+        </section>
+
+        <!-- View: Layanan (Services) -->
+        <section id="view-services" class="tab-view" style="display: none;">
+          <div id="services-count-label" style="font-size: 13px; color: var(--ink-secondary); margin-bottom: 6px;">Data dari server • 0 data</div>
+          <div id="services-list-container" style="display: flex; flex-direction: column; gap: 12px;"></div>
+        </section>
+
+        <!-- View: Pembayaran (Payments) -->
+        <section id="view-payments" class="tab-view" style="display: none;">
+          <h3 style="font-size: 16px; font-weight: 700; margin-bottom: 8px;">Pesanan checkout situs</h3>
+          <div id="payment-orders-list" style="display: flex; flex-direction: column; gap: 10px; margin-bottom: 18px;"></div>
+
+          <h3 style="font-size: 16px; font-weight: 700; margin-bottom: 8px;">Pembayaran akun</h3>
+          <div id="payments-list" style="display: flex; flex-direction: column; gap: 10px;"></div>
+        </section>
+
+        <!-- View: Ulasan (Reviews) -->
+        <section id="view-reviews" class="tab-view" style="display: none;">
+          <div id="reviews-count-label" style="font-size: 13px; color: var(--ink-secondary); margin-bottom: 6px;">Data dari server • 0 data</div>
+          <div id="reviews-list-container" style="display: flex; flex-direction: column; gap: 12px;"></div>
+        </section>
+
+        <!-- View: Performa (Performance) -->
+        <section id="view-performance" class="tab-view" style="display: none;">
+          <div class="mode-selector">
+            <button id="perf-today-btn" class="mode-btn">Hari ini</button>
+            <button id="perf-week-btn" class="mode-btn">7 hari</button>
+            <button id="perf-month-btn" class="mode-btn active">1 Bulan</button>
+          </div>
+
+          <div id="perf-month-switcher" style="display: flex; justify-content: space-between; align-items: center; margin: 8px 0;">
+            <button id="perf-prev-month-btn" class="btn-outline" style="width: auto; padding: 0 14px; height: 36px;">‹ Bulan Lalu</button>
+            <span id="perf-current-month-label" style="font-weight: 700; font-size: 14px;">September 2026</span>
+            <button id="perf-next-month-btn" class="btn-outline" style="width: auto; padding: 0 14px; height: 36px;">Bulan Depan ›</button>
+          </div>
+
+          <!-- KPI Cards -->
+          <div class="stat-grid" style="margin-top: 10px;">
+            <div class="stat-card green" style="grid-column: span 2;">
+              <div class="stat-content">
+                <span style="font-size: 12px; color: #285B42; font-weight: 600;">Pendapatan bersih tim</span>
+                <span id="perf-net-revenue" style="font-size: 24px; font-weight: 800; color: #145E41;">Rp0</span>
+                <span id="perf-completed-orders" style="font-size: 12px; color: #285B42;">0 pesanan selesai</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Combined Performance Chart -->
+          <div class="chart-container" style="margin-top: 14px;">
+            <div class="chart-header">
+              <span id="perf-chart-title" style="font-size: 14px; font-weight: 700;">Grafik Pendapatan & Pesanan</span>
+              <div class="chart-legend">
+                <div class="legend-item"><span class="legend-dot" style="background: var(--orders-yellow);"></span>Pesanan</div>
+                <div class="legend-item"><span class="legend-dot" style="background: var(--revenue-green);"></span>Pendapatan</div>
+              </div>
+            </div>
+            <div id="perf-chart-svg-wrapper"></div>
+          </div>
+
+          <!-- Net Income Breakdown -->
+          <div class="entry-card" style="margin-top: 14px;">
+            <span class="entry-title">Rincian Pendapatan Bersih</span>
+            <div class="modal-row"><span class="modal-row-label">Pendapatan tercatat</span><span id="breakdown-gross" class="modal-row-value">Rp0</span></div>
+            <div class="modal-row"><span class="modal-row-label">Potongan gateway</span><span id="breakdown-gateway" class="modal-row-value" style="color: var(--balance-red);">− Rp0</span></div>
+            <div class="modal-row"><span class="modal-row-label">Pengembangan JOKI.IN (10%)</span><span id="breakdown-dev" class="modal-row-value" style="color: var(--balance-red);">− Rp0</span></div>
+            <div style="height: 1px; background: var(--border-light); margin: 4px 0;"></div>
+            <div class="modal-row"><span style="font-weight: 700;">Total Bersih</span><span id="breakdown-net" class="modal-row-value" style="font-size: 18px; font-weight: 800;">Rp0</span></div>
+          </div>
+
+          <!-- Admin Stats List -->
+          <h3 class="section-title" style="margin-top: 18px;">Statistik admin</h3>
+          <div id="perf-admins-list" style="display: flex; flex-direction: column; gap: 14px; margin-top: 10px;"></div>
+        </section>
+
+        <!-- View: Produk (Products) -->
+        <section id="view-products" class="tab-view" style="display: none;">
+          <div id="product-menu-section">
+            <p style="font-size: 14px; color: var(--ink-secondary); margin-bottom: 12px;">Pusat kendali katalog website</p>
+
+            <div style="background: #4C548F; border-radius: 20px; padding: 20px; color: #FFF; display: flex; flex-direction: column; gap: 12px;">
+              <span style="font-size: 16px; font-weight: 700;">Ringkasan produk</span>
+              <div style="display: flex; gap: 10px;">
+                <div style="flex: 1; background: rgba(255,255,255,0.12); padding: 10px; border-radius: 12px;">
+                  <span style="font-size: 11px; opacity: 0.8;">Layanan aktif</span>
+                  <div id="prod-active-count" style="font-size: 20px; font-weight: 800;">0</div>
+                </div>
+                <div style="flex: 1; background: rgba(255,255,255,0.12); padding: 10px; border-radius: 12px;">
+                  <span style="font-size: 11px; opacity: 0.8;">Diskon aktif</span>
+                  <div id="prod-discount-count" style="font-size: 20px; font-weight: 800;">0</div>
+                </div>
+              </div>
+              <span id="prod-banner-status" style="font-size: 12px; color: #9DEBCB;">○ Banner promo tidak aktif</span>
+            </div>
+
+            <h3 class="section-title" style="margin-top: 18px; margin-bottom: 10px;">Aksi cepat</h3>
+            <div style="display: flex; flex-direction: column; gap: 10px;">
+              <div id="btn-goto-promos" class="entry-card" style="cursor: pointer; background: #EAF7EF; border: none;">
+                <div style="display: flex; align-items: center; gap: 12px;">
+                  <div style="width: 40px; height: 40px; border-radius: 12px; background: rgba(22, 131, 75, 0.12); display: flex; align-items: center; justify-content: center; color: #16834B;">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                      <path d="m3 11 18-5v12L3 13v-2z"></path>
+                      <path d="M11.6 16.8a3 3 0 1 1-5.8-1.6"></path>
+                    </svg>
+                  </div>
+                  <div>
+                    <span style="font-weight: 700; font-size: 16px;">Promo</span>
+                    <p style="font-size: 12px; color: var(--ink-secondary);">Tampilkan atau sembunyikan banner promo di website.</p>
+                  </div>
+                </div>
+              </div>
+
+              <div id="btn-goto-discounts" class="entry-card" style="cursor: pointer; background: #FFF1E5; border: none;">
+                <div style="display: flex; align-items: center; gap: 12px;">
+                  <div style="width: 40px; height: 40px; border-radius: 12px; background: rgba(226, 174, 22, 0.15); display: flex; align-items: center; justify-content: center; color: #986010;">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                      <path d="M12 2H2v10l9.29 9.29c.94.94 2.48.94 3.42 0l6.58-6.58c.94-.94.94-2.48 0-3.42L12 2Z"></path>
+                      <path d="M7 7h.01"></path>
+                    </svg>
+                  </div>
+                  <div>
+                    <span style="font-weight: 700; font-size: 16px;">Diskon</span>
+                    <p style="font-size: 12px; color: var(--ink-secondary);">Atur potongan per layanan; harga dasar tetap.</p>
+                  </div>
+                </div>
+              </div>
+
+              <div id="btn-goto-prices" class="entry-card" style="cursor: pointer; background: #EAF1FF; border: none;">
+                <div style="display: flex; align-items: center; gap: 12px;">
+                  <div style="width: 40px; height: 40px; border-radius: 12px; background: rgba(49, 88, 168, 0.12); display: flex; align-items: center; justify-content: center; color: #3158A8;">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                      <line x1="12" y1="1" x2="12" y2="23"></line>
+                      <path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"></path>
+                    </svg>
+                  </div>
+                  <div>
+                    <span style="font-weight: 700; font-size: 16px;">Ubah harga produk</span>
+                    <p style="font-size: 12px; color: var(--ink-secondary);">Perbarui harga dasar tanpa menghapus diskon.</p>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Sub-view: Promo Manager -->
+          <div id="product-promo-section" style="display: none;">
+            <button id="btn-back-to-prod-menu" class="btn-outline" style="width: auto; height: 34px; padding: 0 12px; margin-bottom: 12px;">‹ Kembali ke Produk</button>
+            <h3 class="section-title">Manajemen Promo</h3>
+            <p id="promo-rules-hint" style="font-size: 12px; color: var(--ink-secondary); margin: 6px 0 12px;">Hanya satu promo aktif di website.</p>
+            <div id="promos-list-container" style="display: flex; flex-direction: column; gap: 12px;"></div>
+            <button id="btn-create-promo" class="btn-primary" style="margin-top: 14px;">+ Buat Promo Baru</button>
+          </div>
+
+          <!-- Sub-view: Discount Manager -->
+          <div id="product-discount-section" style="display: none;">
+            <button id="btn-back-to-prod-menu-2" class="btn-outline" style="width: auto; height: 34px; padding: 0 12px; margin-bottom: 12px;">‹ Kembali ke Produk</button>
+            <h3 class="section-title">Diskon Layanan</h3>
+            <p style="font-size: 12px; color: var(--ink-secondary); margin: 4px 0 12px;">Diskon terpisah dari harga dasar produk.</p>
+            <div id="product-discounts-list" style="display: flex; flex-direction: column; gap: 12px;"></div>
+          </div>
+
+          <!-- Sub-view: Price Manager -->
+          <div id="product-price-section" style="display: none;">
+            <button id="btn-back-to-prod-menu-3" class="btn-outline" style="width: auto; height: 34px; padding: 0 12px; margin-bottom: 12px;">‹ Kembali ke Produk</button>
+            <h3 class="section-title">Ubah Harga Dasar</h3>
+            <p style="font-size: 12px; color: var(--ink-secondary); margin: 4px 0 12px;">Harga dasar sebelum potongan diskon.</p>
+            <div id="product-prices-list" style="display: flex; flex-direction: column; gap: 12px;"></div>
+          </div>
+        </section>
+
+        <!-- View: Folder Lampiran (Task Files) -->
+        <section id="view-task-files" class="tab-view" style="display: none;">
+          <div class="entry-card">
+            <span class="entry-title">Folder lampiran pelanggan</span>
+            <p style="font-size: 13px; color: var(--ink-secondary);">File yang dipilih pelanggan saat checkout disimpan di folder Google Drive ini. Ganti link saat folder harian berubah.</p>
+            <div class="form-group" style="margin-top: 8px;">
+              <label class="form-label" for="task-drive-input">Link Folder Google Drive</label>
+              <input type="url" id="task-drive-input" class="form-input" placeholder="https://drive.google.com/drive/folders/...">
+            </div>
+            <button id="btn-save-drive-folder" class="btn-primary" style="margin-top: 10px;">Simpan Folder</button>
+          </div>
+        </section>
+
+        <!-- View: Pengguna (Users) -->
+        <section id="view-users" class="tab-view" style="display: none;">
+          <div id="users-count-label" style="font-size: 13px; color: var(--ink-secondary); margin-bottom: 6px;">Data dari server • 0 pengguna</div>
+          <div id="users-list-container" style="display: flex; flex-direction: column; gap: 12px;"></div>
+        </section>
+
+      </main>
+
+      <!-- Bottom Navigation Bar (Glassmorphic) -->
+      <nav class="bottom-nav-container">
+        <div class="bottom-nav">
+          <button class="nav-tab-btn active" data-tab="home">
+            <svg class="nav-tab-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="m3 9 9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path>
+              <polyline points="9 22 9 12 15 12 15 22"></polyline>
+            </svg>
+            <span class="nav-tab-label">Beranda</span>
+          </button>
+          <button class="nav-tab-btn" data-tab="orders">
+            <svg class="nav-tab-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <line x1="8" y1="6" x2="21" y2="6"></line>
+              <line x1="8" y1="12" x2="21" y2="12"></line>
+              <line x1="8" y1="18" x2="21" y2="18"></line>
+              <line x1="3" y1="6" x2="3.01" y2="6"></line>
+              <line x1="3" y1="12" x2="3.01" y2="12"></line>
+              <line x1="3" y1="18" x2="3.01" y2="18"></line>
+            </svg>
+            <span class="nav-tab-label">Pesanan</span>
+          </button>
+          <button class="nav-tab-btn" data-tab="services">
+            <svg class="nav-tab-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M6 2 3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4Z"></path>
+              <line x1="3" y1="6" x2="21" y2="6"></line>
+              <path d="M16 10a4 4 0 0 1-8 0"></path>
+            </svg>
+            <span class="nav-tab-label">Layanan</span>
+          </button>
+          <button class="nav-tab-btn" data-tab="payments">
+            <svg class="nav-tab-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <rect x="2" y="4" width="20" height="16" rx="2"></rect>
+              <line x1="2" y1="10" x2="22" y2="10"></line>
+            </svg>
+            <span class="nav-tab-label">Bayar</span>
+          </button>
+        </div>
+      </nav>
+
+    </div>
+  </div>
+
+  <!-- Navigation Drawer (Sidebar) -->
+  <div id="drawer-overlay" class="drawer-overlay"></div>
+  <aside id="drawer-panel" class="drawer-panel">
+    <div class="drawer-header">
+      <div id="drawer-avatar" class="drawer-avatar">A</div>
+      <div class="drawer-user-info">
+        <span id="drawer-admin-name" class="drawer-user-name">Admin</span>
+        <span id="drawer-admin-role" class="drawer-user-role">Administrator</span>
+      </div>
+    </div>
+    <div class="drawer-menu">
+      <button class="drawer-item active" data-tab="home">
+        <span class="drawer-item-icon">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="m3 9 9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path>
+            <polyline points="9 22 9 12 15 12 15 22"></polyline>
+          </svg>
+        </span>
+        <span>Beranda</span>
+      </button>
+      <button class="drawer-item" data-tab="orders">
+        <span class="drawer-item-icon">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <line x1="8" y1="6" x2="21" y2="6"></line>
+            <line x1="8" y1="12" x2="21" y2="12"></line>
+            <line x1="8" y1="18" x2="21" y2="18"></line>
+            <line x1="3" y1="6" x2="3.01" y2="6"></line>
+            <line x1="3" y1="12" x2="3.01" y2="12"></line>
+            <line x1="3" y1="18" x2="3.01" y2="18"></line>
+          </svg>
+        </span>
+        <span>Pesanan</span>
+      </button>
+      <button class="drawer-item" data-tab="services">
+        <span class="drawer-item-icon">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M6 2 3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4Z"></path>
+            <line x1="3" y1="6" x2="21" y2="6"></line>
+            <path d="M16 10a4 4 0 0 1-8 0"></path>
+          </svg>
+        </span>
+        <span>Layanan</span>
+      </button>
+      <button class="drawer-item" data-tab="payments">
+        <span class="drawer-item-icon">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <rect x="2" y="4" width="20" height="16" rx="2"></rect>
+            <line x1="2" y1="10" x2="22" y2="10"></line>
+          </svg>
+        </span>
+        <span>Pembayaran</span>
+      </button>
+      <button class="drawer-item" data-tab="reviews">
+        <span class="drawer-item-icon">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon>
+          </svg>
+        </span>
+        <span>Ulasan</span>
+      </button>
+      <button class="drawer-item" data-tab="products">
+        <span class="drawer-item-icon">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <line x1="16.5" y1="9.4" x2="7.5" y2="4.21"></line>
+            <path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"></path>
+            <polyline points="3.27 6.96 12 12.01 20.73 6.96"></polyline>
+            <line x1="12" y1="22.08" x2="12" y2="12"></line>
+          </svg>
+        </span>
+        <span>Produk & Promo</span>
+      </button>
+      <button class="drawer-item" data-tab="task-files">
+        <span class="drawer-item-icon">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M4 20h16a2 2 0 0 0 2-2V8a2 2 0 0 0-2-2h-7.93a2 2 0 0 1-1.66-.9l-.82-1.2A2 2 0 0 0 7.93 3H4a2 2 0 0 0-2 2v13a2 2 0 0 0 2 2Z"></path>
+          </svg>
+        </span>
+        <span>Folder Lampiran</span>
+      </button>
+      <button id="drawer-tab-performance" class="drawer-item" data-tab="performance" style="display: none;">
+        <span class="drawer-item-icon">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <polyline points="23 6 13.5 15.5 8.5 10.5 1 18"></polyline>
+            <polyline points="17 6 23 6 23 12"></polyline>
+          </svg>
+        </span>
+        <span>Performa Tim</span>
+      </button>
+      <button id="drawer-tab-users" class="drawer-item" data-tab="users" style="display: none;">
+        <span class="drawer-item-icon">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"></path>
+            <circle cx="9" cy="7" r="4"></circle>
+            <path d="M22 21v-2a4 4 0 0 0-3-3.87"></path>
+            <path d="M16 3.13a4 4 0 0 1 0 7.75"></path>
+          </svg>
+        </span>
+        <span>Daftar Pengguna</span>
+      </button>
+    </div>
+    <div class="drawer-footer">
+      <button id="btn-drawer-refresh" class="btn-secondary" style="display: flex; align-items: center; justify-content: center; gap: 8px;">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M21.5 2v6h-6M21.34 15.57a10 10 0 1 1-.57-8.38l5.67-5.19"/>
+        </svg>
+        <span>Segarkan Data</span>
+      </button>
+      <button id="btn-drawer-logout" class="btn-outline" style="color: #D43546; border-color: rgba(212, 53, 70, 0.4); display: flex; align-items: center; justify-content: center; gap: 8px;">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path>
+          <polyline points="16 17 21 12 16 7"></polyline>
+          <line x1="21" y1="12" x2="9" y2="12"></line>
+        </svg>
+        <span>Keluar</span>
+      </button>
+    </div>
+  </aside>
+
+  <!-- Notice Toast Banner -->
+  <div id="notice-toast" class="notice-toast" style="display: none;">
+    <div class="notice-bell-box">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"></path>
+        <path d="M13.73 21a2 2 0 0 1-3.46 0"></path>
+      </svg>
+    </div>
+    <div>
+      <h4 style="font-size: 14px; font-weight: 700;">Pesanan baru</h4>
+      <p id="notice-text" style="font-size: 13px; color: var(--ink-secondary);">Ada pesanan baru masuk</p>
+    </div>
+  </div>
+
+  <!-- Order Detail Modal -->
+  <div id="modal-order-detail" class="modal-overlay">
+    <div class="modal-sheet">
+      <div class="modal-header">
+        <div style="display: flex; align-items: center; gap: 8px;">
+          <img src="./assets/logo-white.png" alt="Logo" style="width: 24px; height: 24px; border-radius: 50%;">
+          <span style="font-size: 13px; font-weight: 700; color: var(--accent-blue);">Detail pesanan</span>
+        </div>
+        <button class="modal-close-btn" data-close-modal="modal-order-detail" aria-label="Tutup">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+            <line x1="18" y1="6" x2="6" y2="18"></line>
+            <line x1="6" y1="6" x2="18" y2="18"></line>
+          </svg>
+        </button>
+      </div>
+      <h2 id="detail-order-code" class="modal-title">#0000</h2>
+
+      <div class="modal-section">
+        <span class="modal-section-title">Pelanggan</span>
+        <div class="modal-row"><span class="modal-row-label">Nama</span><span id="detail-customer-name" class="modal-row-value">-</span></div>
+        <div class="modal-row"><span class="modal-row-label">Email</span><span id="detail-customer-email" class="modal-row-value">-</span></div>
+        <div class="modal-row"><span class="modal-row-label">WhatsApp</span><span id="detail-customer-wa" class="modal-row-value">-</span></div>
+      </div>
+
+      <div class="modal-section">
+        <span class="modal-section-title">Ringkasan Pesanan</span>
+        <div class="modal-row"><span class="modal-row-label">Total</span><span id="detail-order-total" class="modal-row-value" style="font-size: 16px; font-weight: 800;">Rp0</span></div>
+        <div class="modal-row">
+          <span class="modal-row-label">Status kerja</span>
+          <span id="detail-order-status-badge"></span>
+        </div>
+        <div class="modal-row"><span class="modal-row-label">Pembayaran</span><span id="detail-order-payment" class="modal-row-value">-</span></div>
+        <div class="modal-row"><span class="modal-row-label">Dibuat</span><span id="detail-order-date" class="modal-row-value">-</span></div>
+      </div>
+
+      <div class="modal-section">
+        <span class="modal-section-title">Estimasi Selesai</span>
+        <span id="detail-order-deadline" style="font-weight: 700; font-size: 15px;">-</span>
+        <p id="detail-deadline-hint" style="font-size: 12px; color: var(--ink-secondary);">Batas dari pelanggan: <span id="detail-max-estimate-label">4 hari</span></p>
+
+        <div id="detail-estimate-editor" style="display: none; flex-direction: column; gap: 8px; margin-top: 8px;">
+          <div style="display: flex; gap: 6px;" id="estimate-buttons-container"></div>
+          <div style="display: flex; gap: 8px; margin-top: 4px;">
+            <button id="btn-cancel-estimate" class="btn-outline" style="flex: 1;">Batal</button>
+            <button id="btn-save-estimate" class="btn-primary" style="flex: 1;">Simpan</button>
+          </div>
+        </div>
+        <button id="btn-open-estimate-edit" class="btn-outline" style="margin-top: 6px; display: none;">Atur estimasi</button>
+      </div>
+
+      <div class="modal-section">
+        <span class="modal-section-title">Item Pesanan</span>
+        <div id="detail-order-items" style="display: flex; flex-direction: column; gap: 8px;"></div>
+      </div>
+
+      <div class="modal-section">
+        <span class="modal-section-title">Detail Tugas</span>
+        <div class="modal-row"><span class="modal-row-label">Judul</span><span id="detail-task-title" class="modal-row-value">-</span></div>
+        <div style="display: flex; flex-direction: column; gap: 2px;">
+          <span class="modal-row-label">Catatan</span>
+          <p id="detail-task-notes" style="font-size: 13px; color: var(--ink); background: var(--bg-variant); padding: 10px; border-radius: 12px; margin-top: 4px;"></p>
+        </div>
+        <div class="modal-row" style="margin-top: 6px;"><span class="modal-row-label">Deadline dari pelanggan</span><span id="detail-task-deadline" class="modal-row-value">-</span></div>
+        <div id="detail-task-drive-links" style="display: flex; flex-direction: column; gap: 6px; margin-top: 8px;"></div>
+      </div>
+
+      <button class="btn-secondary" data-close-modal="modal-order-detail" style="margin-top: 8px;">Tutup</button>
+    </div>
+  </div>
+
+  <!-- Confirmation Dialog Modal -->
+  <div id="modal-confirm" class="modal-overlay">
+    <div class="modal-sheet" style="border-radius: 28px; max-width: 440px; margin: auto; padding: 24px;">
+      <h3 id="confirm-title" class="modal-title" style="font-size: 18px;">Konfirmasi</h3>
+      <p id="confirm-message" style="font-size: 14px; color: var(--ink-secondary); margin: 10px 0 16px;">Apakah Anda yakin ingin melanjutkan?</p>
+      <div style="display: flex; gap: 10px;">
+        <button id="btn-confirm-cancel" class="btn-outline" style="flex: 1;">Batal</button>
+        <button id="btn-confirm-ok" class="btn-primary" style="flex: 1;">Lanjutkan</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Adjust Admin Balance Modal -->
+  <div id="modal-adjust-balance" class="modal-overlay">
+    <div class="modal-sheet" style="border-radius: 28px; max-width: 440px; margin: auto; padding: 24px;">
+      <h3 id="adjust-balance-title" class="modal-title" style="font-size: 18px;">Ubah Saldo Admin</h3>
+      <p id="adjust-balance-current" style="font-size: 14px; font-weight: 600; margin: 8px 0;">Saldo sekarang: Rp0</p>
+      
+      <div class="mode-selector" style="margin: 10px 0;">
+        <button id="adjust-type-add" class="mode-btn active">Tambah (+)</button>
+        <button id="adjust-type-subtract" class="mode-btn">Kurangi (−)</button>
+      </div>
+
+      <div class="form-group">
+        <label class="form-label" for="adjust-balance-amount">Nominal (Rp)</label>
+        <input type="number" id="adjust-balance-amount" class="form-input" placeholder="Contoh: 50000" min="1">
+      </div>
+
+      <div id="adjust-balance-error" style="color: var(--balance-red); font-size: 12px; margin-top: 6px; display: none;"></div>
+
+      <div style="display: flex; gap: 10px; margin-top: 18px;">
+        <button class="btn-outline" data-close-modal="modal-adjust-balance" style="flex: 1;">Batal</button>
+        <button id="btn-save-adjust-balance" class="btn-primary" style="flex: 1;">Lanjutkan</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Promo Editor Modal -->
+  <div id="modal-promo-editor" class="modal-overlay">
+    <div class="modal-sheet">
+      <div class="modal-header">
+        <h3 id="promo-editor-title" class="modal-title">Buat Promo Baru</h3>
+        <button class="modal-close-btn" data-close-modal="modal-promo-editor" aria-label="Tutup">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+            <line x1="18" y1="6" x2="6" y2="18"></line>
+            <line x1="6" y1="6" x2="18" y2="18"></line>
+          </svg>
+        </button>
+      </div>
+      <form id="promo-editor-form" style="display: flex; flex-direction: column; gap: 12px;">
+        <input type="hidden" id="promo-edit-id">
+        <div class="form-group">
+          <label class="form-label" for="promo-edit-text">Teks Promo</label>
+          <input type="text" id="promo-edit-text" class="form-input" placeholder="Diskon Spesial Mahasiswa Akhir Bulan" required minlength="5" maxlength="180">
+        </div>
+        <div class="form-group">
+          <label class="form-label" for="promo-edit-coupon">Kode Kupon (Huruf & Angka)</label>
+          <input type="text" id="promo-edit-coupon" class="form-input" placeholder="PROMO20" required pattern="[A-Za-z0-9]{4,24}" style="text-transform: uppercase;">
+        </div>
+        <div class="form-group">
+          <label class="form-label" for="promo-edit-percent">Diskon (%)</label>
+          <input type="number" id="promo-edit-percent" class="form-input" placeholder="20" min="1" max="90" required>
+        </div>
+        <div class="form-group">
+          <label class="form-label" for="promo-edit-starts">Tanggal Mulai</label>
+          <input type="datetime-local" id="promo-edit-starts" class="form-input" required>
+        </div>
+        <div class="form-group">
+          <label class="form-label" for="promo-edit-ends">Tanggal Berakhir</label>
+          <input type="datetime-local" id="promo-edit-ends" class="form-input" required>
+        </div>
+
+        <button type="submit" id="btn-submit-promo" class="btn-primary" style="margin-top: 10px;">Simpan Promo</button>
+      </form>
+    </div>
+  </div>
+
+  <!-- Product Discount Editor Modal -->
+  <div id="modal-discount-editor" class="modal-overlay">
+    <div class="modal-sheet" style="border-radius: 28px; max-width: 440px; margin: auto; padding: 24px;">
+      <h3 id="discount-editor-title" class="modal-title" style="font-size: 18px;">Atur Diskon</h3>
+      <p id="discount-editor-price" style="font-size: 14px; color: var(--ink-secondary); margin: 6px 0 14px;">Harga dasar: Rp0</p>
+      
+      <div class="form-group">
+        <label class="form-label" for="discount-percent-input">Diskon Persen (%)</label>
+        <input type="number" id="discount-percent-input" class="form-input" placeholder="0" min="0" max="99">
+      </div>
+      <p style="text-align: center; font-size: 12px; color: var(--ink-muted); margin: 6px 0;">— ATAU —</p>
+      <div class="form-group">
+        <label class="form-label" for="discount-amount-input">Diskon Nominal (Rp)</label>
+        <input type="number" id="discount-amount-input" class="form-input" placeholder="0" min="0">
+      </div>
+
+      <div style="display: flex; gap: 10px; margin-top: 18px;">
+        <button class="btn-outline" data-close-modal="modal-discount-editor" style="flex: 1;">Batal</button>
+        <button id="btn-save-discount" class="btn-primary" style="flex: 1;">Simpan</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Product Base Price Editor Modal -->
+  <div id="modal-price-editor" class="modal-overlay">
+    <div class="modal-sheet" style="border-radius: 28px; max-width: 440px; margin: auto; padding: 24px;">
+      <h3 id="price-editor-title" class="modal-title" style="font-size: 18px;">Ubah Harga Dasar</h3>
+      <div class="form-group" style="margin-top: 14px;">
+        <label class="form-label" for="price-amount-input">Harga Dasar Baru (Rp)</label>
+        <input type="number" id="price-amount-input" class="form-input" placeholder="Contoh: 150000" min="1000">
+      </div>
+      <div style="display: flex; gap: 10px; margin-top: 18px;">
+        <button class="btn-outline" data-close-modal="modal-price-editor" style="flex: 1;">Batal</button>
+        <button id="btn-save-price" class="btn-primary" style="flex: 1;">Simpan</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Audio Chime for In-App Notifications -->
+  <audio id="notification-sound" preload="auto">
+    <source src="data:audio/wav;base64,UklGRnoGAABXQVZFZm10IBAAAAABAAEAQB8AAEAfAAABAAgAZGF0YQoGAACBhYqFbF1fdJivrJBhNjVgodDbq2EcBj+a2/LDciUFLI7L8M98KAUkg8vwz3woBSyPy/DPfCgFLI/L8M98KAUkg8vwz3woBSyPy/DPfCgFLI/L8M98KAUkg8vwz3woBSyPy/DPfCgFLI/L8M98KAUkg8vwz3woBSyPy/DPfCg=" type="audio/wav">
+  </audio>
+
+  <!-- Application Main Script -->
+  <script type="module" src="./js/app.js"></script>
+
+  <!-- Register Service Worker -->
+  <script>
+    if ('serviceWorker' in navigator) {
+      window.addEventListener('load', () => {
+        navigator.serviceWorker.register('./service-worker.js').catch(err => {
+          console.log('SW registration error:', err);
+        });
+      });
+    }
+  </script>
+</body>
+</html>

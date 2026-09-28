@@ -1,0 +1,20 @@
+{
+  "name": "jokiin-workplace-website",
+  "version": "1.0.0",
+  "description": "JOKI.IN Workplace Admin Web Application & iOS Safari PWA",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js",
+    "dev": "node server.js"
+  },
+  "keywords": [
+    "jokiin",
+    "workplace",
+    "admin",
+    "pwa",
+    "safari",
+    "supabase"
+  ],
+  "author": "JOKI.IN Team",
+  "license": "MIT"
+}
