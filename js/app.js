@@ -249,6 +249,11 @@ function showAppShell() {
   document.getElementById('welcome-admin-name').textContent = `Halo, Kak ${nickname}`;
   document.getElementById('drawer-admin-name').textContent = nickname;
   document.getElementById('drawer-admin-role').textContent = isOrderSupervisor(state.admin) ? 'Supervisor' : 'Admin';
+  document.getElementById('header-account-name').textContent = nickname;
+  document.getElementById('header-account-role').textContent = isOrderSupervisor(state.admin) ? 'Supervisor' : 'Admin';
+  const headerDate = document.getElementById('header-date');
+  headerDate.textContent = new Intl.DateTimeFormat('id-ID', { day: 'numeric', month: 'long', year: 'numeric', timeZone: 'Asia/Jakarta' }).format(new Date());
+  headerDate.dateTime = new Date().toISOString();
   document.getElementById('drawer-avatar').textContent = nickname.charAt(0).toUpperCase();
 
   const headerAvatarLetter = document.getElementById('header-avatar-letter');
@@ -470,6 +475,9 @@ function switchTab(tabName, forcedDirection = null) {
   }
 
   state.activeTab = tabName;
+  const pageNames = { home: 'Beranda', orders: 'Pesanan', services: 'Layanan', payments: 'Pembayaran', reviews: 'Ulasan', performance: 'Performa tim', products: 'Produk & promo', 'task-files': 'Folder lampiran', users: 'Daftar pengguna', invoice: 'Invoice' };
+  document.getElementById('header-page-title').textContent = pageNames[tabName] || 'Workplace';
+  document.querySelector('.welcome-card').style.display = tabName === 'home' ? 'block' : 'none';
   state.searchQuery = '';
   state.orderPage = 1;
 
@@ -521,6 +529,8 @@ function switchTab(tabName, forcedDirection = null) {
   // Update Drawer Nav
   document.querySelectorAll('.drawer-item').forEach(btn => {
     btn.classList.toggle('active', btn.dataset.tab === tabName);
+    if (btn.dataset.tab === tabName) btn.setAttribute('aria-current', 'page');
+    else btn.removeAttribute('aria-current');
   });
 
   // Show/Hide Tab Views with slide/fade animation
@@ -658,7 +668,8 @@ function renderHome() {
       siteList.appendChild(entry);
     });
   } else {
-    siteSec.style.display = 'none';
+    siteSec.style.display = 'block';
+    siteList.innerHTML = '<p class="page-description">Belum ada checkout situs. Pesanan dari website akan muncul di sini.</p>';
   }
 }
 
@@ -1163,7 +1174,7 @@ function renderPerformance() {
     until = new Date(now.getTime() + 1000);
     document.getElementById('perf-month-switcher').style.display = 'none';
   } else if (state.perfRange === 'week') {
-    since = new Date(now.getTime() - 6 * 24 * 3600 * 1000);
+    since = new Date(now.getFullYear(), now.getMonth(), now.getDate() - 6);
     until = new Date(now.getTime() + 1000);
     document.getElementById('perf-month-switcher').style.display = 'none';
   } else { // month
@@ -1207,7 +1218,8 @@ function renderPerformance() {
   }
 
   updateKpiSparkline(periodOrders, state.perfRange, state.perfMonthOffset);
-  updateKpiBars(periodOrders, state.perfRange, state.perfMonthOffset);
+  const chartPoints = renderCombinedChart(periodOrders, state.perfRange, state.perfMonthOffset);
+  updateKpiBars(chartPoints);
 
   document.getElementById('breakdown-gross').textContent = formatRupiah(gross);
   document.getElementById('breakdown-gateway').textContent = `− ${formatRupiah(gatewayCut)}`;
@@ -1234,6 +1246,10 @@ function animateCountUp(elementId, targetValue, duration = 850, isFormattedRupia
   }
 
   const startTime = performance.now();
+  if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+    el.textContent = isFormattedRupiah ? targetValue.toLocaleString('id-ID') : targetValue.toString();
+    return;
+  }
 
   function step(currentTime) {
     const elapsed = currentTime - startTime;
@@ -1310,34 +1326,16 @@ function updateKpiSparkline(periodOrders, range, monthOffset) {
   path.setAttribute('d', d);
 }
 
-function updateKpiBars(periodOrders, range, monthOffset) {
+function updateKpiBars(points) {
   const container = document.getElementById('perf-animated-bars');
   if (!container) return;
-
-  const now = new Date();
-  const counts = [];
-
-  for (let i = 6; i >= 0; i--) {
-    const day = new Date(now.getTime() - i * 24 * 3600 * 1000);
-    const match = periodOrders.filter(o => new Date(o.created_at).toDateString() === day.toDateString());
-    counts.push(match.length);
-  }
-
-  const maxCount = Math.max(...counts, 1);
-  const bars = container.querySelectorAll('i');
-
-  bars.forEach((bar, idx) => {
-    const count = counts[idx] || 0;
-    const heightPercent = count > 0 ? Math.max(25, Math.round((count / maxCount) * 100)) : 18;
-    bar.style.setProperty('--ac-12-h', `${heightPercent}%`);
-    bar.style.animation = 'none';
-    bar.offsetHeight;
-    bar.style.animation = null;
-  });
+  const maxCount = Math.max(...points.map(p => p.count), 1);
+  container.innerHTML = points.map(p => `<i style="--ac-12-h:${p.count / maxCount * 100}%"></i>`).join('');
 }
 
 function renderCombinedChart(orders, range, monthOffset) {
   const wrapper = document.getElementById('perf-chart-svg-wrapper');
+  if (!wrapper) return [];
   wrapper.innerHTML = '';
 
   // Bucket points
@@ -1380,9 +1378,13 @@ function renderCombinedChart(orders, range, monthOffset) {
   const svg = document.createElementNS(svgNS, 'svg');
   svg.setAttribute('class', 'chart-svg');
   svg.setAttribute('viewBox', '0 0 500 180');
+  svg.setAttribute('role', 'img');
+  svg.setAttribute('aria-label', 'Tren pendapatan dan pesanan selesai. Rincian tersedia pada tabel data grafik.');
 
   const maxAmount = Math.max(1000, ...points.map(p => p.amount));
   const maxCount = Math.max(1, ...points.map(p => p.count));
+  document.getElementById('perf-chart-empty').hidden = points.some(p => p.amount > 0 || p.count > 0);
+  document.getElementById('perf-chart-data').innerHTML = points.map(p => `<tr><th scope="row">${p.label}</th><td>${formatRupiah(p.amount)}</td><td>${p.count}</td></tr>`).join('');
 
   // Grid lines
   for (let s = 0; s < 4; s++) {
@@ -1402,6 +1404,16 @@ function renderCombinedChart(orders, range, monthOffset) {
 
   // Bars (Orders Yellow)
   points.forEach((p, idx) => {
+    if (idx % Math.max(1, Math.ceil(points.length / 7)) === 0 || idx === points.length - 1) {
+      const label = document.createElementNS(svgNS, 'text');
+      label.setAttribute('x', 30 + idx * slotW + slotW / 2);
+      label.setAttribute('y', '172');
+      label.setAttribute('text-anchor', 'middle');
+      label.setAttribute('fill', '#526174');
+      label.setAttribute('font-size', '11');
+      label.textContent = p.label;
+      svg.appendChild(label);
+    }
     if (p.count > 0) {
       const barH = (p.count / maxCount) * 120;
       const x = 30 + idx * slotW + (slotW - barW) / 2;
@@ -1443,6 +1455,7 @@ function renderCombinedChart(orders, range, monthOffset) {
   svg.insertBefore(path, svg.querySelector('circle'));
 
   wrapper.appendChild(svg);
+  return points;
 }
 
 function renderAdminTeamStats(periodOrders) {
@@ -1451,6 +1464,9 @@ function renderAdminTeamStats(periodOrders) {
 
   const workers = state.profiles.filter(p => p.role === 'admin');
   const canManage = canManageAdminBalances(state.admin);
+  if (workers.length === 0) {
+    container.innerHTML = '<p class="page-description">Data admin belum tersedia. Gunakan Segarkan Data untuk memuat ulang.</p>';
+  }
 
   workers.forEach(w => {
     const nickname = profileNickname(w);
@@ -1929,13 +1945,20 @@ function playNoticeSound() {
 }
 
 function openDrawer() {
+  if (window.matchMedia?.('(min-width: 1024px)').matches) {
+    document.getElementById('btn-drawer-refresh').focus();
+    return;
+  }
   document.getElementById('drawer-overlay').classList.add('open');
   document.getElementById('drawer-panel').classList.add('open');
+  document.getElementById('btn-open-drawer').setAttribute('aria-expanded', 'true');
+  document.getElementById('btn-close-drawer').focus();
 }
 
 function closeDrawer() {
   document.getElementById('drawer-overlay').classList.remove('open');
   document.getElementById('drawer-panel').classList.remove('open');
+  document.getElementById('btn-open-drawer')?.setAttribute?.('aria-expanded', 'false');
 }
 
 // ========================================================
@@ -1994,6 +2017,16 @@ function setupEventListeners() {
   // Drawer Controls
   document.getElementById('btn-open-drawer')?.addEventListener('click', openDrawer);
   document.getElementById('drawer-overlay')?.addEventListener('click', closeDrawer);
+  document.getElementById('btn-close-drawer')?.addEventListener('click', () => {
+    closeDrawer();
+    document.getElementById('btn-open-drawer').focus();
+  });
+  document.addEventListener('keydown', e => {
+    if (e.key === 'Escape' && document.getElementById('drawer-panel').classList.contains('open')) {
+      closeDrawer();
+      document.getElementById('btn-open-drawer').focus();
+    }
+  });
   document.getElementById('btn-drawer-refresh')?.addEventListener('click', () => {
     closeDrawer();
     loadData();

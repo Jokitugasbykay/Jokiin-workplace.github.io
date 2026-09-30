@@ -2,7 +2,7 @@
 <html lang="id">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
   <title>JOKI.IN Workplace Admin</title>
 
   <!-- iOS Safari PWA Meta Tags -->
@@ -18,12 +18,13 @@
   <meta name="theme-color" content="#000000">
 
   <!-- Stylesheet -->
-  <link rel="stylesheet" href="./css/style.css?v=11">
+  <link rel="stylesheet" href="./css/style.css?v=13">
 
   <!-- Supabase JS Library -->
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 </head>
 <body>
+  <a class="skip-link" href="#main-content">Langsung ke konten</a>
 
   <!-- Splash Screen / Intro -->
   <div id="splash-screen">
@@ -100,7 +101,7 @@
       <header class="top-bar">
         <div class="top-bar-content">
           <div class="top-bar-left">
-            <button id="btn-open-drawer" class="header-icon-btn" aria-label="Buka Menu" title="Menu">
+            <button id="btn-open-drawer" class="header-icon-btn" aria-label="Buka Menu" aria-controls="drawer-panel" aria-expanded="false" title="Menu">
               <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
                 <line x1="3" y1="6" x2="21" y2="6"></line>
                 <line x1="3" y1="12" x2="16" y2="12"></line>
@@ -117,31 +118,30 @@
 
           <div class="top-bar-brand">
             <div class="brand-logo-wrapper">
-              <img src="./assets/logo-white.png" alt="JOKI.IN" class="brand-logo-img">
+              <img src="./assets/logo-white.png" alt="" width="36" height="36" class="brand-logo-img">
             </div>
             <div class="top-bar-titles">
               <div class="brand-title-row">
-                <h1 class="top-bar-title">JOKI.IN</h1>
-                <span class="brand-pill">WORKPLACE</span>
+                <span class="top-bar-title">JOKI.IN</span>
+                <span class="brand-pill">Workplace</span>
               </div>
-              <span class="top-bar-subtitle">
-                <span class="status-dot-pulse"></span>
-                Sistem manajemen pesanan
-              </span>
+              <span class="header-workspace-label">Workplace</span>
+              <h1 id="header-page-title" class="top-bar-subtitle" aria-live="polite">Beranda</h1>
             </div>
           </div>
 
           <div class="top-bar-actions">
-            <button id="btn-header-avatar" class="header-avatar-btn" aria-label="Menu Profil Admin" title="Menu Admin">
+            <time id="header-date" class="header-date"></time>
+            <div class="header-account-copy"><span id="header-account-name">Admin</span><span id="header-account-role">Administrator</span></div>
+            <button id="btn-header-avatar" class="header-avatar-btn" aria-label="Buka tindakan akun" title="Tindakan akun">
               <span id="header-avatar-letter">A</span>
-              <span class="header-status-badge"></span>
             </button>
           </div>
         </div>
       </header>
 
       <!-- Welcome Banner -->
-      <div class="welcome-card" style="margin: 14px 16px 0;">
+      <div class="welcome-card">
         <h2 id="welcome-admin-name" class="welcome-title">Halo, Kak Admin</h2>
         <p class="welcome-subtitle">Semangat kelola orderan hari ini</p>
       </div>
@@ -158,10 +158,11 @@
       </div>
 
       <!-- Main Content Views Container -->
-      <main class="content-area">
+      <main id="main-content" class="content-area" tabindex="-1">
         
         <!-- View: Beranda (Home) -->
         <section id="view-home" class="tab-view">
+          <div class="home-overview-grid">
           <!-- Saldo Card -->
           <div class="admin-balance-card">
             <div class="balance-icon-box">Rp</div>
@@ -224,7 +225,10 @@
             </div>
           </div>
 
+          </div>
           <!-- Recent Orders Section -->
+          <div class="home-orders-grid">
+          <section class="home-orders-panel">
           <div class="section-header" style="margin-top: 18px;">
             <h3 class="section-title">Order terbaru</h3>
             <button id="btn-see-all-orders" class="section-action-btn">Lihat semua</button>
@@ -232,11 +236,13 @@
           <div id="home-recent-orders-list" style="display: flex; flex-direction: column; gap: 10px; margin-top: 8px;">
             <!-- Rendered dynamically -->
           </div>
+          </section>
 
           <!-- Recent Site Orders -->
           <div id="home-site-orders-section" style="margin-top: 18px; display: none;">
             <h3 class="section-title" style="margin-bottom: 8px;">Checkout situs terbaru</h3>
             <div id="home-recent-site-orders" style="display: flex; flex-direction: column; gap: 10px;"></div>
+          </div>
           </div>
         </section>
 
@@ -280,10 +286,13 @@
 
         <!-- View: Performa (Performance) -->
         <section id="view-performance" class="tab-view" style="display: none;">
+          <div class="performance-toolbar">
+          <p class="page-description">Pantau pendapatan dan penyelesaian pesanan tim.</p>
           <div class="mode-selector">
             <button id="perf-today-btn" class="mode-btn">Hari ini</button>
             <button id="perf-week-btn" class="mode-btn">7 hari</button>
             <button id="perf-month-btn" class="mode-btn active">1 Bulan</button>
+          </div>
           </div>
 
           <div id="perf-month-switcher" style="display: flex; justify-content: space-between; align-items: center; margin: 8px 0;">
@@ -346,7 +355,7 @@
                   <span class="ac-12__num-sub">0</span>
                   <span class="ac-12__unit">%</span>
                 </p>
-                <div class="ac-12__meter" role="meter" aria-valuenow="89">
+                <div class="ac-12__meter" role="meter" aria-label="Hak pendapatan admin" aria-valuemin="0" aria-valuemax="100" aria-valuenow="89">
                   <span id="perf-meter-bar" style="width: 89%;"></span>
                 </div>
                 <p class="ac-12__foot">Hak admin 89% · Gateway 1% · Sistem 10%</p>
@@ -355,14 +364,27 @@
             </div>
           </div>
 
+          <div class="performance-analysis-grid">
+          <article class="performance-chart-card">
+            <div class="section-header">
+              <h3 class="section-title">Tren pendapatan & pesanan</h3>
+            </div>
+            <p class="chart-caption">Pendapatan tercatat sebelum potongan. Setiap seri memakai skala tersendiri.</p>
+            <div class="chart-legend"><span><i class="legend-revenue"></i>Pendapatan</span><span><i class="legend-orders"></i>Pesanan selesai</span></div>
+            <div id="perf-chart-svg-wrapper"></div>
+            <p id="perf-chart-empty" class="chart-caption" hidden>Belum ada pendapatan atau pesanan selesai pada periode ini.</p>
+            <details class="chart-data"><summary>Lihat data grafik</summary><div class="chart-table-wrap"><table><caption>Data per interval pada periode terpilih</caption><thead><tr><th scope="col">Waktu</th><th scope="col">Pendapatan</th><th scope="col">Selesai</th></tr></thead><tbody id="perf-chart-data"></tbody></table></div></details>
+          </article>
+
           <!-- Net Income Breakdown -->
-          <div class="entry-card" style="margin-top: 14px;">
+          <div class="entry-card income-breakdown">
             <span class="entry-title">Rincian Pendapatan Bersih</span>
             <div class="modal-row"><span class="modal-row-label">Pendapatan tercatat</span><span id="breakdown-gross" class="modal-row-value">Rp0</span></div>
             <div class="modal-row"><span class="modal-row-label">Potongan gateway (1%)</span><span id="breakdown-gateway" class="modal-row-value" style="color: var(--balance-red);">− Rp0</span></div>
             <div class="modal-row"><span class="modal-row-label">Pengembangan JOKI.IN (10%)</span><span id="breakdown-dev" class="modal-row-value" style="color: var(--balance-red);">− Rp0</span></div>
             <div style="height: 1px; background: var(--border-light); margin: 4px 0;"></div>
             <div class="modal-row"><span style="font-weight: 700;">Total Bersih</span><span id="breakdown-net" class="modal-row-value" style="font-size: 18px; font-weight: 800;">Rp0</span></div>
+          </div>
           </div>
 
           <!-- Admin Stats List -->
@@ -637,11 +659,15 @@
       </nav>
 
     </div>
-  </div>
 
   <!-- Navigation Drawer (Sidebar) -->
   <div id="drawer-overlay" class="drawer-overlay"></div>
-  <aside id="drawer-panel" class="drawer-panel">
+  <aside id="drawer-panel" class="drawer-panel" aria-label="Navigasi Workplace">
+    <div class="sidebar-brand">
+      <img src="./assets/logo-white.png" width="40" height="40" alt="">
+      <div><strong>JOKI.IN</strong><span>Workplace</span></div>
+      <button id="btn-close-drawer" class="header-icon-btn" aria-label="Tutup menu">×</button>
+    </div>
     <div class="drawer-header">
       <div id="drawer-avatar" class="drawer-avatar">A</div>
       <div class="drawer-user-info">
@@ -649,7 +675,7 @@
         <span id="drawer-admin-role" class="drawer-user-role">Administrator</span>
       </div>
     </div>
-    <div class="drawer-menu">
+    <nav class="drawer-menu" aria-label="Halaman utama">
       <button class="drawer-item active" data-tab="home">
         <span class="drawer-item-icon">
           <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
@@ -750,7 +776,7 @@
         </span>
         <span>Invoice</span>
       </button>
-    </div>
+    </nav>
     <div class="drawer-footer">
       <button id="btn-drawer-refresh" class="btn-secondary" style="display: flex; align-items: center; justify-content: center; gap: 8px;">
         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
@@ -768,6 +794,7 @@
       </button>
     </div>
   </aside>
+  </div>
 
   <!-- Notice Toast Banner -->
   <div id="notice-toast" class="notice-toast" style="display: none;">
@@ -977,7 +1004,7 @@
   </audio>
 
   <!-- Application Main Script (Universal script for file://, localhost, & cloud hosting) -->
-  <script src="./js/app.js?v=11"></script>
+  <script src="./js/app.js?v=13"></script>
 
   <!-- Failsafe Watchdog & Service Worker -->
   <script>
