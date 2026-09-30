@@ -1,0 +1,3 @@
+[functions.workplace-push]
+# User routes verify the access token with Auth; dispatch verifies its private Vault webhook secret.
+verify_jwt = false

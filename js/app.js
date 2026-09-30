@@ -126,6 +126,9 @@ const state = {
   perfMonthOffset: 0,
   searchQuery: '',
   knownOrderIds: new Set(),
+  knownCheckoutIds: new Set(),
+  ordersBaselineLoaded: false,
+  checkoutBaselineLoaded: false,
   loading: false,
   liveUpdateTimer: null,
   countdownTimer: null
@@ -267,7 +270,9 @@ function showAppShell() {
   document.getElementById('drawer-tab-users').style.display = isSupervisor ? 'flex' : 'none';
 
   // Initialize active tab and bottom nav pill
-  switchTab(state.activeTab || 'home');
+  const notificationTab = new URLSearchParams(window.location.search).get('tab');
+  switchTab(['orders', 'payments'].includes(notificationTab) ? notificationTab : (state.activeTab || 'home'));
+  syncPushSubscription().catch(error => setPushStatus(error.message || 'Gagal menyinkronkan notifikasi. Coba lagi.', true));
 }
 window.showAppShell = showAppShell;
 
@@ -327,11 +332,19 @@ async function handleLogin(email, password, rememberMe) {
 }
 
 async function handleLogout() {
+  try { await disablePushNotifications(false); } catch {
+    showNotice('Gagal menonaktifkan notifikasi perangkat. Coba keluar lagi saat koneksi tersedia.');
+    return;
+  }
   stopLiveUpdates();
   const supabase = await getSupabase();
   await supabase.auth.signOut({ scope: 'local' });
   localStorage.removeItem('password_login_at');
   state.admin = null;
+  state.knownOrderIds.clear();
+  state.knownCheckoutIds.clear();
+  state.ordersBaselineLoaded = false;
+  state.checkoutBaselineLoaded = false;
   closeDrawer();
   showLoginView();
 }
@@ -380,22 +393,13 @@ async function loadData() {
     const newOrders = ordersRes.data || [];
     const newPaymentOrders = paymentOrdersRes.data || [];
 
-    // Check for incoming new orders (sound & toast alert)
-    if (state.knownOrderIds.size > 0) {
-      let newlyArrived = 0;
-      for (const ord of newOrders) {
-        if (!state.knownOrderIds.has(ord.id) && ord.status === 'pending') {
-          newlyArrived++;
-        }
-      }
-      if (newlyArrived > 0) {
-        showNotice(newlyArrived === 1 ? 'Ada pesanan baru masuk' : `Ada ${newlyArrived} pesanan baru masuk`);
-        playNoticeSound();
-      }
+    let newlyArrived = 0;
+    if (!ordersRes.error) newlyArrived += trackIncomingOrders(newOrders, 'orders');
+    if (!paymentOrdersRes.error) newlyArrived += trackIncomingOrders(newPaymentOrders, 'checkout');
+    if (newlyArrived > 0) {
+      showNotice(newlyArrived === 1 ? 'Ada pesanan baru masuk' : `Ada ${newlyArrived} pesanan baru masuk`);
+      playNoticeSound();
     }
-
-    // Update known IDs
-    state.knownOrderIds = new Set(newOrders.map(o => o.id));
 
     state.orders = newOrders;
     state.paymentOrders = newPaymentOrders;
@@ -1960,6 +1964,116 @@ function showNotice(text) {
   setTimeout(() => { toast.style.display = 'none'; }, 5000);
 }
 
+function trackIncomingOrders(orders, source) {
+  const ids = source === 'checkout' ? state.knownCheckoutIds : state.knownOrderIds;
+  const baseline = source === 'checkout' ? 'checkoutBaselineLoaded' : 'ordersBaselineLoaded';
+  const count = state[baseline] ? orders.filter(o => !ids.has(o.id) && o.status !== 'cancelled').length : 0;
+  orders.forEach(o => ids.add(o.id));
+  state[baseline] = true;
+  return count;
+}
+
+function pushSupported() {
+  return typeof navigator !== 'undefined' && window.isSecureContext && 'serviceWorker' in navigator
+    && 'PushManager' in window && 'Notification' in window;
+}
+
+async function pushApi(action, data = {}) {
+  const client = await getSupabase();
+  const { data: sessionData } = await client.auth.getSession();
+  if (!sessionData.session) throw Error('Sesi berakhir. Silakan masuk ulang.');
+  const response = await fetch(`${SUPABASE_URL}/functions/v1/workplace-push/${action}`, {
+    method: 'POST', headers: { 'Content-Type': 'application/json', apikey: SUPABASE_PUBLISHABLE_KEY,
+      Authorization: `Bearer ${sessionData.session.access_token}` }, body: JSON.stringify(data)
+  });
+  const result = await response.json();
+  if (!response.ok) throw Error(result.error || 'Gagal menghubungkan notifikasi. Coba lagi.');
+  return result;
+}
+
+function setPushStatus(text, enabled = false) {
+  document.getElementById('push-status').textContent = text;
+  document.getElementById('btn-enable-push').hidden = enabled;
+  document.getElementById('btn-test-push').hidden = !enabled;
+  document.getElementById('btn-disable-push').hidden = !enabled;
+}
+
+async function pushRegistration() {
+  await navigator.serviceWorker.register('./service-worker.js');
+  return Promise.race([navigator.serviceWorker.ready,
+    new Promise((_, reject) => setTimeout(() => reject(Error('Service worker belum siap. Muat ulang halaman dan coba lagi.')), 15000))]);
+}
+
+async function enablePushNotifications() {
+  if (!pushSupported()) {
+    setPushStatus('Browser belum mendukung Web Push. Di iPhone, buka lewat ikon Layar Utama; di Android, gunakan Chrome.');
+    return;
+  }
+  const button = document.getElementById('btn-enable-push');
+  button.disabled = true;
+  try {
+    // Permission must be requested directly from this button gesture on iOS.
+    const permission = await Notification.requestPermission();
+    if (permission !== 'granted') throw Error('Izin belum diberikan. Izinkan notifikasi di pengaturan browser/perangkat, lalu coba lagi.');
+    const registration = await pushRegistration();
+    const { publicKey } = await pushApi('config');
+    const bytes = Uint8Array.from(atob(publicKey.replace(/-/g, '+').replace(/_/g, '/') + '='.repeat((4-publicKey.length%4)%4)), c => c.charCodeAt(0));
+    const subscription = await registration.pushManager.getSubscription()
+      || await registration.pushManager.subscribe({ userVisibleOnly: true, applicationServerKey: bytes });
+    await pushApi('subscribe', { subscription: subscription.toJSON() });
+    localStorage.setItem('workplace_push_enabled', '1');
+    setPushStatus('Notifikasi order aktif pada perangkat ini, termasuk saat aplikasi ditutup.', true);
+  } catch (error) { setPushStatus(error.message || 'Gagal mengaktifkan notifikasi. Coba lagi.'); }
+  finally { button.disabled = false; }
+}
+
+async function syncPushSubscription() {
+  if (!pushSupported()) return;
+  if (localStorage.getItem('workplace_push_enabled') !== '1') return;
+  const registration = await pushRegistration();
+  const subscription = await registration.pushManager.getSubscription();
+  if (!subscription || Notification.permission !== 'granted') {
+    localStorage.removeItem('workplace_push_enabled');
+    setPushStatus('Notifikasi belum aktif. Tekan Aktifkan notifikasi order.');
+    return;
+  }
+  await pushApi('subscribe', { subscription: subscription.toJSON() });
+  setPushStatus('Notifikasi order aktif pada perangkat ini, termasuk saat aplikasi ditutup.', true);
+}
+
+async function disablePushNotifications(showStatus = true) {
+  if (!pushSupported()) return;
+  const registration = await navigator.serviceWorker.getRegistration();
+  const subscription = await registration?.pushManager.getSubscription();
+  if (subscription) {
+    try {
+      await pushApi('unsubscribe', { endpoint: subscription.endpoint });
+    } catch (error) {
+      // An expired login may prevent server removal; revoking the browser endpoint still stops delivery.
+      if (!await subscription.unsubscribe()) throw error;
+      localStorage.removeItem('workplace_push_enabled');
+      if (showStatus) setPushStatus('Notifikasi perangkat dimatikan.');
+      return;
+    }
+    await subscription.unsubscribe();
+  }
+  localStorage.removeItem('workplace_push_enabled');
+  if (showStatus) setPushStatus('Notifikasi perangkat dimatikan. Anda bisa mengaktifkannya kembali.');
+}
+
+async function testPushNotification() {
+  const button = document.getElementById('btn-test-push');
+  button.disabled = true;
+  try {
+    const registration = await pushRegistration();
+    const subscription = await registration.pushManager.getSubscription();
+    if (!subscription) throw Error('Aktifkan notifikasi terlebih dahulu.');
+    await pushApi('test', { subscription: subscription.toJSON() });
+    setPushStatus('Tes dikirim. Periksa pusat notifikasi atau layar kunci HP.', true);
+  } catch (error) { setPushStatus(error.message || 'Tes gagal. Coba lagi.', true); }
+  finally { button.disabled = false; }
+}
+
 function playNoticeSound() {
   try {
     const audio = document.getElementById('notification-sound');
@@ -1991,6 +2105,14 @@ function closeDrawer() {
 // Event Listeners & User Actions
 // ========================================================
 function setupEventListeners() {
+  document.getElementById('btn-enable-push')?.addEventListener('click', enablePushNotifications);
+  document.getElementById('btn-test-push')?.addEventListener('click', testPushNotification);
+  document.getElementById('btn-disable-push')?.addEventListener('click', async () => {
+    try { await disablePushNotifications(); } catch (error) { setPushStatus(error.message, true); }
+  });
+  document.addEventListener('visibilitychange', () => {
+    if (document.visibilityState === 'visible' && state.admin && isSessionValid()) loadData();
+  });
   // Login Form
   document.getElementById('login-form').addEventListener('submit', async (e) => {
     e.preventDefault();

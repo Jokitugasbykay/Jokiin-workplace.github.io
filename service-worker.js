@@ -1,4 +1,4 @@
-const CACHE_NAME = 'jokiin-admin-v14';
+const CACHE_NAME = 'jokiin-admin-v15';
 const ASSETS_TO_CACHE = [
   './',
   './index.html',
@@ -61,4 +61,29 @@ self.addEventListener('fetch', (event) => {
       return cachedResponse || fetchPromise;
     })
   );
+});
+
+self.addEventListener('push', event => {
+  let payload = {};
+  try { payload = event.data?.json() || {}; } catch {}
+  const tab = ['orders', 'payments', 'home'].includes(payload.tab) ? payload.tab : 'orders';
+  event.waitUntil(self.registration.showNotification(payload.title || 'Pesanan baru · JOKI.IN', {
+    body: payload.body || 'Ada pesanan baru masuk. Buka Workplace untuk melihat detail.',
+    icon: new URL('./assets/icon-192.png', self.registration.scope).href,
+    badge: new URL('./assets/icon-192.png', self.registration.scope).href,
+    tag: typeof payload.tag === 'string' ? payload.tag : 'workplace-order',
+    data: { tab }
+  }));
+});
+
+self.addEventListener('notificationclick', event => {
+  event.notification.close();
+  const tab = ['orders', 'payments', 'home'].includes(event.notification.data?.tab) ? event.notification.data.tab : 'orders';
+  const target = new URL('./index.html', self.registration.scope);
+  target.searchParams.set('tab', tab);
+  event.waitUntil(self.clients.matchAll({ type: 'window', includeUncontrolled: true }).then(async clients => {
+    const client = clients.find(c => c.url.startsWith(self.registration.scope));
+    if (client) { await client.navigate(target.href); return client.focus(); }
+    return self.clients.openWindow(target.href);
+  }));
 });

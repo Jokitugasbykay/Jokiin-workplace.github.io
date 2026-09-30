@@ -2031,6 +2031,10 @@ input:checked + .toggle-slider:before {
   border-radius: 18px;
   background: var(--bg-surface);
 }
+.push-settings { display: grid; gap: 8px; }
+.push-settings [hidden] { display: none !important; }
+.push-status { font-size: 12px; line-height: 1.5; color: var(--ink-secondary); }
+.drawer-footer { flex-shrink: 0; max-height: 46dvh; overflow-y: auto; }
 .chart-caption { color: var(--ink-secondary); font-size: 13px; line-height: 1.6; margin: 8px 0; }
 .chart-legend { display: flex; flex-wrap: wrap; gap: 20px; font-size: 13px; margin: 16px 0; }
 .chart-legend span { display: flex; align-items: center; gap: 8px; }

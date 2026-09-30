@@ -165,3 +165,13 @@ Aplikasi ini adalah situs web statis murni dengan integrasi langsung ke Supabase
 
 ## Lisensi & Hak Cipta
 Hak Cipta © 2026 JOKI.IN Workplace. Seluruh hak cipta dilindungi undang-undang.
+
+## Notifikasi order di HP
+
+Buka menu admin → **Aktifkan notifikasi order** → izinkan notifikasi → **Tes notifikasi**. Android memakai browser yang mendukung Web Push. Pada iPhone/iPad iOS 16.4+, tambahkan situs ke Layar Utama lalu buka dari ikon tersebut sebelum mengaktifkan notifikasi. Setelah aktif, coba tes dengan aplikasi ditutup atau layar terkunci; pengaturan notifikasi dan mode Fokus HP tetap berlaku.
+
+Notifikasi menggunakan Web Push dari server, tanpa menampilkan identitas pelanggan di layar kunci. Logout atau **Matikan notifikasi perangkat** mencabut langganan perangkat. Order baru pada `orders` dan `payment_orders` masuk antrean; `order_code` yang sama dikirim sekali per perangkat. Pengiriman gagal dicoba ulang maksimal lima kali; antrean dibersihkan setelah tujuh hari.
+
+Backend proyek saat ini sudah dikonfigurasi. Untuk proyek Supabase baru, jalankan migrasi `supabase/migrations/202609300001_workplace_push.sql`, simpan pasangan kunci VAPID dan secret webhook acak di Vault sebagai `workplace_push_public_key`, `workplace_push_private_key`, dan `workplace_push_hook_secret`, lalu deploy fungsi `workplace-push` sesuai `supabase/config.toml`. Sesuaikan URL proyek dalam migrasi dan daftar origin dalam fungsi. Kunci privat hanya berada di Vault, tidak di frontend atau Git.
+
+Pemeriksaan lokal: `node test-notifications.cjs`. Penerimaan di layar kunci perlu diverifikasi pada perangkat yang telah memberi izin.
