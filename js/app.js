@@ -1468,7 +1468,7 @@ function renderAdminTeamStats(periodOrders) {
     container.innerHTML = '<p class="page-description">Data admin belum tersedia. Gunakan Segarkan Data untuk memuat ulang.</p>';
   }
 
-  workers.forEach(w => {
+  const stats = workers.map(w => {
     const nickname = profileNickname(w);
     const completedOrders = periodOrders.filter(o => o.assigned_to === w.id && o.status === 'completed');
     const netEarned = completedOrders.reduce((sum, o) => {
@@ -1478,6 +1478,11 @@ function renderAdminTeamStats(periodOrders) {
       return sum + Math.max(0, total - gatewayFee - devFee);
     }, 0);
 
+    return { worker: w, nickname, count: completedOrders.length, netEarned };
+  });
+  renderAdminComparison(stats);
+
+  stats.forEach(({ worker: w, nickname, count, netEarned }) => {
     const balance = w.admin_balance || 0;
 
     const card = document.createElement('div');
@@ -1485,7 +1490,7 @@ function renderAdminTeamStats(periodOrders) {
     card.innerHTML = `
       <div style="display: flex; justify-content: space-between; align-items: center;">
         <h4 style="font-size: 16px; font-weight: 800;">Admin ${nickname}</h4>
-        <span class="status-badge active">${completedOrders.length} order selesai</span>
+        <span class="status-badge active">${count} order selesai</span>
       </div>
       <div style="font-size: 14px; font-weight: 700; color: var(--revenue-green);">
         Pendapatan order: ${formatRupiah(netEarned)}
@@ -1503,6 +1508,27 @@ function renderAdminTeamStats(periodOrders) {
 
     container.appendChild(card);
   });
+}
+
+function renderAdminComparison(stats) {
+  const container = document.getElementById('perf-admin-comparison');
+  const empty = document.getElementById('perf-admin-comparison-empty');
+  empty.hidden = stats.some(s => s.count > 0);
+  empty.textContent = stats.length
+    ? 'Belum ada pesanan selesai pada periode ini. Pilih periode lain untuk membandingkan.'
+    : 'Data admin belum tersedia. Gunakan Segarkan Data untuk memuat ulang.';
+  container.innerHTML = stats.length ? [
+    { key: 'netEarned', title: 'Pendapatan bersih', format: formatRupiah },
+    { key: 'count', title: 'Pesanan selesai', format: value => `${value.toLocaleString('id-ID')} pesanan` }
+  ].map(metric => {
+    const sorted = [...stats].sort((a, b) => b[metric.key] - a[metric.key]);
+    const max = Math.max(1, ...sorted.map(s => s[metric.key]));
+    return `<table class="admin-bar-chart"><caption>${metric.title}</caption><thead><tr><th scope="col">Admin</th><th scope="col">${metric.title}</th></tr></thead><tbody>${sorted.map(s => `
+      <tr><th scope="row">${escapeHtml(s.nickname)}</th><td>
+        <span class="admin-bar-value">${metric.format(s[metric.key])}</span>
+        <div class="admin-bar-track" aria-hidden="true"><div class="admin-bar-fill" style="width:${s[metric.key] / max * 100}%"></div></div>
+      </td></tr>`).join('')}</tbody></table>`;
+  }).join('') : '';
 }
 
 // ========================================================

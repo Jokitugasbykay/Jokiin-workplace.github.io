@@ -2088,6 +2088,17 @@ button, input, select, textarea, summary { touch-action: manipulation; }
 .performance-analysis-grid { display: grid; gap: 20px; margin-top: 20px; }
 .performance-analysis-grid .performance-chart-card { margin-top: 0; }
 .income-breakdown { align-self: start; }
+.admin-comparison-grid { display: grid; grid-template-columns: minmax(0, 1fr); gap: 24px; margin-top: 20px; }
+.admin-bar-chart { width: 100%; border-collapse: collapse; table-layout: fixed; font-size: 13px; }
+.admin-bar-chart caption { text-align: left; font-size: 16px; font-weight: 700; padding-bottom: 16px; }
+.admin-bar-chart thead { color: var(--ink-secondary); }
+.admin-bar-chart th { text-align: left; width: 30%; overflow-wrap: anywhere; }
+.admin-bar-chart td, .admin-bar-chart th { padding: 10px 12px 10px 0; vertical-align: middle; }
+.admin-bar-chart thead th:nth-child(2) { width: 70%; }
+.admin-bar-value { display: block; text-align: right; margin-bottom: 8px; font-variant-numeric: tabular-nums; }
+.admin-bar-track { background: #E5E9EF; height: 12px; border-radius: 3px; overflow: hidden; }
+.admin-bar-fill { background: #10653C; height: 100%; }
+@media (min-width: 1024px) { .admin-comparison-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 32px; } }
 .income-breakdown .modal-row { padding-block: 12px; }
 .home-orders-panel { margin-top: 18px; }
 .home-orders-panel .section-header { margin-top: 0 !important; }

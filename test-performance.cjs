@@ -21,7 +21,7 @@ const context = vm.createContext({ Date: Clock, console,
   window: { addEventListener() {}, matchMedia: () => ({ matches: true }) },
   performance: { now: () => 0 },
   document: { readyState: 'loading', addEventListener() {}, getElementById: get,
-    createElementNS: element, querySelectorAll: () => [] }
+    createElementNS: element, createElement: element, querySelectorAll: () => [] }
 });
 vm.runInContext(fs.readFileSync(path.join(__dirname, 'js/app.js'), 'utf8'), context);
 const html = fs.readFileSync(path.join(__dirname, 'index.html'), 'utf8');
@@ -47,3 +47,26 @@ assert.equal(get('perf-chart-empty').hidden, false);
 assert.ok(!get('perf-animated-bars').innerHTML.includes('NaN'));
 assert.equal(get('perf-completed-orders').textContent, '0');
 console.log('PASS: chart mounting, period filters, launch cutoff, completed counts, empty month and reduced motion.');
+vm.runInContext(`state.profiles = [
+  { id: 'a', role: 'admin', name: 'AdminA' },
+  { id: 'b', role: 'admin', name: 'AdminB' },
+  { id: 'c', role: 'user', name: 'Customer' }
+]; state.orders = [
+  { created_at: '2026-09-29T10:00:00+07:00', assigned_to: 'a', status: 'completed', total_price: 100000 },
+  { created_at: '2026-09-30T10:00:00+07:00', assigned_to: 'b', status: 'completed', total_price: 200000 },
+  { created_at: '2026-09-30T10:00:00+07:00', assigned_to: 'a', status: 'processing', total_price: 900000 },
+  { created_at: '2026-09-30T10:00:00+07:00', assigned_to: null, status: 'completed', total_price: 800000 }
+]; state.perfMonthOffset = 0; renderPerformance();`, context);
+let comparison = get('perf-admin-comparison').innerHTML;
+assert.ok(comparison.includes('89.000') && comparison.includes('178.000'));
+assert.ok(comparison.includes('width:50%') && comparison.includes('width:100%'));
+assert.ok(!comparison.includes('Customer') && !comparison.includes('712.000'));
+assert.equal(get('perf-admin-comparison-empty').hidden, true);
+vm.runInContext("state.perfRange = 'today'; renderPerformance()", context);
+assert.ok(get('perf-admin-comparison').innerHTML.includes('width:0%'));
+vm.runInContext("state.perfRange = 'month'; state.perfMonthOffset = -1; renderPerformance()", context);
+assert.equal(get('perf-admin-comparison-empty').hidden, false);
+assert.ok(!get('perf-admin-comparison').innerHTML.includes('NaN'));
+vm.runInContext("state.profiles = []; renderPerformance()", context);
+assert.equal(get('perf-admin-comparison').innerHTML, '');
+console.log('PASS: admin chart shares card totals, period filters, net deductions, zero values and unassigned/non-admin exclusion.');
