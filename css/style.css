@@ -2307,3 +2307,5 @@ p { text-wrap: pretty; }
     break-inside: avoid;
   }
 }
+
+.home-push-settings { padding: 16px; margin-bottom: 16px; border: 1px solid var(--border-color, #d6deea); border-radius: 12px; background: #fff; }

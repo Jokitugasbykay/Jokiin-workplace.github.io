@@ -60,6 +60,14 @@ async function main() {
   handlers.notificationclick({ notification: { close() {}, data: { tab: 'payments' } }, waitUntil: p => { work = p; } });
   await work;
   assert.equal(opened, 'https://jokitugasbykay.github.io/Jokiin-workplace.github.io/index.html?tab=payments');
+  worker.fetch = async () => ({ ok: true, version: 'new', clone() { return this; } });
+  worker.caches = { open: async () => ({ put: async () => {} }), match: async () => ({ version: 'old' }) };
+  let response;
+  handlers.fetch({ request: { method: 'GET', url: 'https://jokitugasbykay.github.io/Jokiin-workplace.github.io/index.html', mode: 'navigate' }, respondWith: p => { response = p; }, waitUntil() {} });
+  assert.equal((await response).version, 'new');
+  worker.fetch = async () => { throw Error('Offline'); };
+  handlers.fetch({ request: { method: 'GET', url: 'https://jokitugasbykay.github.io/Jokiin-workplace.github.io/index.html', mode: 'navigate' }, respondWith: p => { response = p; }, waitUntil() {} });
+  assert.equal((await response).version, 'old');
   console.log('PASS: first order after empty baseline, checkout arrivals, no repeats, permission UI, endpoint revocation and safe notification navigation.');
 }
 main().catch(error => { console.error(error); process.exitCode = 1; });

@@ -18,7 +18,7 @@
   <meta name="theme-color" content="#000000">
 
   <!-- Stylesheet -->
-  <link rel="stylesheet" href="./css/style.css?v=15">
+  <link rel="stylesheet" href="./css/style.css?v=16">
 
   <!-- Supabase JS Library -->
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
@@ -162,6 +162,12 @@
         
         <!-- View: Beranda (Home) -->
         <section id="view-home" class="tab-view">
+      <div class="push-settings home-push-settings">
+        <button id="btn-enable-push" class="btn-secondary">Aktifkan notifikasi order</button>
+        <button id="btn-test-push" class="btn-outline" hidden>Tes notifikasi</button>
+        <button id="btn-disable-push" class="btn-outline" hidden>Matikan notifikasi perangkat</button>
+        <p id="push-status" class="push-status" role="status">Terima notifikasi saat aplikasi ditutup. Di iPhone, tambahkan ke Layar Utama terlebih dahulu.</p>
+      </div>
           <div class="home-overview-grid">
           <!-- Saldo Card -->
           <div class="admin-balance-card">
@@ -785,12 +791,6 @@
       </button>
     </nav>
     <div class="drawer-footer">
-      <div class="push-settings">
-        <button id="btn-enable-push" class="btn-secondary">Aktifkan notifikasi order</button>
-        <button id="btn-test-push" class="btn-outline" hidden>Tes notifikasi</button>
-        <button id="btn-disable-push" class="btn-outline" hidden>Matikan notifikasi perangkat</button>
-        <p id="push-status" class="push-status" role="status">Terima notifikasi saat aplikasi ditutup. Di iPhone, tambahkan ke Layar Utama terlebih dahulu.</p>
-      </div>
       <button id="btn-drawer-refresh" class="btn-secondary" style="display: flex; align-items: center; justify-content: center; gap: 8px;">
         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
           <path d="M21.5 2v6h-6M21.34 15.57a10 10 0 1 1-.57-8.38l5.67-5.19"/>
@@ -1017,7 +1017,7 @@
   </audio>
 
   <!-- Application Main Script (Universal script for file://, localhost, & cloud hosting) -->
-  <script src="./js/app.js?v=15"></script>
+  <script src="./js/app.js?v=16"></script>
 
   <!-- Failsafe Watchdog & Service Worker -->
   <script>
