@@ -67,6 +67,13 @@ async function main() {
   assert.equal(vm.runInContext('isSessionValid()', context), true);
   assert.equal(signouts, 3);
   assert.equal(auditCalls, 1);
+  vm.runInContext('state.admin = null', context);
+  client.auth.signInWithPassword = async () => ({ data: { user: { id: 'customer', user_metadata: { avatar_url: 'https://example.test/google-photo.png' } } }, error: null });
+  await vm.runInContext("handleLogin('admin@example.test', 'test', true)", context);
+  assert.equal(vm.runInContext('state.admin.role', context), 'admin');
+  assert.equal(vm.runInContext('state.admin.avatar_url', context), 'https://example.test/google-photo.png');
+  assert.equal(getElement('login-error-box').style.display, 'none');
+  assert.equal(auditCalls, 2);
   console.log('PASS: canonical Google redirect, file guard, non-admin rejection, and all three local signouts.');
 }
 main().catch(error => { console.error(error); process.exitCode = 1; });

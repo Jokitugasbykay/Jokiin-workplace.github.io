@@ -311,7 +311,7 @@ async function handleLogin(email, password, rememberMe) {
       localStorage.removeItem('workplace_remembered_email');
     }
 
-    state.admin = { ...profile, avatar_url: session.user.user_metadata?.avatar_url || session.user.user_metadata?.picture || profile.avatar_url };
+    state.admin = { ...profile, avatar_url: data.user.user_metadata?.avatar_url || data.user.user_metadata?.picture || profile.avatar_url };
     showAppShell();
     await loadData();
     startLiveUpdates();
