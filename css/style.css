@@ -2341,3 +2341,9 @@ p { text-wrap: pretty; }
 @keyframes workplaceEnterRight { from { transform: translateX(100%); } }
 @keyframes workplaceExitRight { to { transform: translateX(25%); opacity: .25; } }
 @keyframes workplaceEnterLeft { from { transform: translateX(-100%); } }
+
+.password-field { position: relative; }
+.password-field .form-input { padding-right: 52px; }
+.password-toggle { position: absolute; right: 5px; top: 50%; transform: translateY(-50%); width: 44px; height: 44px; display: grid; place-items: center; border: 0; border-radius: 8px; background: transparent; color: var(--ink-secondary); cursor: pointer; }
+.password-toggle:hover { background: #EAF1FF; color: #1D4ED8; }
+#password-eye-slash { display: none; }

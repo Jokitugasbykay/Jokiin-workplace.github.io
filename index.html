@@ -18,7 +18,7 @@
   <meta name="theme-color" content="#000000">
 
   <!-- Stylesheet -->
-  <link rel="stylesheet" href="./css/style.css?v=21">
+  <link rel="stylesheet" href="./css/style.css?v=22">
 
   <!-- Supabase JS Library -->
   <script defer src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
@@ -61,7 +61,12 @@
         </div>
         <div class="form-group" style="margin-top: 12px;">
           <label class="form-label" for="login-password">Password</label>
-          <input type="password" id="login-password" class="form-input" placeholder="••••••••" required autocomplete="current-password">
+          <div class="password-field">
+            <input type="password" id="login-password" class="form-input" placeholder="••••••••" required autocomplete="current-password">
+            <button type="button" id="btn-toggle-password" class="password-toggle" aria-label="Tampilkan password" aria-pressed="false" aria-controls="login-password">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7S2 12 2 12Z"/><circle cx="12" cy="12" r="3"/><path id="password-eye-slash" d="m3 3 18 18" hidden/></svg>
+            </button>
+          </div>
         </div>
         <div style="display: flex; align-items: center; gap: 8px; margin-top: 14px;">
           <input type="checkbox" id="remember-me" checked style="width: 18px; height: 18px; accent-color: #000;">
@@ -1018,7 +1023,7 @@
   </audio>
 
   <!-- Application Main Script (Universal script for file://, localhost, & cloud hosting) -->
-  <script src="./js/app.js?v=21"></script>
+  <script src="./js/app.js?v=22"></script>
 
   <!-- Failsafe Watchdog & Service Worker -->
   <script>

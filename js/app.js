@@ -2041,8 +2041,8 @@ async function pushApi(action, data = {}) {
 function setPushStatus(text, enabled = false) {
   document.getElementById('push-status').textContent = text;
   document.getElementById('btn-enable-push').hidden = enabled;
-  document.getElementById('btn-test-push').hidden = !enabled;
-  document.getElementById('btn-disable-push').hidden = !enabled;
+  document.getElementById('btn-test-push').hidden = true;
+  document.getElementById('btn-disable-push').hidden = true;
 }
 
 async function pushRegistration() {
@@ -2152,6 +2152,15 @@ function closeDrawer() {
 // Event Listeners & User Actions
 // ========================================================
 function setupEventListeners() {
+  document.getElementById('btn-toggle-password')?.addEventListener('click', () => {
+    const input = document.getElementById('login-password');
+    const button = document.getElementById('btn-toggle-password');
+    const visible = input.type === 'password';
+    input.type = visible ? 'text' : 'password';
+    button.setAttribute('aria-pressed', String(visible));
+    button.setAttribute('aria-label', visible ? 'Sembunyikan password' : 'Tampilkan password');
+    document.getElementById('password-eye-slash').style.display = visible ? 'block' : 'none';
+  });
   document.getElementById('btn-enable-push')?.addEventListener('click', enablePushNotifications);
   document.getElementById('btn-test-push')?.addEventListener('click', testPushNotification);
   document.getElementById('btn-disable-push')?.addEventListener('click', async () => {

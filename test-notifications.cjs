@@ -40,7 +40,9 @@ async function main() {
   await vm.runInContext('enablePushNotifications()', ctx);
   assert.equal(saved, true);
   assert.equal(storage.get('workplace_push_enabled'), '1');
-  assert.equal(el('btn-test-push').hidden, false);
+  assert.equal(el('btn-test-push').hidden, true);
+  assert.equal(el('btn-disable-push').hidden, true);
+  assert.equal(el('btn-enable-push').hidden, true);
   ctx.fakeApi = async () => { throw Error('Expired session'); };
   vm.runInContext('pushApi = fakeApi', ctx);
   await vm.runInContext('disablePushNotifications()', ctx);
