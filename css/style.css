@@ -2225,6 +2225,14 @@ p { text-wrap: pretty; }
     width: 100% !important;
     max-width: none !important;
     min-width: 0 !important;
+    height: auto !important;
+    overflow: visible !important;
+    opacity: 1 !important;
+    visibility: visible !important;
+    transform: none !important;
+    animation: none !important;
+    transition: none !important;
+    will-change: auto !important;
     margin: 0 !important;
     padding: 0 !important;
     background: transparent !important;
