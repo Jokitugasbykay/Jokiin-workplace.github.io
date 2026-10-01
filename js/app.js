@@ -321,6 +321,7 @@ async function handleLogout() {
   const supabase = await getSupabase();
   await supabase.auth.signOut({ scope: 'local' });
   state.admin = null;
+  activityHistoryReady = false;
   state.knownOrderIds.clear();
   state.knownCheckoutIds.clear();
   state.ordersBaselineLoaded = false;
@@ -445,7 +446,49 @@ function stopLiveUpdates() {
 // ========================================================
 const BOTTOM_TABS = ['home', 'orders', 'services', 'payments'];
 
+let restoringActivity = false;
+let activityHistoryReady = false;
+function activityView() {
+  return { searchQuery: state.searchQuery, orderPage: state.orderPage, orderMode: state.orderMode, perfRange: state.perfRange, perfMonthOffset: state.perfMonthOffset };
+}
+function rememberActivity() {
+  if (activityHistoryReady && !restoringActivity && window.history?.state?.workplace) {
+    window.history.replaceState({ ...window.history.state, view: activityView() }, '', window.location.href);
+  }
+}
+function saveActivity(modal = null) {
+  if (!window.history || restoringActivity) return;
+  const url = new URL(window.location.href);
+  url.searchParams.set('tab', state.activeTab);
+  const activity = { workplace: true, tab: state.activeTab, modal, view: activityView() };
+  if (!activityHistoryReady) {
+    window.history.replaceState({ ...activity, root: true }, '', url);
+    activityHistoryReady = true;
+  }
+  window.history.pushState(activity, '', url);
+}
+
+function restoreActivity(event) {
+  if (!activityHistoryReady || !state.admin) return;
+  const activity = event.state;
+  if (!activity?.workplace) return;
+  restoringActivity = true;
+  try {
+    document.querySelectorAll('.modal-overlay.open').forEach(modal => modal.classList.remove('open'));
+    closeDrawer();
+    const tab = ['performance', 'users'].includes(activity.tab) && !isOrderSupervisor(state.admin) ? 'home' : activity.tab;
+    switchTab(tab, 'left');
+    if (activity.view) Object.assign(state, activity.view);
+    document.getElementById('global-search-input').value = state.searchQuery;
+    renderActiveTab();
+    if (activity.modal) openModal(activity.modal);
+  } finally { restoringActivity = false; }
+  if (activity.root) saveActivity();
+}
+window.addEventListener('popstate', restoreActivity);
+
 function switchTab(tabName, forcedDirection = null) {
+  rememberActivity();
   const prevTab = state.activeTab;
   let direction = forcedDirection;
 
@@ -458,6 +501,7 @@ function switchTab(tabName, forcedDirection = null) {
   }
 
   state.activeTab = tabName;
+  if (!activityHistoryReady || prevTab !== tabName) saveActivity();
   const pageNames = { home: 'Beranda', orders: 'Pesanan', services: 'Layanan', payments: 'Pembayaran', reviews: 'Ulasan', performance: 'Performa tim', products: 'Produk & promo', 'task-files': 'Folder lampiran', users: 'Daftar pengguna', invoice: 'Invoice' };
   document.getElementById('header-page-title').textContent = pageNames[tabName] || 'Workplace';
   document.querySelector('.welcome-card').style.display = tabName === 'home' ? 'block' : 'none';
@@ -1914,12 +1958,13 @@ function renderInvoice() {
 // ========================================================
 function openModal(modalId) {
   const modal = document.getElementById(modalId);
-  if (modal) modal.classList.add('open');
+  if (modal) { rememberActivity(); modal.classList.add('open'); saveActivity(modalId); }
 }
 
 function closeModal(modalId) {
   const modal = document.getElementById(modalId);
   if (modal) modal.classList.remove('open');
+  if (!restoringActivity && window.history?.state?.modal === modalId) window.history.back();
 }
 
 function showConfirm(title, message, onConfirm) {
@@ -2138,7 +2183,8 @@ function setupEventListeners() {
   // Header Actions
   document.getElementById('btn-header-avatar')?.addEventListener('click', openDrawer);
   document.getElementById('btn-header-back')?.addEventListener('click', () => {
-    switchTab('home', 'left');
+    if (activityHistoryReady) window.history.back();
+    else switchTab('home', 'left');
   });
 
   // Drawer Controls

@@ -2086,7 +2086,7 @@ button, input, select, textarea, summary { touch-action: manipulation; }
 .sidebar-brand span { display: block; color: var(--ink-secondary); font-size: 13px; margin-top: 2px; }
 #btn-close-drawer { margin-left: auto; font-size: 26px; }
 .drawer-item:hover { background: #F4F6F8; }
-.drawer-item.active { background: #E9F7F0; color: #10653C; }
+.drawer-item.active { background: #EAF1FF; color: #1D4ED8; }
 .drawer-item { border-radius: 8px; min-height: 44px; }
 .performance-toolbar { display: flex; flex-direction: column; gap: 16px; }
 .page-description { font-size: 14px; line-height: 1.6; color: var(--ink-secondary); }

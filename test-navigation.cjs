@@ -1,0 +1,15 @@
+const assert = require('node:assert/strict');
+const fs = require('node:fs');
+const vm = require('node:vm');
+const events = {}, stack = [{}]; let position = 0;
+const elements = new Map();
+const element = id => { if (!elements.has(id)) elements.set(id, { style:{}, value:'', classList:{add(){},remove(){}},addEventListener(){} }); return elements.get(id); };
+const history = { get state(){return stack[position];}, replaceState(value){stack[position]=value;}, pushState(value){stack.splice(++position);stack.push(value);}, back(){if(position>0) events.popstate({state:stack[--position]});} };
+const ctx=vm.createContext({console,URL,window:{history,location:new URL('https://example.test/workplace/'),addEventListener:(name,fn)=>{events[name]=fn;}},document:{readyState:'loading',addEventListener(){},getElementById:element,querySelectorAll(){return[];}},setTimeout(){}});
+vm.runInContext(fs.readFileSync('js/app.js','utf8'),ctx);
+vm.runInContext("state.admin={role:'admin',id:'73a14e88-9421-4936-ba99-745768343a13'}; closeDrawer=()=>{}; renderActiveTab=()=>{}; switchTab=(tab)=>{rememberActivity();state.activeTab=tab;if(!restoringActivity)saveActivity();}; saveActivity();",ctx);
+vm.runInContext("state.searchQuery='tugas'; switchTab('orders'); openModal('modal-order-detail');",ctx);
+history.back(); assert.equal(history.state.modal,null); assert.equal(vm.runInContext('state.activeTab',ctx),'orders');
+history.back(); assert.equal(vm.runInContext('state.activeTab',ctx),'home'); assert.equal(vm.runInContext('state.searchQuery',ctx),'tugas');
+history.back(); assert.equal(position,1); assert.equal(history.state.workplace,true);
+console.log('PASS: modal Back, previous tab/search and root guard keep Workplace open.');
