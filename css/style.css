@@ -426,8 +426,8 @@ input, textarea, select, button {
 }
 
 .form-input:focus {
-  border-color: var(--ink);
-  box-shadow: 0 0 0 3px rgba(0, 0, 0, 0.08);
+  border-color: #2563EB;
+  box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.12);
 }
 
 .btn-primary {
@@ -2054,7 +2054,7 @@ input:checked + .toggle-slider:before {
 .entry-card, .order-card, .stat-card { min-width: 0; overflow-wrap: anywhere; }
 .entry-title, .balance-content, .stat-content { min-width: 0; overflow-wrap: anywhere; }
 button, input, select, textarea, summary { touch-action: manipulation; }
-:focus-visible { outline: 3px solid #16834B; outline-offset: 3px; }
+:focus-visible { outline: 3px solid #2563EB; outline-offset: 3px; }
 #main-content { scroll-margin-top: calc(var(--app-bar-height) + var(--safe-top) + 12px); }
 .skip-link { position: fixed; left: 16px; top: -80px; z-index: 3000; background: #FFFFFF; color: #10653C; padding: 14px; border-radius: 8px; }
 .skip-link:focus { top: 12px; }
