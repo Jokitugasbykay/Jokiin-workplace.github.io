@@ -253,7 +253,7 @@ function showAppShell() {
   // Initialize active tab and bottom nav pill
   const notificationTab = new URLSearchParams(window.location.search).get('tab');
   switchTab(['orders', 'payments'].includes(notificationTab) ? notificationTab : (state.activeTab || 'home'));
-  syncPushSubscription().catch(error => setPushStatus(error.message || 'Gagal menyinkronkan notifikasi. Coba lagi.', true));
+  syncPushSubscription().catch(error => setPushStatus(error.message || 'Gagal menyinkronkan notifikasi. Coba lagi.'));
 }
 window.showAppShell = showAppShell;
 
@@ -2052,6 +2052,10 @@ async function pushApi(action, data = {}) {
 }
 
 function setPushStatus(text, enabled = false) {
+  const panel = document.getElementById('push-settings-panel');
+  const wasHidden = panel.hidden;
+  panel.hidden = enabled;
+  if (enabled && !wasHidden) showNotice('Fitur notifikasi sudah aktif');
   document.getElementById('push-status').textContent = text;
   document.getElementById('btn-enable-push').hidden = enabled;
   document.getElementById('btn-test-push').hidden = true;

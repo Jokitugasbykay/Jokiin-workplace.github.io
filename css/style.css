@@ -2339,3 +2339,5 @@ p { text-wrap: pretty; }
 .nav-tab-icon, .nav-tab-btn { transition: color 180ms ease, transform 180ms ease; }
 
 #btn-login-google[hidden], .login-divider[hidden] { display: none !important; }
+
+#push-settings-panel[hidden] { display: none !important; }

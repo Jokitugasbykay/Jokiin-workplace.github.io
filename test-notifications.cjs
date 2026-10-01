@@ -39,6 +39,8 @@ async function main() {
   vm.runInContext('pushApi = fakeApi', ctx);
   await vm.runInContext('enablePushNotifications()', ctx);
   assert.equal(saved, true);
+  assert.equal(el('push-settings-panel').hidden, true);
+  assert.equal(el('notice-text').textContent, 'Fitur notifikasi sudah aktif');
   assert.equal(storage.get('workplace_push_enabled'), '1');
   assert.equal(el('btn-test-push').hidden, true);
   assert.equal(el('btn-disable-push').hidden, true);
@@ -47,6 +49,7 @@ async function main() {
   vm.runInContext('pushApi = fakeApi', ctx);
   await vm.runInContext('disablePushNotifications()', ctx);
   assert.equal(storage.has('workplace_push_enabled'), false);
+  assert.equal(el('push-settings-panel').hidden, false);
 
   const handlers = {};
   let shown, opened, work;
