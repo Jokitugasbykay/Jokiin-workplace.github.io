@@ -1,4 +1,4 @@
-const CACHE_NAME = 'jokiin-admin-v26';
+const CACHE_NAME = 'jokiin-admin-v27';
 const ASSETS_TO_CACHE = [
   './',
   './index.html',
@@ -66,10 +66,8 @@ self.addEventListener('push', event => {
   const tab = ['orders', 'payments', 'home'].includes(payload.tab) ? payload.tab : 'orders';
   event.waitUntil(self.registration.showNotification(payload.title || 'Pesanan baru · JOKI.IN', {
     body: payload.body || 'Ada pesanan baru masuk. Buka Workplace untuk melihat detail.',
-    icon: new URL('./assets/logo-jokiin.png',
-  './assets/logo-jokiin-invoice.png', self.registration.scope).href,
-    badge: new URL('./assets/logo-jokiin.png',
-  './assets/logo-jokiin-invoice.png', self.registration.scope).href,
+    icon: new URL('./assets/logo-jokiin.png', self.registration.scope).href,
+    badge: new URL('./assets/logo-jokiin.png', self.registration.scope).href,
     tag: typeof payload.tag === 'string' ? payload.tag : 'workplace-order',
     data: { tab }
   }));
