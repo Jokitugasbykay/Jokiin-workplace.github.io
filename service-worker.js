@@ -1,4 +1,4 @@
-const CACHE_NAME = 'jokiin-admin-v28';
+const CACHE_NAME = 'jokiin-admin-v29';
 const ASSETS_TO_CACHE = [
   './',
   './index.html',
@@ -43,7 +43,7 @@ self.addEventListener('activate', (event) => {
 self.addEventListener('fetch', event => {
   const url = new URL(event.request.url);
   if (event.request.method !== 'GET' || url.origin !== new URL(self.registration.scope).origin) return;
-  event.respondWith(fetch(event.request).then(response => {
+  event.respondWith(fetch(event.request, { cache: 'no-cache' }).then(response => {
     if (response.ok) {
       const copy = response.clone();
       event.waitUntil(caches.open(CACHE_NAME).then(cache => cache.put(event.request, copy)));

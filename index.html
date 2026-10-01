@@ -18,7 +18,7 @@
   <meta name="theme-color" content="#000000">
 
   <!-- Stylesheet -->
-  <link rel="stylesheet" href="./css/style.css?v=28">
+  <link rel="stylesheet" href="./css/style.css?v=29">
 
   <!-- Supabase JS Library -->
   <script defer src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
@@ -1021,7 +1021,7 @@
   </audio>
 
   <!-- Application Main Script (Universal script for file://, localhost, & cloud hosting) -->
-  <script src="./js/app.js?v=28"></script>
+  <script src="./js/app.js?v=29"></script>
 
   <!-- Failsafe Watchdog & Service Worker -->
   <script>
@@ -1041,8 +1041,17 @@
 
     // Register Service Worker only on HTTP/HTTPS
     if ('serviceWorker' in navigator && window.location.protocol.startsWith('http')) {
+      const hadController = Boolean(navigator.serviceWorker.controller);
+      let updatingLogin = false;
+      navigator.serviceWorker.addEventListener('controllerchange', function() {
+        const login = document.getElementById('login-view');
+        if (hadController && !updatingLogin && login?.style.display === 'flex') {
+          updatingLogin = true;
+          window.location.reload();
+        }
+      });
       window.addEventListener('load', function() {
-        navigator.serviceWorker.register('./service-worker.js').catch(function(err) {
+        navigator.serviceWorker.register('./service-worker.js', { updateViaCache: 'none' }).then(registration => registration.update()).catch(function(err) {
           console.log('SW registration error:', err);
         });
       });
