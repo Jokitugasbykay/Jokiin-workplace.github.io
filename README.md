@@ -175,3 +175,11 @@ Notifikasi menggunakan Web Push dari server, tanpa menampilkan identitas pelangg
 Backend proyek saat ini sudah dikonfigurasi. Untuk proyek Supabase baru, jalankan migrasi `supabase/migrations/202609300001_workplace_push.sql`, simpan pasangan kunci VAPID dan secret webhook acak di Vault sebagai `workplace_push_public_key`, `workplace_push_private_key`, dan `workplace_push_hook_secret`, lalu deploy fungsi `workplace-push` sesuai `supabase/config.toml`. Sesuaikan URL proyek dalam migrasi dan daftar origin dalam fungsi. Kunci privat hanya berada di Vault, tidak di frontend atau Git.
 
 Pemeriksaan lokal: `node test-notifications.cjs`. Penerimaan di layar kunci perlu diverifikasi pada perangkat yang telah memberi izin.
+
+## Sesi admin Workplace
+
+Workplace menyimpan sesi dengan kunci `jokiin-workplace-auth`, terpisah dari penyimpanan auth situs lain, dan login Google selalu kembali ke URL Workplace dengan pilihan akun. Identitas Google dan konfigurasi provider Supabase masih memakai proyek yang sama; nama aplikasi pada layar persetujuan Google diatur melalui Google Cloud OAuth.
+
+Tidak ada lagi batas logout 24 jam di aplikasi. Sesi diperbarui oleh Supabase sampai pengguna keluar atau sesi dicabut oleh layanan auth. Checkbox login hanya mengingat email. Setelah perubahan kunci sesi ini, pengguna perlu masuk sekali untuk membuat sesi Workplace terpisah.
+
+Catatan sesi admin tersimpan di `workplace_login_history`: akun, waktu login, waktu terakhir membuka aplikasi, provider, dan browser. Tidak menyimpan password atau token. RPC `workplace_record_login` mengambil identitas dari JWT; satu sesi menghasilkan satu catatan, dan RLS membatasi pembacaan ke pemilik akun.

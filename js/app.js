@@ -38,6 +38,7 @@ async function getSupabase() {
         persistSession: true,
         autoRefreshToken: true,
         detectSessionInUrl: true,
+        storageKey: 'jokiin-workplace-auth',
         storage: window.localStorage
       }
     });
@@ -136,7 +137,6 @@ const state = {
 
 window.state = state;
 
-const SESSION_DURATION = 24 * 60 * 60 * 1000; // 24 hours
 const PERFORMANCE_LAUNCH_AT = new Date('2026-09-27T10:35:00Z');
 
 // ========================================================
@@ -164,7 +164,7 @@ function initApp() {
     } finally {
       hideSplash();
     }
-  }, 900);
+  }, 0);
 }
 
 if (document.readyState === 'loading') {
@@ -185,56 +185,37 @@ function hideSplash() {
 // Session & Authentication
 // ========================================================
 function isSessionValid() {
-  const loginAt = parseInt(localStorage.getItem('password_login_at') || '0', 10);
-  if (!loginAt) return false;
-  return (Date.now() - loginAt) < SESSION_DURATION;
+  return Boolean(state.admin);
+}
+
+async function recordLogin(supabase) {
+  try {
+    const { error } = await supabase.rpc('workplace_record_login', { device: navigator.userAgent.slice(0, 256) });
+    if (error) console.warn('Catatan login belum tersimpan:', error.message);
+  } catch (error) { console.warn('Catatan login belum tersimpan:', error.message); }
 }
 
 async function checkInitialSession() {
   const supabase = await getSupabase();
   const { data: { session } } = await supabase.auth.getSession();
-
-  if (session && session.user) {
-    if (!localStorage.getItem('password_login_at')) {
-      localStorage.setItem('password_login_at', Date.now().toString());
+  if (session?.user) {
+    const { data: profile, error } = await supabase.from('profiles').select('*').eq('id', session.user.id).single();
+    if (error) throw error;
+    if (profile?.role === 'admin') {
+      state.admin = profile;
+      await recordLogin(supabase);
+      showAppShell();
+      await loadData();
+      startLiveUpdates();
+      return;
     }
-
-    if (isSessionValid()) {
-      try {
-        const { data: profile } = await supabase
-          .from('profiles')
-          .select('*')
-          .eq('id', session.user.id)
-          .single();
-
-        if (profile && profile.role === 'admin') {
-          state.admin = profile;
-          showAppShell();
-          await loadData();
-          startLiveUpdates();
-          return;
-        } else {
-          await supabase.auth.signOut({ scope: 'local' });
-          localStorage.removeItem('password_login_at');
-          const errorBox = document.getElementById('login-error-box');
-          if (errorBox) {
-            errorBox.textContent = 'Akun Google ini tidak memiliki hak akses admin JOKI.IN.';
-            errorBox.style.display = 'block';
-          }
-        }
-      } catch (err) {
-        console.warn('Session profile check error:', err);
-      }
-    }
+    await supabase.auth.signOut({ scope: 'local' });
+    const errorBox = document.getElementById('login-error-box');
+    errorBox.textContent = 'Akun ini tidak memiliki hak akses admin Workplace.';
+    errorBox.style.display = 'block';
   }
-
-  // Check if there was a remembered email
-  const rememberedEmail = localStorage.getItem('remembered_email');
-  if (rememberedEmail) {
-    const emailInput = document.getElementById('login-email');
-    if (emailInput) emailInput.value = rememberedEmail;
-  }
-
+  const rememberedEmail = localStorage.getItem('workplace_remembered_email');
+  if (rememberedEmail) document.getElementById('login-email').value = rememberedEmail;
   showLoginView();
 }
 
@@ -310,11 +291,11 @@ async function handleLogin(email, password, rememberMe) {
     }
 
     // Success
-    localStorage.setItem('password_login_at', Date.now().toString());
+    await recordLogin(supabase);
     if (rememberMe) {
-      localStorage.setItem('remembered_email', email.trim());
+      localStorage.setItem('workplace_remembered_email', email.trim());
     } else {
-      localStorage.removeItem('remembered_email');
+      localStorage.removeItem('workplace_remembered_email');
     }
 
     state.admin = profile;
@@ -339,7 +320,6 @@ async function handleLogout() {
   stopLiveUpdates();
   const supabase = await getSupabase();
   await supabase.auth.signOut({ scope: 'local' });
-  localStorage.removeItem('password_login_at');
   state.admin = null;
   state.knownOrderIds.clear();
   state.knownCheckoutIds.clear();
@@ -444,8 +424,7 @@ function startLiveUpdates() {
     if (!state.loading && isSessionValid()) {
       loadData();
     } else if (!isSessionValid() && state.admin) {
-      alert('Sesi 24 jam telah berakhir. Silakan masuk kembali.');
-      handleLogout();
+      stopLiveUpdates();
     }
   }, 15000); // Poll every 15s (matching Android app)
 }
@@ -2139,11 +2118,11 @@ function setupEventListeners() {
 
       try {
         const supabase = await getSupabase();
-        localStorage.setItem('password_login_at', Date.now().toString());
         const { error } = await supabase.auth.signInWithOAuth({
           provider: 'google',
           options: {
-            redirectTo: WORKPLACE_REDIRECT_URL
+            redirectTo: WORKPLACE_REDIRECT_URL,
+            queryParams: { prompt: 'select_account' }
           }
         });
         if (error) throw error;

@@ -14,6 +14,7 @@ export async function getSupabase() {
         persistSession: true,
         autoRefreshToken: true,
         detectSessionInUrl: true,
+        storageKey: 'jokiin-workplace-auth',
         storage: window.localStorage
       }
     });
@@ -27,7 +28,8 @@ export async function getSupabase() {
       persistSession: true,
       autoRefreshToken: true,
       detectSessionInUrl: true,
-      storage: window.localStorage
+      storageKey: 'jokiin-workplace-auth',
+        storage: window.localStorage
     }
   });
   return client;

@@ -6,6 +6,7 @@ const path = require('node:path');
 async function main() {
   const elements = new Map();
   const calls = [];
+  let clientOptions, role = 'customer', auditCalls = 0;
   const storage = new Map();
   const getElement = id => {
     if (!elements.has(id)) elements.set(id, {
@@ -19,14 +20,14 @@ async function main() {
     async signOut(options) { assert.equal(options.scope, 'local'); },
     async getSession() { return { data: { session: { user: { id: 'customer' } } } }; },
     async signInWithPassword() { return { data: { user: { id: 'customer' } }, error: null }; }
-  }, from() { return { select() { return this; }, eq() { return this; },
-    async single() { return { data: { id: 'customer', role: 'customer' } }; }
+  }, async rpc(name) { assert.equal(name, 'workplace_record_login'); auditCalls++; return { error: null }; }, from() { return { select() { return this; }, eq() { return this; },
+    async single() { return { data: { id: 'customer', role } }; }
   }; } };
-  const context = vm.createContext({ console, setTimeout() {}, clearInterval() {},
+  const context = vm.createContext({ navigator: { userAgent: 'Test browser' }, console, setTimeout() {}, clearInterval() {},
     localStorage: { getItem: k => storage.get(k), setItem: (k,v) => storage.set(k,v), removeItem: k => storage.delete(k) },
     document: { readyState: 'loading', addEventListener() {}, getElementById: getElement,
       querySelectorAll: () => [], querySelector: () => null },
-    window: { location: {}, addEventListener() {}, supabase: { createClient: () => client } }
+    window: { location: {}, addEventListener() {}, supabase: { createClient: (url, key, options) => { clientOptions = options; return client; } } }
   });
   const source = fs.readFileSync(path.join(__dirname, 'js/app.js'), 'utf8');
   vm.runInContext(source, context);
@@ -40,6 +41,7 @@ async function main() {
     await getElement('btn-login-google').click();
     const request = calls.at(-1);
     assert.equal(request.provider, 'google');
+    assert.equal(request.options.queryParams.prompt, 'select_account');
     assert.equal(request.options.redirectTo, 'https://jokitugasbykay.github.io/Jokiin-workplace.github.io/');
   }
   assert.equal(calls.length, 4);
@@ -54,6 +56,17 @@ async function main() {
   await vm.runInContext("handleLogin('customer@example.test', 'test', false)", context);
   assert.equal(signouts, 3);
   assert.equal(vm.runInContext('state.admin', context), null);
+  assert.equal(clientOptions.auth.storageKey, 'jokiin-workplace-auth');
+  assert.equal(clientOptions.auth.persistSession, true);
+  assert.equal(clientOptions.auth.autoRefreshToken, true);
+  role = 'admin';
+  storage.set('password_login_at', String(Date.now() - 7 * 86400000));
+  vm.runInContext('showAppShell = () => {}; loadData = async () => {}; startLiveUpdates = () => {};', context);
+  await vm.runInContext('checkInitialSession()', context);
+  assert.equal(vm.runInContext('state.admin.role', context), 'admin');
+  assert.equal(vm.runInContext('isSessionValid()', context), true);
+  assert.equal(signouts, 3);
+  assert.equal(auditCalls, 1);
   console.log('PASS: canonical Google redirect, file guard, non-admin rejection, and all three local signouts.');
 }
 main().catch(error => { console.error(error); process.exitCode = 1; });
