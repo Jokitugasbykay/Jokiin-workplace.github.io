@@ -206,7 +206,7 @@ async function checkInitialSession() {
     const { data: profile, error } = await supabase.from('profiles').select('*').eq('id', session.user.id).single();
     if (error) throw error;
     if (profile?.role === 'admin') {
-      state.admin = profile;
+      state.admin = { ...profile, avatar_url: session.user.user_metadata?.avatar_url || session.user.user_metadata?.picture || profile.avatar_url };
       await recordLogin(supabase);
       showAppShell();
       await loadData();
@@ -242,13 +242,22 @@ function showAppShell() {
   const headerDate = document.getElementById('header-date');
   headerDate.textContent = new Intl.DateTimeFormat('id-ID', { day: 'numeric', month: 'long', year: 'numeric', timeZone: 'Asia/Jakarta' }).format(new Date());
   headerDate.dateTime = new Date().toISOString();
-  document.getElementById('drawer-avatar').textContent = nickname.charAt(0).toUpperCase();
-
-  const headerAvatarLetter = document.getElementById('header-avatar-letter');
-  if (headerAvatarLetter) {
-    headerAvatarLetter.textContent = nickname.charAt(0).toUpperCase();
+  for (const id of ['drawer-avatar', 'header-avatar-letter']) {
+    const avatar = document.getElementById(id);
+    if (!avatar) continue;
+    const initial = nickname.charAt(0).toUpperCase();
+    avatar.textContent = initial;
+    try {
+      const url = new URL(state.admin.avatar_url);
+      if (url.protocol !== 'https:') continue;
+      const image = document.createElement('img');
+      image.src = url.href;
+      image.alt = '';
+      image.referrerPolicy = 'no-referrer';
+      image.onerror = () => { avatar.textContent = initial; };
+      avatar.replaceChildren(image);
+    } catch { /* Keep initials when no profile photo is available. */ }
   }
-
   // Supervisor tabs visibility
   const isSupervisor = isOrderSupervisor(state.admin);
   document.getElementById('drawer-tab-performance').style.display = isSupervisor ? 'flex' : 'none';
@@ -302,7 +311,7 @@ async function handleLogin(email, password, rememberMe) {
       localStorage.removeItem('workplace_remembered_email');
     }
 
-    state.admin = profile;
+    state.admin = { ...profile, avatar_url: session.user.user_metadata?.avatar_url || session.user.user_metadata?.picture || profile.avatar_url };
     showAppShell();
     await loadData();
     startLiveUpdates();
@@ -351,7 +360,7 @@ async function loadData() {
         .select('*')
         .eq('id', state.admin.id)
         .single();
-      if (refreshedAdmin) state.admin = refreshedAdmin;
+      if (refreshedAdmin) state.admin = { ...refreshedAdmin, avatar_url: state.admin.avatar_url || refreshedAdmin.avatar_url };
     }
 
     // Fetch all collections concurrently

@@ -2349,3 +2349,6 @@ p { text-wrap: pretty; }
 .login-logo, .brand-logo-img, .sidebar-brand img { border-radius: 8px; object-fit: contain; }
 @media (prefers-reduced-motion: reduce) { .splash-new-logo { animation: none; } }
 .invoice-brand { display: flex; align-items: center; gap: 10px; }
+
+#header-avatar-letter { width: 100%; height: 100%; display: grid; place-items: center; }
+#header-avatar-letter img, .drawer-avatar img { width: 100%; height: 100%; object-fit: cover; border-radius: 50%; }
