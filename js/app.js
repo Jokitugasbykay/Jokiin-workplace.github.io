@@ -472,7 +472,7 @@ function restoreActivity(event) {
   if (!activityHistoryReady || !state.admin) return;
   const activity = event.state;
   if (!activity?.workplace) return;
-  activePageTransition?.skipTransition();
+  activePageTransition?.();
   restoringActivity = true;
   try {
     document.querySelectorAll('.modal-overlay.open').forEach(modal => modal.classList.remove('open'));
@@ -490,24 +490,37 @@ window.addEventListener('popstate', restoreActivity);
 
 let activePageTransition = null;
 function switchTab(tabName, forcedDirection = null) {
+  activePageTransition?.();
   const reduced = window.matchMedia?.('(prefers-reduced-motion: reduce)').matches;
-  if (!document.startViewTransition || reduced || restoringActivity || state.activeTab === tabName) {
-    return performSwitchTab(tabName, forcedDirection);
-  }
-  activePageTransition?.skipTransition();
-  const previous = BOTTOM_TABS.indexOf(state.activeTab);
-  const next = BOTTOM_TABS.indexOf(tabName);
-  document.documentElement.dataset.navMotion = forcedDirection || (next >= previous ? 'right' : 'left');
-  const transition = document.startViewTransition(() => performSwitchTab(tabName, forcedDirection));
-  activePageTransition = transition;
-  transition.ready.catch(() => {});
-  transition.finished.catch(() => {}).finally(() => {
-    if (activePageTransition === transition) {
-      activePageTransition = null;
-      delete document.documentElement.dataset.navMotion;
-    }
-  });
-  return transition.updateCallbackDone;
+  const previous = document.getElementById('view-' + state.activeTab);
+  const content = document.getElementById('main-content');
+  if (reduced || state.activeTab === tabName || !previous?.animate) return performSwitchTab(tabName, forcedDirection);
+  const direction = forcedDirection || (BOTTOM_TABS.indexOf(tabName) >= BOTTOM_TABS.indexOf(state.activeTab) ? 'right' : 'left');
+  const sign = direction === 'left' ? -1 : 1;
+  const outgoing = previous.cloneNode(true);
+  outgoing.removeAttribute('id');
+  outgoing.querySelectorAll('[id]').forEach(el => el.removeAttribute('id'));
+  outgoing.setAttribute('aria-hidden', 'true');
+  outgoing.inert = true;
+  outgoing.className = 'page-outgoing';
+  content.classList.add('page-transitioning');
+  outgoing.style.left = previous.offsetLeft + 'px';
+  outgoing.style.top = previous.offsetTop + 'px';
+  outgoing.style.width = previous.offsetWidth + 'px';
+  performSwitchTab(tabName, direction);
+  const incoming = document.getElementById('view-' + tabName);
+  content.append(outgoing);
+  const options = { duration: 420, easing: 'cubic-bezier(.22, .8, .25, 1)', fill: 'both' };
+  const exit = outgoing.animate([{ transform: 'translateX(0)' }, { transform: 'translateX(' + (-sign * 100) + '%)' }], options);
+  const enter = incoming.animate([{ transform: 'translateX(' + (sign * 100) + '%)' }, { transform: 'translateX(0)' }], options);
+  const cleanup = () => {
+    incoming.classList.remove('slide-right', 'slide-left', 'fade-in');
+    exit.cancel(); enter.cancel(); outgoing.remove();
+    content.classList.remove('page-transitioning');
+    if (activePageTransition === cleanup) activePageTransition = null;
+  };
+  activePageTransition = cleanup;
+  enter.finished.then(cleanup, () => {});
 }
 
 function performSwitchTab(tabName, forcedDirection = null) {
