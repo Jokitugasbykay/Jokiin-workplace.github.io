@@ -2322,3 +2322,22 @@ p { text-wrap: pretty; }
 .splash-caption { margin: 0; color: var(--ink-secondary); font-size: 13px; }
 @keyframes splashEnter { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: translateY(0); } }
 @media (prefers-reduced-motion: reduce) { #splash-screen { transition: none; } .splash-logo-container, .splash-spinner { animation: none; } }
+
+@media screen and (prefers-reduced-motion: no-preference) {
+  #main-content { view-transition-name: workplace-page; }
+  [data-nav-motion] .tab-view { animation: none; }
+  ::view-transition-group(workplace-page) { animation-duration: 380ms; overflow: clip; }
+  ::view-transition-old(workplace-page), ::view-transition-new(workplace-page) {
+    animation-duration: 380ms;
+    animation-timing-function: cubic-bezier(.22, 1, .36, 1);
+    mix-blend-mode: normal;
+  }
+  ::view-transition-old(workplace-page) { animation-name: workplaceExitLeft; }
+  ::view-transition-new(workplace-page) { animation-name: workplaceEnterRight; }
+  [data-nav-motion="left"]::view-transition-old(workplace-page) { animation-name: workplaceExitRight; }
+  [data-nav-motion="left"]::view-transition-new(workplace-page) { animation-name: workplaceEnterLeft; }
+}
+@keyframes workplaceExitLeft { to { transform: translateX(-25%); opacity: .25; } }
+@keyframes workplaceEnterRight { from { transform: translateX(100%); } }
+@keyframes workplaceExitRight { to { transform: translateX(25%); opacity: .25; } }
+@keyframes workplaceEnterLeft { from { transform: translateX(-100%); } }

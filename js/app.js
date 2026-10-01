@@ -472,6 +472,7 @@ function restoreActivity(event) {
   if (!activityHistoryReady || !state.admin) return;
   const activity = event.state;
   if (!activity?.workplace) return;
+  activePageTransition?.skipTransition();
   restoringActivity = true;
   try {
     document.querySelectorAll('.modal-overlay.open').forEach(modal => modal.classList.remove('open'));
@@ -487,7 +488,29 @@ function restoreActivity(event) {
 }
 window.addEventListener('popstate', restoreActivity);
 
+let activePageTransition = null;
 function switchTab(tabName, forcedDirection = null) {
+  const reduced = window.matchMedia?.('(prefers-reduced-motion: reduce)').matches;
+  if (!document.startViewTransition || reduced || restoringActivity || state.activeTab === tabName) {
+    return performSwitchTab(tabName, forcedDirection);
+  }
+  activePageTransition?.skipTransition();
+  const previous = BOTTOM_TABS.indexOf(state.activeTab);
+  const next = BOTTOM_TABS.indexOf(tabName);
+  document.documentElement.dataset.navMotion = forcedDirection || (next >= previous ? 'right' : 'left');
+  const transition = document.startViewTransition(() => performSwitchTab(tabName, forcedDirection));
+  activePageTransition = transition;
+  transition.ready.catch(() => {});
+  transition.finished.catch(() => {}).finally(() => {
+    if (activePageTransition === transition) {
+      activePageTransition = null;
+      delete document.documentElement.dataset.navMotion;
+    }
+  });
+  return transition.updateCallbackDone;
+}
+
+function performSwitchTab(tabName, forcedDirection = null) {
   rememberActivity();
   const prevTab = state.activeTab;
   let direction = forcedDirection;
