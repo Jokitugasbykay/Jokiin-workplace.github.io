@@ -1,4 +1,4 @@
-const CACHE_NAME = 'jokiin-admin-v24';
+const CACHE_NAME = 'jokiin-admin-v25';
 const ASSETS_TO_CACHE = [
   './',
   './index.html',
@@ -7,9 +7,11 @@ const ASSETS_TO_CACHE = [
   './js/app.js',
   './js/supabaseClient.js',
   './assets/apple-touch-icon.png',
-  './assets/icon-192.png',
+  './assets/logo-jokiin.png',
+  './assets/logo-jokiin-invoice.png',
   './assets/icon-512.png',
-  './assets/logo-white.png',
+  './assets/logo-jokiin.png',
+  './assets/logo-jokiin-invoice.png',
   './assets/wordmark.png',
   './assets/secure.gif'
 ];
@@ -64,8 +66,10 @@ self.addEventListener('push', event => {
   const tab = ['orders', 'payments', 'home'].includes(payload.tab) ? payload.tab : 'orders';
   event.waitUntil(self.registration.showNotification(payload.title || 'Pesanan baru · JOKI.IN', {
     body: payload.body || 'Ada pesanan baru masuk. Buka Workplace untuk melihat detail.',
-    icon: new URL('./assets/icon-192.png', self.registration.scope).href,
-    badge: new URL('./assets/icon-192.png', self.registration.scope).href,
+    icon: new URL('./assets/logo-jokiin.png',
+  './assets/logo-jokiin-invoice.png', self.registration.scope).href,
+    badge: new URL('./assets/logo-jokiin.png',
+  './assets/logo-jokiin-invoice.png', self.registration.scope).href,
     tag: typeof payload.tag === 'string' ? payload.tag : 'workplace-order',
     data: { tab }
   }));

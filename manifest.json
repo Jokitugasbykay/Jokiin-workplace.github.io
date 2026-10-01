@@ -9,21 +9,10 @@
   "theme_color": "#000000",
   "icons": [
     {
-      "src": "./assets/icon-192.png",
-      "sizes": "192x192",
+      "src": "./assets/logo-jokiin.png",
+      "sizes": "1280x1280",
       "type": "image/png",
       "purpose": "any maskable"
-    },
-    {
-      "src": "./assets/icon-512.png",
-      "sizes": "512x512",
-      "type": "image/png",
-      "purpose": "any maskable"
-    },
-    {
-      "src": "./assets/apple-touch-icon.png",
-      "sizes": "1000x1000",
-      "type": "image/png"
     }
   ]
 }

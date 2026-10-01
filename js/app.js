@@ -173,7 +173,11 @@ if (document.readyState === 'loading') {
   initApp();
 }
 
+const introStartedAt = Date.now();
 function hideSplash() {
+  const reduced = window.matchMedia?.('(prefers-reduced-motion: reduce)').matches;
+  const remaining = reduced ? 0 : Math.max(0, 1800 - (Date.now() - introStartedAt));
+  if (remaining) { setTimeout(hideSplash, remaining); return; }
   const splash = document.getElementById('splash-screen');
   if (splash) {
     splash.classList.add('hidden');
@@ -695,7 +699,7 @@ function renderHome() {
       const card = document.createElement('div');
       card.className = 'order-card';
       card.innerHTML = `
-        <img src="./assets/logo-white.png" alt="Logo" class="order-brand-logo">
+        <img src="./assets/logo-jokiin.png" alt="Logo" class="order-brand-logo">
         <div class="order-info">
           <div class="order-code">${ord.order_code || '#' + ord.id}</div>
           <div class="order-customer">${escapeHtml(getCustomerName(ord))}</div>

@@ -2341,3 +2341,11 @@ p { text-wrap: pretty; }
 #btn-login-google[hidden], .login-divider[hidden] { display: none !important; }
 
 #push-settings-panel[hidden] { display: none !important; }
+
+#splash-screen { background: #000; }
+.splash-logo-container { animation: none; }
+.splash-new-logo { width: min(74vw, 520px); height: auto; animation: jokiinIntro 1.6s .2s both cubic-bezier(.16,1,.3,1); }
+@keyframes jokiinIntro { 0% { opacity: 0; transform: translateY(90px) scale(.65); } 75% { opacity: 1; transform: translateY(0) scale(1.035); } 100% { opacity: 1; transform: translateY(0) scale(1); } }
+.login-logo, .brand-logo-img, .sidebar-brand img { border-radius: 8px; object-fit: contain; }
+@media (prefers-reduced-motion: reduce) { .splash-new-logo { animation: none; } }
+.invoice-brand { display: flex; align-items: center; gap: 10px; }
