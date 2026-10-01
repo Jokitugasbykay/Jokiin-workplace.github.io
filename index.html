@@ -472,7 +472,164 @@
                   <div>
                     <span style="font-weight: 700; font-size: 16px;">Ubah harga produk</span>
                     <p style="font-size: 12px; color: var(--ink-secondary);">Perbarui harga dasar tanpa menghapus diskon.</p>
-          …2392 tokens truncated…ice-note">Terima kasih telah mempercayakan pekerjaan Anda kepada JOKI.IN.</p>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Sub-view: Promo Manager -->
+          <div id="product-promo-section" class="product-subview" style="display: none;">
+            <button id="btn-back-to-prod-menu" class="btn-outline" style="width: auto; height: 34px; padding: 0 12px; margin-bottom: 12px;">‹ Kembali ke Produk</button>
+            <h3 class="section-title">Manajemen Promo</h3>
+            <p id="promo-rules-hint" style="font-size: 12px; color: var(--ink-secondary); margin: 6px 0 12px;">Hanya satu promo aktif di website.</p>
+            <div id="promos-list-container" style="display: flex; flex-direction: column; gap: 12px;"></div>
+            <button id="btn-create-promo" class="btn-primary" style="margin-top: 14px;">+ Buat Promo Baru</button>
+          </div>
+
+          <!-- Sub-view: Discount Manager -->
+          <div id="product-discount-section" class="product-subview" style="display: none;">
+            <button id="btn-back-to-prod-menu-2" class="btn-outline" style="width: auto; height: 34px; padding: 0 12px; margin-bottom: 12px;">‹ Kembali ke Produk</button>
+            <h3 class="section-title">Diskon Layanan</h3>
+            <p style="font-size: 12px; color: var(--ink-secondary); margin: 4px 0 12px;">Diskon terpisah dari harga dasar produk.</p>
+            <div id="product-discounts-list" style="display: flex; flex-direction: column; gap: 12px;"></div>
+          </div>
+
+          <!-- Sub-view: Price Manager -->
+          <div id="product-price-section" class="product-subview" style="display: none;">
+            <button id="btn-back-to-prod-menu-3" class="btn-outline" style="width: auto; height: 34px; padding: 0 12px; margin-bottom: 12px;">‹ Kembali ke Produk</button>
+            <h3 class="section-title">Ubah Harga Dasar</h3>
+            <p style="font-size: 12px; color: var(--ink-secondary); margin: 4px 0 12px;">Harga dasar sebelum potongan diskon.</p>
+            <div id="product-prices-list" style="display: flex; flex-direction: column; gap: 12px;"></div>
+          </div>
+        </section>
+
+        <!-- View: Folder Lampiran (Task Files) -->
+        <section id="view-task-files" class="tab-view" style="display: none;">
+          <div class="entry-card">
+            <span class="entry-title">Folder lampiran pelanggan</span>
+            <p style="font-size: 13px; color: var(--ink-secondary);">File yang dipilih pelanggan saat checkout disimpan di folder Google Drive ini. Ganti link saat folder harian berubah.</p>
+            <div class="form-group" style="margin-top: 8px;">
+              <label class="form-label" for="task-drive-input">Link Folder Google Drive</label>
+              <input type="url" id="task-drive-input" class="form-input" placeholder="https://drive.google.com/drive/folders/...">
+            </div>
+            <button id="btn-save-drive-folder" class="btn-primary" style="margin-top: 10px;">Simpan Folder</button>
+          </div>
+        </section>
+
+        <!-- View: Pengguna (Users) -->
+        <section id="view-users" class="tab-view" style="display: none;">
+          <div id="users-count-label" style="font-size: 13px; color: var(--ink-secondary); margin-bottom: 6px;">Data dari server • 0 pengguna</div>
+          <div id="users-list-container" style="display: flex; flex-direction: column; gap: 12px;"></div>
+        </section>
+
+        <!-- View: Invoice -->
+        <section id="view-invoice" class="tab-view" style="display: none;">
+          <!-- Paid Order Selector Bar (no-print) -->
+          <div class="entry-card invoice-selector-card no-print" style="margin-bottom: 16px;">
+            <div style="display: flex; justify-content: space-between; align-items: center; gap: 10px; margin-bottom: 6px;">
+              <span class="entry-title" style="margin-bottom: 0;">Pilih Pesanan Paid</span>
+              <span class="status-badge active" style="font-size: 11px;">Non-PKP (PPN 0%)</span>
+            </div>
+            <p style="font-size: 12.5px; color: var(--ink-secondary); margin-bottom: 12px;">
+              Pilih pesanan yang berstatus <strong>paid</strong> untuk mengisi seluruh rincian invoice secara otomatis.
+            </p>
+            <div style="display: flex; gap: 10px; flex-wrap: wrap;">
+              <select id="invoice-order-picker" class="form-input" style="flex: 1; min-width: 220px; height: 46px; border-radius: 12px; font-size: 14px;">
+                <option value="">-- Pilih Pesanan (Status: Paid) --</option>
+              </select>
+              <button id="btn-invoice-load-order" class="btn-primary" style="width: auto; padding: 0 20px; height: 46px; border-radius: 12px; font-size: 14px; background: #087C5B;">
+                Isi Otomatis
+              </button>
+            </div>
+          </div>
+
+          <!-- Printable Invoice Sheet -->
+          <div class="invoice-sheet">
+            <header class="invoice-header">
+              <div>
+                <div class="invoice-brand"><img src="./assets/logo-jokiin-invoice.png" width="56" height="56" alt="Logo Jokiin"> JOKI<span>.IN</span></div>
+                <p class="invoice-tagline">Teman tugas mahasiswa</p>
+              </div>
+              <h1 class="invoice-title">INVOICE</h1>
+            </header>
+
+            <section class="invoice-fields" aria-label="Informasi invoice">
+              <div class="invoice-field">
+                <label for="inv-freelancer">Nama Admin</label>
+                <input id="inv-freelancer" placeholder="Nama admin" autocomplete="name">
+              </div>
+              <div class="invoice-field">
+                <label for="inv-client">Nama Klien</label>
+                <input id="inv-client" placeholder="Nama klien">
+              </div>
+              <div class="invoice-field">
+                <label for="inv-number">Nomor Invoice</label>
+                <input id="inv-number" placeholder="NUG-001">
+              </div>
+              <div class="invoice-field">
+                <label for="inv-date">Tanggal Invoice</label>
+                <input id="inv-date" type="date">
+              </div>
+              <div class="invoice-field">
+                <label for="inv-due">Tanggal Deadline</label>
+                <input id="inv-due" type="date">
+              </div>
+            </section>
+
+            <div class="invoice-table-wrap">
+              <table class="invoice-table" aria-label="Daftar item invoice">
+                <thead>
+                  <tr>
+                    <th>Deskripsi</th>
+                    <th>Jumlah</th>
+                    <th>Harga Satuan</th>
+                    <th>Subtotal</th>
+                    <th class="no-print">Aksi</th>
+                  </tr>
+                </thead>
+                <tbody id="inv-items"></tbody>
+              </table>
+            </div>
+
+            <div class="invoice-actions no-print">
+              <button id="inv-add-row" type="button" class="invoice-btn invoice-btn-secondary">+ Tambah Baris</button>
+            </div>
+
+            <section class="invoice-totals" aria-label="Total invoice">
+              <div class="invoice-total-row">
+                <span>Subtotal</span>
+                <strong id="inv-subtotal">Rp0</strong>
+              </div>
+              <div class="invoice-total-row invoice-tax-row no-print">
+                <label for="inv-tax">PPN:</label>
+                <div class="invoice-tax-control">
+                  <input id="inv-tax" type="number" min="0" max="100" step="0.01" value="0" inputmode="decimal">
+                  <span class="invoice-tax-percent">%</span>
+                </div>
+              </div>
+              <div class="invoice-total-row">
+                <span id="inv-tax-label">Nilai PPN (0%)</span>
+                <strong id="inv-tax-value">Rp0</strong>
+              </div>
+              <div class="invoice-total-row invoice-grand">
+                <span>Total Akhir</span>
+                <span id="inv-grand">Rp0</span>
+              </div>
+            </section>
+
+            <div class="invoice-actions no-print" style="margin-top: 24px;">
+              <button id="inv-print" type="button" class="invoice-btn" style="display: flex; align-items: center; gap: 8px;">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                  <polyline points="6 9 6 2 18 2 18 9"></polyline>
+                  <path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"></path>
+                  <rect x="6" y="14" width="12" height="8"></rect>
+                </svg>
+                <span>Cetak / Simpan PDF</span>
+              </button>
+            </div>
+
+            <p class="invoice-note">Terima kasih telah mempercayakan pekerjaan Anda kepada JOKI.IN.</p>
           </div>
         </section>
 
