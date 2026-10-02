@@ -18,7 +18,7 @@
   <meta name="theme-color" content="#000000">
 
   <!-- Stylesheet -->
-  <link rel="stylesheet" href="./css/style.css?v=31">
+  <link rel="stylesheet" href="./css/style.css?v=32">
 
   <!-- Supabase JS Library -->
   <script defer src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
@@ -180,6 +180,8 @@
               <span id="balance-title" class="balance-label">Saldo Admin</span>
               <span id="home-admin-balance" class="balance-amount">Rp0</span>
               <span class="balance-subtext">Saldo pribadi akun ini</span>
+              <button id="btn-withdraw-balance" class="btn-secondary" type="button" hidden style="margin-top:10px;">Tarik saldo</button>
+              <p id="balance-withdraw-status" class="balance-subtext" role="status"></p>
             </div>
           </div>
 
@@ -523,13 +525,24 @@
             <div class="form-group"><label class="form-label" for="violation-admin">Admin</label><select id="violation-admin" class="form-input" required></select></div>
             <div class="form-group"><label class="form-label" for="violation-date">Tanggal</label><input id="violation-date" class="form-input" type="date" required></div>
             <div class="form-group"><label class="form-label" for="violation-description">Keterangan</label><textarea id="violation-description" class="form-input" rows="3" maxlength="2000" required></textarea></div>
-            <div class="form-group"><label class="form-label" for="violation-status">Status penyelesaian</label><select id="violation-status" class="form-input"><option value="false">Belum selesai</option><option value="true">Selesai</option></select></div>
+            <div class="form-group"><label class="form-label" for="violation-days">Durasi sanksi (hari)</label><input id="violation-days" class="form-input" name="sanction_days" type="number" inputmode="numeric" min="1" max="3650" step="1" value="1" required><small>Sanksi dimulai pada tanggal di atas, pukul 00.00 WIB.</small></div>
+            <fieldset class="sanction-options"><legend>Bentuk sanksi</legend>
+              <label><input id="violation-block-orders" type="checkbox" checked> Tidak dapat mengambil order</label>
+              <label><input id="violation-freeze-balance" type="checkbox" checked> Pembekuan rekening</label>
+              <label><input id="violation-block-withdrawals" type="checkbox" checked> Tidak dapat mengajukan pencairan</label>
+            </fieldset>
+            <div class="form-group"><label class="form-label" for="violation-status">Status penyelesaian</label><select id="violation-status" class="form-input"><option value="false">Belum selesai — sanksi aktif sesuai durasi</option><option value="true">Selesai — akhiri sanksi</option></select></div>
             <button class="btn-primary" type="submit">Simpan pelanggaran</button>
             <p id="violation-form-status" role="status"></p>
           </form>
           <div id="violations-list" style="display:grid;gap:12px;margin-top:16px;" aria-live="polite"></div>
         </section>
 
+        <section id="view-withdrawals" class="tab-view" style="display:none;">
+          <h2 class="section-title">Pengajuan pencairan dana</h2>
+          <p class="section-help">Tinjau rekening tujuan dan nominal. Tandai cair setelah transfer dilakukan. Pengajuan sendiri ditinjau pengelola lain.</p>
+          <div id="withdrawals-list" class="withdrawals-list" aria-live="polite"></div>
+        </section>
         <!-- View: Pengguna (Users) -->
         <section id="view-users" class="tab-view" style="display: none;">
           <div id="users-count-label" style="font-size: 13px; color: var(--ink-secondary); margin-bottom: 6px;">Data dari server • 0 pengguna</div>
@@ -783,6 +796,10 @@
         </span>
         <span>Performa Tim</span>
       </button>
+      <button id="drawer-tab-withdrawals" class="drawer-item" data-tab="withdrawals" style="display:none;">
+        <span class="drawer-item-icon" aria-hidden="true"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 6h18v14H3zM7 3h10M7 10h10M7 15h4"/></svg></span>
+        <span>Pengajuan pencairan dana</span>
+      </button>
       <button id="drawer-tab-users" class="drawer-item" data-tab="users" style="display: none;">
         <span class="drawer-item-icon">
           <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
@@ -954,6 +971,20 @@
   </div>
 
   <!-- Promo Editor Modal -->
+  <div id="modal-withdrawal" class="modal-overlay">
+    <form id="withdrawal-form" class="modal-sheet" role="dialog" aria-modal="true" aria-labelledby="withdrawal-title">
+      <div class="modal-header"><h2 id="withdrawal-title" class="modal-title">Tarik saldo</h2><button class="modal-close-btn" type="button" data-close-modal="modal-withdrawal" aria-label="Tutup">×</button></div>
+      <div class="modal-body">
+        <p id="withdrawal-available" class="section-help"></p>
+        <div class="form-group"><label class="form-label" for="withdrawal-amount">Nominal (Rp)</label><input id="withdrawal-amount" name="amount" type="number" inputmode="numeric" class="form-input" min="50000" step="1" required></div>
+        <div class="form-group"><label class="form-label" for="withdrawal-bank">Bank atau e-wallet</label><input id="withdrawal-bank" name="bank" class="form-input" maxlength="80" autocomplete="off" required></div>
+        <div class="form-group"><label class="form-label" for="withdrawal-account">Nomor rekening / e-wallet</label><input id="withdrawal-account" name="account" type="text" inputmode="numeric" class="form-input" minlength="3" maxlength="50" autocomplete="off" required></div>
+        <div class="form-group"><label class="form-label" for="withdrawal-name">Nama pemilik rekening</label><input id="withdrawal-name" name="account_name" class="form-input" maxlength="120" autocomplete="off" required></div>
+        <p id="withdrawal-error" role="alert" tabindex="-1"></p>
+        <button id="btn-submit-withdrawal" type="submit" class="btn-primary">Ajukan pencairan</button>
+      </div>
+    </form>
+  </div>
   <div id="modal-promo-editor" class="modal-overlay">
     <div class="modal-sheet">
       <div class="modal-header">
@@ -1037,7 +1068,7 @@
   </audio>
 
   <!-- Application Main Script (Universal script for file://, localhost, & cloud hosting) -->
-  <script src="./js/app.js?v=31"></script>
+  <script src="./js/app.js?v=32"></script>
 
   <!-- Failsafe Watchdog & Service Worker -->
   <script>

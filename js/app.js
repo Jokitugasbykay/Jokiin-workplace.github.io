@@ -118,6 +118,8 @@ const ESTIMATE_OPTIONS = [
 
 // Application State
 const state = {
+  sanctions: null,
+  withdrawals: [],
   admin: null,
   returningAdmin: null,
   orders: [],
@@ -275,6 +277,7 @@ function showAppShell() {
   document.getElementById('drawer-tab-users').style.display = isSupervisor ? 'flex' : 'none';
 
   document.getElementById('drawer-tab-violations').style.display = isFounder(state.admin) ? 'flex' : 'none';
+  document.getElementById('drawer-tab-withdrawals').style.display = isOrderSupervisor(state.admin) ? 'flex' : 'none';
 
   // Initialize active tab and bottom nav pill
   const notificationTab = new URLSearchParams(window.location.search).get('tab');
@@ -347,6 +350,8 @@ async function handleLogout() {
   const supabase = await getSupabase();
   await supabase.auth.signOut({ scope: 'local' });
   state.admin = null;
+  state.sanctions = null;
+  state.withdrawals = [];
   activityHistoryReady = false;
   state.knownOrderIds.clear();
   state.knownCheckoutIds.clear();
@@ -376,6 +381,7 @@ async function loadData() {
       if (refreshedAdmin) state.admin = { ...refreshedAdmin, avatar_url: state.admin.avatar_url || refreshedAdmin.avatar_url };
     }
 
+    await loadWithdrawalState(supabase);
     // Fetch all collections concurrently
     const [
       ordersRes,
@@ -517,6 +523,7 @@ window.addEventListener('popstate', restoreActivity);
 let activePageTransition = null;
 function switchTab(tabName, forcedDirection = null) {
   if (tabName === 'violations' && !isFounder(state.admin)) return;
+  if (tabName === 'withdrawals' && !isOrderSupervisor(state.admin)) return;
   activePageTransition?.();
   const reduced = window.matchMedia?.('(prefers-reduced-motion: reduce)').matches;
   const previous = document.getElementById('view-' + state.activeTab);
@@ -552,6 +559,7 @@ function switchTab(tabName, forcedDirection = null) {
 
 function performSwitchTab(tabName, forcedDirection = null) {
   if (tabName === 'violations' && !isFounder(state.admin)) return;
+  if (tabName === 'withdrawals' && !isOrderSupervisor(state.admin)) return;
   rememberActivity();
   const prevTab = state.activeTab;
   let direction = forcedDirection;
@@ -566,7 +574,7 @@ function performSwitchTab(tabName, forcedDirection = null) {
 
   state.activeTab = tabName;
   if (!activityHistoryReady || prevTab !== tabName) saveActivity();
-  const pageNames = { home: 'Beranda', orders: 'Pesanan', services: 'Layanan', payments: 'Pembayaran', reviews: 'Ulasan', performance: 'Performa tim', products: 'Produk & promo', 'task-files': 'Folder lampiran', users: 'Daftar pengguna', invoice: 'Invoice', violations: 'Pelanggaran' };
+  const pageNames = { home: 'Beranda', orders: 'Pesanan', services: 'Layanan', payments: 'Pembayaran', reviews: 'Ulasan', performance: 'Performa tim', products: 'Produk & promo', 'task-files': 'Folder lampiran', users: 'Daftar pengguna', invoice: 'Invoice', violations: 'Pelanggaran', withdrawals: 'Pengajuan pencairan dana' };
   document.getElementById('header-page-title').textContent = pageNames[tabName] || 'Workplace';
   document.querySelector('.welcome-card').style.display = tabName === 'home' ? 'block' : 'none';
   state.searchQuery = '';
@@ -594,7 +602,7 @@ function performSwitchTab(tabName, forcedDirection = null) {
   }
 
   // Hide Bottom Navigation on secondary tabs: ulasan, produk & promo, folder lampiran, peforma tim, daftar pengguna, invoice
-  const HIDE_NAVBAR_TABS = ['reviews', 'products', 'task-files', 'performance', 'users', 'invoice', 'violations'];
+  const HIDE_NAVBAR_TABS = ['reviews', 'products', 'task-files', 'performance', 'users', 'invoice', 'violations', 'withdrawals'];
   const shouldHideNav = HIDE_NAVBAR_TABS.includes(tabName);
 
   const bottomNavContainer = document.querySelector('.bottom-nav-container');
@@ -642,7 +650,7 @@ function performSwitchTab(tabName, forcedDirection = null) {
 
   // Toggle Search Section visibility
   const searchSec = document.getElementById('search-section');
-  if (tabName === 'home' || tabName === 'performance' || tabName === 'products' || tabName === 'task-files' || tabName === 'invoice') {
+  if (tabName === 'home' || tabName === 'performance' || tabName === 'products' || tabName === 'task-files' || tabName === 'invoice' || tabName === 'violations' || tabName === 'withdrawals') {
     searchSec.style.display = 'none';
   } else {
     searchSec.style.display = 'block';
@@ -685,6 +693,9 @@ function renderActiveTab() {
     case 'users':
       renderUsers();
       break;
+    case 'withdrawals':
+      renderWithdrawals();
+      break;
     case 'violations':
       renderViolations();
       break;
@@ -697,11 +708,144 @@ function renderActiveTab() {
 // ========================================================
 // Tab: Beranda (Home)
 // ========================================================
+function activeSanction(kind) {
+  const until = state.sanctions?.[kind + '_until'];
+  return until && Date.parse(until) > Date.now() ? until : null;
+}
+
+async function loadWithdrawalState(db) {
+  const [sanctions, withdrawals] = await Promise.all([
+    db.rpc('workplace_my_sanctions'),
+    db.from('admin_withdrawals').select('*').order('created_at', { ascending: false })
+  ]);
+  if (sanctions.error || withdrawals.error) {
+    state.sanctions = null;
+    state.withdrawals = [];
+    return;
+  }
+  state.sanctions = sanctions.data || {};
+  state.withdrawals = withdrawals.data || [];
+}
+
+function withdrawalReason() {
+  if (!state.sanctions) return 'Memuat aturan pencairan…';
+  const until = activeSanction('balance') || activeSanction('withdrawals');
+  if (until) return 'Pencairan diblokir hingga ' + new Intl.DateTimeFormat('id-ID', { dateStyle: 'medium', timeStyle: 'short', timeZone: 'Asia/Jakarta' }).format(new Date(until)) + ' WIB.';
+  if (state.withdrawals.some(row => row.requested_by === state.admin.id && ['pending', 'approved'].includes(row.status))) return 'Pengajuan pencairan sedang diproses.';
+  if (Number(state.admin?.admin_balance) < 50000) return 'Minimal saldo untuk pencairan Rp50.000.';
+  return '';
+}
+
+function renderWithdrawalButton() {
+  const button = document.getElementById('btn-withdraw-balance');
+  if (!button) return;
+  button.hidden = Number(state.admin?.admin_balance || 0) < 50000;
+  button.disabled = Boolean(withdrawalReason());
+  const status = document.getElementById('balance-withdraw-status');
+  const latest = state.withdrawals.find(row => row.requested_by === state.admin.id);
+  const labels = { pending: 'Diproses', approved: 'Disetujui', paid: 'Sudah cair', rejected: 'Ditolak', cancelled: 'Dibatalkan' };
+  status.textContent = withdrawalReason() || (latest ? `Pencairan terakhir: ${labels[latest.status] || latest.status} · ${formatRupiah(latest.amount)}` : '');
+}
+
+function openWithdrawalForm() {
+  const reason = withdrawalReason();
+  if (reason) { showNotice(reason); return; }
+  const amount = document.getElementById('withdrawal-amount');
+  amount.max = Number(state.admin.admin_balance);
+  amount.value = Number(state.admin.admin_balance);
+  document.getElementById('withdrawal-available').textContent = `Saldo tersedia ${formatRupiah(state.admin.admin_balance)}. Minimal pencairan Rp50.000; Anda dapat mencairkan seluruh saldo.`;
+  document.getElementById('withdrawal-error').textContent = '';
+  openModal('modal-withdrawal');
+}
+
+async function submitWithdrawal(event) {
+  event.preventDefault();
+  const form = document.getElementById('withdrawal-form');
+  if (!form.reportValidity()) return;
+  const button = document.getElementById('btn-submit-withdrawal');
+  if (button.disabled) return;
+  const errorBox = document.getElementById('withdrawal-error');
+  button.disabled = true;
+  button.textContent = 'Mengajukan…';
+  errorBox.textContent = '';
+  try {
+    const reason = withdrawalReason();
+    if (reason) throw new Error(reason);
+    const db = await getSupabase();
+    const { error } = await db.rpc('workplace_request_withdrawal', {
+      p_amount: Number(document.getElementById('withdrawal-amount').value),
+      p_bank: document.getElementById('withdrawal-bank').value.trim(),
+      p_account: document.getElementById('withdrawal-account').value.trim(),
+      p_name: document.getElementById('withdrawal-name').value.trim()
+    });
+    if (error) throw error;
+    closeModal('modal-withdrawal');
+    await loadData();
+    showNotice('Pengajuan pencairan berhasil dikirim.');
+  } catch (error) { errorBox.textContent = error.message || 'Gagal mengajukan pencairan.'; errorBox.focus(); }
+  finally { button.disabled = false; button.textContent = 'Ajukan pencairan'; }
+}
+
+function renderWithdrawals() {
+  if (!isOrderSupervisor(state.admin)) return;
+  const list = document.getElementById('withdrawals-list');
+  list.replaceChildren();
+  if (!state.sanctions) { list.textContent = 'Data pencairan belum tersedia. Gunakan Segarkan Data untuk mencoba lagi.'; return; }
+  if (!state.withdrawals.length) list.textContent = 'Belum ada pengajuan pencairan.';
+  const labels = { pending: 'Menunggu tinjauan', approved: 'Disetujui', paid: 'Sudah cair', rejected: 'Ditolak', cancelled: 'Dibatalkan' };
+  for (const row of state.withdrawals) {
+    const card = document.createElement('div');
+    card.className = 'entry-card withdrawal-card';
+    const admin = state.profiles.find(profile => profile.id === row.requested_by);
+    card.innerHTML = `<strong>${escapeHtml(admin?.name || 'Admin')}</strong><span class="status-badge">${labels[row.status] || escapeHtml(row.status)}</span><strong>${formatRupiah(row.amount)}</strong><span>${new Intl.DateTimeFormat('id-ID', { dateStyle: 'medium', timeStyle: 'short', timeZone: 'Asia/Jakarta' }).format(new Date(row.created_at))} WIB</span><p>${escapeHtml(row.bank_name || '-')} · ${escapeHtml(row.account_number || '-')}<br>${escapeHtml(row.account_name || '-')}</p>`;
+    if (row.review_note) { const note = document.createElement('p'); note.textContent = 'Catatan: ' + row.review_note; card.appendChild(note); }
+    if (row.status === 'pending' && row.requested_by !== state.admin.id) {
+      const label = document.createElement('label');
+      label.htmlFor = 'withdrawal-review-' + row.id;
+      label.textContent = 'Referensi transfer / alasan penolakan';
+      const input = document.createElement('input');
+      input.id = label.htmlFor;
+      input.className = 'form-input';
+      input.maxLength = 500;
+      const actions = document.createElement('div');
+      actions.className = 'promo-actions';
+      const status = document.createElement('p');
+      status.setAttribute('role', 'status');
+      for (const [result, text] of [['paid', 'Tandai sudah cair'], ['rejected', 'Tolak pengajuan']]) {
+        const button = document.createElement('button');
+        button.type = 'button';
+        button.className = 'btn-outline';
+        button.textContent = text;
+        button.onclick = () => {
+          if (!input.value.trim()) { status.textContent = 'Isi referensi transfer atau alasan penolakan.'; input.focus(); return; }
+          showConfirm(text, result === 'paid' ? 'Pastikan transfer sudah dilakukan. Saldo admin akan dikurangi sebesar ' + formatRupiah(row.amount) + '.' : 'Tolak pengajuan ini? Saldo admin tetap tersedia.', async () => {
+            actions.querySelectorAll('button').forEach(btn => { btn.disabled = true; });
+            try {
+              const db = await getSupabase();
+              const { error } = await db.rpc('workplace_review_withdrawal', { p_id: row.id, p_status: result, p_note: input.value.trim() });
+              if (error) throw error;
+              await loadData();
+            } catch (error) { status.textContent = error.message || 'Gagal memproses pengajuan.'; actions.querySelectorAll('button').forEach(btn => { btn.disabled = false; }); }
+          });
+        };
+        actions.appendChild(button);
+      }
+      card.append(label, input, actions, status);
+    } else if (row.status === 'pending') {
+      const note = document.createElement('p');
+      note.textContent = 'Pengajuan sendiri ditinjau pengelola lain.';
+      card.appendChild(note);
+    }
+    list.appendChild(card);
+  }
+}
+
 function renderHome() {
   // Saldo
   const balance = state.admin?.admin_balance || 0;
   document.getElementById('home-admin-balance').textContent = formatRupiah(balance);
   document.getElementById('balance-title').textContent = `Saldo Admin ${profileNickname(state.admin)}`;
+  renderWithdrawalButton();
 
   // Stat Counters
   const pendingCount = state.orders.filter(o => o.status === 'pending').length;
@@ -1801,7 +1945,11 @@ async function renderViolations() {
       const { error } = await db.from('workplace_violations').insert({
         admin_id: document.getElementById('violation-admin').value,
         violation_date: date.value, description,
-        resolved: document.getElementById('violation-status').value === 'true'
+        resolved: document.getElementById('violation-status').value === 'true',
+        sanction_days: Number(document.getElementById('violation-days').value),
+        block_orders: document.getElementById('violation-block-orders').checked,
+        freeze_balance: document.getElementById('violation-freeze-balance').checked,
+        block_withdrawals: document.getElementById('violation-block-withdrawals').checked
       });
       if (error) throw error;
       document.getElementById('violation-description').value = '';
@@ -1822,10 +1970,16 @@ async function renderViolations() {
       const card = document.createElement('div');
       card.className = 'entry-card';
       card.innerHTML = `<strong>${escapeHtml(admin?.name || 'Admin')}</strong><span>${escapeHtml(row.violation_date)}</span><p style="white-space:pre-wrap;overflow-wrap:anywhere;">${escapeHtml(row.description)}</p><span class="status-badge">${row.resolved ? 'Selesai' : 'Belum selesai'}</span>`;
+      const detail = document.createElement('p');
+      const sanctions = [row.block_orders && 'Tidak dapat mengambil order', row.freeze_balance && 'Rekening dibekukan', row.block_withdrawals && 'Tidak dapat mengajukan pencairan'].filter(Boolean);
+      const ends = new Date(Date.parse(row.violation_date + 'T00:00:00+07:00') + row.sanction_days * 86400000);
+      const endLabel = row.sanction_days ? new Intl.DateTimeFormat('id-ID', { dateStyle: 'medium', timeStyle: 'short', timeZone: 'Asia/Jakarta' }).format(ends) : '';
+      detail.textContent = row.sanction_days ? `${row.sanction_days} hari · ${sanctions.join(' · ')}. ${row.resolved ? 'Sanksi diakhiri.' : 'Berakhir ' + endLabel + ' WIB.'}` : 'Tanpa sanksi';
+      card.appendChild(detail);
       const button = document.createElement('button');
       button.type = 'button';
       button.className = 'btn-outline';
-      button.textContent = row.resolved ? 'Tandai belum selesai' : 'Tandai selesai';
+      button.textContent = row.resolved ? 'Tandai belum selesai' : 'Selesaikan dan akhiri sanksi';
       button.onclick = async () => {
         if (!isFounder(state.admin)) return;
         button.disabled = true;
@@ -2264,6 +2418,8 @@ function closeDrawer() {
 // Event Listeners & User Actions
 // ========================================================
 function setupEventListeners() {
+  document.getElementById('btn-withdraw-balance')?.addEventListener('click', openWithdrawalForm);
+  document.getElementById('withdrawal-form')?.addEventListener('submit', submitWithdrawal);
   document.getElementById('btn-toggle-password')?.addEventListener('click', () => {
     const input = document.getElementById('login-password');
     const button = document.getElementById('btn-toggle-password');
@@ -2541,6 +2697,8 @@ function setupEventListeners() {
     // Claim Order Button
     const claimBtn = e.target.closest('.btn-claim-order');
     if (claimBtn) {
+      const blockedUntil = activeSanction('orders');
+      if (blockedUntil) { showNotice('Anda tidak dapat mengambil order selama sanksi aktif.'); return; }
       const orderId = parseInt(claimBtn.dataset.orderId, 10);
       showConfirm('Konfirmasi Ambil Pesanan', 'Apakah Anda yakin ingin mengambil pesanan ini untuk dikerjakan?', async () => {
         try {

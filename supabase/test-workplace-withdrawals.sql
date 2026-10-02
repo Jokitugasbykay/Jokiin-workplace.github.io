@@ -1,0 +1,56 @@
+begin;
+do $$
+declare target uuid; manager uuid; req uuid; wallet numeric; rejected boolean; block_id uuid; order_id bigint;
+begin
+ select id into target from public.profiles where role='admin' and workplace_role='admin' order by name limit 1;
+ select id into manager from public.profiles where workplace_role='supervisor' limit 1;
+ assert target is not null and manager is not null;
+ select admin_balance into wallet from public.profiles where id=target;
+ insert into private.admin_balance_adjustments(admin_id,changed_by,delta,balance_before,balance_after)
+ values(target,manager,70000,wallet,wallet+70000);
+ perform public.refresh_global_admin_balance();
+ perform set_config('request.jwt.claim.sub',target::text,true);
+ rejected := false;
+ begin perform public.workplace_request_withdrawal(49000,'Test bank','000000','Test'); exception when others then rejected:=true; end;
+ assert rejected,'Amount below minimum accepted';
+ req := public.workplace_request_withdrawal(70000,'Test bank','000000','Test');
+ rejected := false;
+ begin perform public.workplace_request_withdrawal(50000,'Test bank','000000','Test'); exception when others then rejected:=true; end;
+ assert rejected,'Duplicate pending accepted';
+ perform set_config('request.jwt.claim.sub',manager::text,true);
+ perform public.workplace_review_withdrawal(req,'rejected','Test rejection');
+ perform set_config('request.jwt.claim.sub',target::text,true);
+ req := public.workplace_request_withdrawal(70000,'Test bank','000000','Test');
+ insert into public.workplace_violations(admin_id,violation_date,description,sanction_days,block_orders,freeze_balance,block_withdrawals,created_by)
+ values(target,(now() at time zone 'Asia/Jakarta')::date,'Test sanction',2,true,true,true,manager) returning id into block_id;
+ assert private.workplace_sanction_until(target,'orders') is not null,'Order sanction missing';
+ rejected := false;
+ begin perform public.workplace_request_withdrawal(50000,'Test bank','000000','Test'); exception when insufficient_privilege then rejected:=true; end;
+ assert rejected,'Sanctioned request accepted';
+ insert into public.orders(order_code,status) values('TEST-SANCTION-'||gen_random_uuid()::text,'cancelled') returning id into order_id;
+ perform set_config('request.jwt.claim.sub',manager::text,true);
+ update public.orders set status='pending' where id=order_id;
+ perform set_config('request.jwt.claim.sub',target::text,true);
+ rejected := false;
+ begin update public.orders set status='processing',assigned_to=target,assigned_at=now() where id=order_id; exception when insufficient_privilege then rejected:=true; end;
+ assert rejected,'Sanctioned claim accepted';
+ rejected := false;
+ begin update public.profiles set admin_balance=admin_balance-1 where id=target; exception when insufficient_privilege then rejected:=true; end;
+ assert rejected,'Frozen balance decrease accepted';
+ perform set_config('request.jwt.claim.sub',manager::text,true);
+ rejected := false;
+ begin perform public.workplace_review_withdrawal(req,'paid','Test transfer'); exception when insufficient_privilege then rejected:=true; end;
+ assert rejected,'Frozen payout accepted';
+ update public.workplace_violations set resolved=true where id=block_id;
+ assert private.workplace_sanction_until(target,'balance') is null,'Resolved sanction still active';
+ select admin_balance into wallet from public.profiles where id=target;
+ perform public.workplace_review_withdrawal(req,'paid','Test transfer');
+ assert (select status='paid' from public.admin_withdrawals where id=req),'Payment status missing';
+ assert (select admin_balance=wallet-70000 from public.profiles where id=target),'Payout balance incorrect';
+ rejected := false;
+ begin perform public.workplace_review_withdrawal(req,'paid','Test duplicate'); exception when others then rejected:=true; end;
+ assert rejected,'Duplicate payment accepted';
+ update public.workplace_violations set resolved=false,violation_date=(now() at time zone 'Asia/Jakarta')::date-3 where id=block_id;
+ assert private.workplace_sanction_until(target,'orders') is null,'Expired sanction still active';
+end $$;
+rollback;
