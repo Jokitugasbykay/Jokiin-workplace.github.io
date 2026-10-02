@@ -1142,10 +1142,12 @@ async function openCheckoutDetail(checkoutId, button) {
   } finally { if (button) button.disabled = false; }
 }
 
+let detailReturnFocus = null;
 function openOrderDetail(orderId, checkout = null) {
   if (checkout && !canViewCheckoutTask(state.admin)) return;
   const order = checkout || state.orders.find(o => o.id === orderId);
   if (!order) return;
+  detailReturnFocus = document.activeElement;
 
   document.getElementById('detail-order-code').textContent = order.order_code || '#' + order.id;
   document.getElementById('detail-customer-name').textContent = getCustomerName(order);
@@ -1156,7 +1158,7 @@ function openOrderDetail(orderId, checkout = null) {
   const waContainer = document.getElementById('detail-customer-wa');
   const waUrl = getWhatsAppUrl(rawWa);
   if (waUrl) {
-    waContainer.innerHTML = `<a href="${waUrl}" target="_blank" rel="noopener" style="color: #12845E; font-weight: 700; text-decoration: none;">Chat WhatsApp (${rawWa})</a>`;
+    waContainer.innerHTML = `<a href="${waUrl}" target="_blank" rel="noopener" class="detail-whatsapp"><span>Chat via WhatsApp</span><small>${escapeHtml(rawWa)}</small></a>`;
   } else {
     waContainer.textContent = rawWa || '-';
   }
@@ -1164,7 +1166,11 @@ function openOrderDetail(orderId, checkout = null) {
   // Summary
   document.getElementById('detail-order-total').textContent = formatRupiah(order.total_price);
   document.getElementById('detail-order-status-badge').innerHTML = renderStatusBadge(order.status || 'pending');
-  document.getElementById('detail-order-payment').textContent = `${order.payment_method || '-'} • ${order.payment_status || '-'}`;
+  const paymentStatus = String(order.payment_status || '').toUpperCase();
+  const paymentLabel = { PAID: 'Sudah dibayar', PENDING: 'Menunggu pembayaran', CANCELED: 'Pembayaran dibatalkan', CANCELLED: 'Pembayaran dibatalkan' }[paymentStatus] || order.payment_status || 'Status pembayaran belum tersedia';
+  const paymentElement = document.getElementById('detail-order-payment');
+  paymentElement.textContent = paymentLabel + (order.payment_method ? ` · ${order.payment_method}` : '');
+  paymentElement.className = paymentStatus === 'PENDING' ? 'payment-pending' : paymentStatus === 'PAID' ? 'payment-paid' : 'payment-other';
   document.getElementById('detail-order-date').textContent = formatDate(order.created_at);
 
   // Estimate
@@ -1196,16 +1202,11 @@ function openOrderDetail(orderId, checkout = null) {
   } else {
     items.forEach(it => {
       const row = document.createElement('div');
-      row.className = 'modal-row';
-      row.style.background = 'var(--bg-variant)';
-      row.style.padding = '8px 12px';
-      row.style.borderRadius = '10px';
+      row.className = 'detail-item-row';
       row.innerHTML = `
-        <div>
-          <div style="font-weight: 600;">${escapeHtml(it.name || 'Item')}</div>
-          <div style="font-size: 11px; color: var(--ink-secondary);">Jumlah: ${it.quantity || 1}</div>
-        </div>
-        <div style="font-weight: 700; color: var(--accent-blue);">${formatRupiah(it.price ?? it.unit_price)}</div>
+        <strong>${escapeHtml(it.name || 'Item')}</strong>
+        <span>${escapeHtml(String(it.quantity || 1))}</span>
+        <span>${formatRupiah(it.price ?? it.unit_price)}</span>
       `;
       itemsContainer.appendChild(row);
     });
@@ -1263,6 +1264,7 @@ function openOrderDetail(orderId, checkout = null) {
   }
 
   openModal('modal-order-detail');
+  document.getElementById('modal-order-detail').querySelector?.('.modal-close-btn')?.focus();
 }
 
 function setupEstimateButtons(order, maxHours) {
@@ -2317,6 +2319,7 @@ function openModal(modalId) {
 function closeModal(modalId) {
   const modal = document.getElementById(modalId);
   if (modal) modal.classList.remove('open');
+  if (modalId === 'modal-order-detail') detailReturnFocus?.focus?.();
   if (!restoringActivity && window.history?.state?.modal === modalId) window.history.back();
 }
 
@@ -2572,6 +2575,16 @@ function setupEventListeners() {
     document.getElementById('btn-open-drawer').focus();
   });
   document.addEventListener('keydown', e => {
+    const detail = document.getElementById('modal-order-detail');
+    if (detail.classList.contains('open')) {
+      if (e.key === 'Escape') { e.preventDefault(); closeModal('modal-order-detail'); return; }
+      if (e.key === 'Tab') {
+        const controls = [...detail.querySelectorAll('button:not([disabled]),a[href],input:not([disabled])')].filter(el => el.getClientRects().length);
+        const first = controls[0], last = controls[controls.length - 1];
+        if (e.shiftKey && document.activeElement === first) { e.preventDefault(); last?.focus(); }
+        else if (!e.shiftKey && document.activeElement === last) { e.preventDefault(); first?.focus(); }
+      }
+    }
     if (e.key === 'Escape' && document.getElementById('drawer-panel').classList.contains('open')) {
       closeDrawer();
       document.getElementById('btn-open-drawer').focus();

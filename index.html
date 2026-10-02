@@ -18,7 +18,7 @@
   <meta name="theme-color" content="#000000">
 
   <!-- Stylesheet -->
-  <link rel="stylesheet" href="./css/style.css?v=33">
+  <link rel="stylesheet" href="./css/style.css?v=36">
 
   <!-- Supabase JS Library -->
   <script defer src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
@@ -862,11 +862,11 @@
 
   <!-- Order Detail Modal -->
   <div id="modal-order-detail" class="modal-overlay">
-    <div class="modal-sheet">
-      <div class="modal-header">
-        <div style="display: flex; align-items: center; gap: 8px;">
-          <img src="./assets/logo-jokiin.png" alt="Logo" style="width: 24px; height: 24px; border-radius: 50%;">
-          <span style="font-size: 13px; font-weight: 700; color: var(--accent-blue);">Detail pesanan</span>
+    <div class="modal-sheet" role="dialog" aria-modal="true" aria-labelledby="detail-modal-title" aria-describedby="detail-order-code">
+      <div class="modal-header detail-header">
+        <div>
+          <h2 id="detail-modal-title">Detail pesanan</h2>
+          <p id="detail-order-code">#0000</p>
         </div>
         <button class="modal-close-btn" data-close-modal="modal-order-detail" aria-label="Tutup">
           <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
@@ -875,61 +875,49 @@
           </svg>
         </button>
       </div>
-      <h2 id="detail-order-code" class="modal-title">#0000</h2>
-
-      <div class="modal-section">
-        <span class="modal-section-title">Pelanggan</span>
-        <div class="modal-row"><span class="modal-row-label">Nama</span><span id="detail-customer-name" class="modal-row-value">-</span></div>
-        <div class="modal-row"><span class="modal-row-label">Email</span><span id="detail-customer-email" class="modal-row-value">-</span></div>
-        <div class="modal-row"><span class="modal-row-label">WhatsApp</span><span id="detail-customer-wa" class="modal-row-value">-</span></div>
-      </div>
-
-      <div class="modal-section">
-        <span class="modal-section-title">Ringkasan Pesanan</span>
-        <div class="modal-row"><span class="modal-row-label">Total</span><span id="detail-order-total" class="modal-row-value" style="font-size: 16px; font-weight: 800;">Rp0</span></div>
-        <div class="modal-row">
-          <span class="modal-row-label">Status kerja</span>
-          <span id="detail-order-status-badge"></span>
+      <div class="detail-body">
+        <div class="detail-main">
+          <section class="detail-task-section">
+            <h3>Detail tugas</h3>
+            <div class="detail-field"><span class="detail-label">Judul tugas</span><p id="detail-task-title"></p></div>
+            <div class="detail-field"><span class="detail-label">Deadline pelanggan</span><p id="detail-task-deadline">-</p></div>
+            <div class="detail-field"><span class="detail-label">Catatan pelanggan</span><p id="detail-task-notes"></p></div>
+            <div id="detail-task-drive-links"></div>
+          </section>
+          <section class="detail-items-section">
+            <h3>Item pesanan</h3>
+            <div class="detail-item-head" aria-hidden="true"><span>Nama item</span><span>Jumlah</span><span>Harga satuan</span></div>
+            <div id="detail-order-items"></div>
+          </section>
         </div>
-        <div class="modal-row"><span class="modal-row-label">Pembayaran</span><span id="detail-order-payment" class="modal-row-value">-</span></div>
-        <div class="modal-row"><span class="modal-row-label">Dibuat</span><span id="detail-order-date" class="modal-row-value">-</span></div>
+        <aside class="detail-summary" aria-label="Ringkasan pesanan">
+          <section class="detail-total-section">
+            <span class="detail-label">Total pesanan</span><strong id="detail-order-total">Rp0</strong>
+            <p id="detail-order-payment"></p>
+            <div class="detail-field"><span class="detail-label">Status pengerjaan</span><span id="detail-order-status-badge"></span></div>
+            <div class="detail-field"><span class="detail-label">Tanggal pesanan</span><p id="detail-order-date">-</p></div>
+          </section>
+          <section class="detail-contact-section">
+            <h3>Pelanggan</h3><strong id="detail-customer-name">-</strong><p id="detail-customer-email">-</p><div id="detail-customer-wa"></div>
+          </section>
+          <section class="detail-estimate-section">
+            <h3>Estimasi selesai</h3><p id="detail-order-deadline">-</p>
+            <p id="detail-deadline-hint">Maksimal estimasi: <span id="detail-max-estimate-label">4 hari</span></p>
+            <div id="detail-estimate-editor" style="display: none; flex-direction: column; gap: 8px; margin-top: 8px;">
+              <div style="display: flex; gap: 6px;" id="estimate-buttons-container"></div>
+              <div style="display: flex; gap: 8px; margin-top: 4px;">
+                <button id="btn-cancel-estimate" class="btn-outline" style="flex: 1;">Batal</button>
+                <button id="btn-save-estimate" class="btn-primary" style="flex: 1;">Simpan</button>
+              </div>
+            </div>
+            <button id="btn-open-estimate-edit" class="btn-outline" style="margin-top: 6px; display: none;">Atur estimasi</button>
+          </section>
+        </aside>
       </div>
-
-      <div class="modal-section">
-        <span class="modal-section-title">Estimasi Selesai</span>
-        <span id="detail-order-deadline" style="font-weight: 700; font-size: 15px;">-</span>
-        <p id="detail-deadline-hint" style="font-size: 12px; color: var(--ink-secondary);">Batas dari pelanggan: <span id="detail-max-estimate-label">4 hari</span></p>
-
-        <div id="detail-estimate-editor" style="display: none; flex-direction: column; gap: 8px; margin-top: 8px;">
-          <div style="display: flex; gap: 6px;" id="estimate-buttons-container"></div>
-          <div style="display: flex; gap: 8px; margin-top: 4px;">
-            <button id="btn-cancel-estimate" class="btn-outline" style="flex: 1;">Batal</button>
-            <button id="btn-save-estimate" class="btn-primary" style="flex: 1;">Simpan</button>
-          </div>
-        </div>
-        <button id="btn-open-estimate-edit" class="btn-outline" style="margin-top: 6px; display: none;">Atur estimasi</button>
+      <div class="detail-footer">
+        <button id="btn-order-create-invoice" class="btn-primary" style="display: none;">Buat / cetak invoice</button>
+        <button class="btn-outline" data-close-modal="modal-order-detail">Tutup</button>
       </div>
-
-      <div class="modal-section">
-        <span class="modal-section-title">Item Pesanan</span>
-        <div id="detail-order-items" style="display: flex; flex-direction: column; gap: 8px;"></div>
-      </div>
-
-      <div class="modal-section">
-        <span class="modal-section-title">Detail Tugas</span>
-        <div class="modal-row"><span class="modal-row-label">Judul</span><span id="detail-task-title" class="modal-row-value">-</span></div>
-        <div style="display: flex; flex-direction: column; gap: 2px;">
-          <span class="modal-row-label">Catatan</span>
-          <p id="detail-task-notes" style="font-size: 13px; color: var(--ink); background: var(--bg-variant); padding: 10px; border-radius: 12px; margin-top: 4px;"></p>
-        </div>
-        <div class="modal-row" style="margin-top: 6px;"><span class="modal-row-label">Deadline dari pelanggan</span><span id="detail-task-deadline" class="modal-row-value">-</span></div>
-        <div id="detail-task-drive-links" style="display: flex; flex-direction: column; gap: 6px; margin-top: 8px;"></div>
-      </div>
-
-      <button id="btn-order-create-invoice" class="btn-primary" style="margin-top: 10px; background: #087C5B; display: none;">
-        📄 Buat / Cetak Invoice (Paid)
-      </button>
-      <button class="btn-secondary" data-close-modal="modal-order-detail" style="margin-top: 8px;">Tutup</button>
     </div>
   </div>
 
@@ -1084,7 +1072,7 @@
   </audio>
 
   <!-- Application Main Script (Universal script for file://, localhost, & cloud hosting) -->
-  <script src="./js/app.js?v=35"></script>
+  <script src="./js/app.js?v=36"></script>
 
   <!-- Failsafe Watchdog & Service Worker -->
   <script>
