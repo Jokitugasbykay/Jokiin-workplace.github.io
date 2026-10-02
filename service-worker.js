@@ -1,4 +1,4 @@
-const CACHE_NAME = 'jokiin-admin-v30';
+const CACHE_NAME = 'jokiin-admin-v31';
 const ASSETS_TO_CACHE = [
   './',
   './index.html',

@@ -18,7 +18,7 @@
   <meta name="theme-color" content="#000000">
 
   <!-- Stylesheet -->
-  <link rel="stylesheet" href="./css/style.css?v=30">
+  <link rel="stylesheet" href="./css/style.css?v=31">
 
   <!-- Supabase JS Library -->
   <script defer src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
@@ -517,6 +517,19 @@
           </div>
         </section>
 
+        <section id="view-violations" class="tab-view" style="display:none;">
+          <h2 class="section-title">Pelanggaran admin</h2>
+          <form id="violation-form" class="entry-card">
+            <div class="form-group"><label class="form-label" for="violation-admin">Admin</label><select id="violation-admin" class="form-input" required></select></div>
+            <div class="form-group"><label class="form-label" for="violation-date">Tanggal</label><input id="violation-date" class="form-input" type="date" required></div>
+            <div class="form-group"><label class="form-label" for="violation-description">Keterangan</label><textarea id="violation-description" class="form-input" rows="3" maxlength="2000" required></textarea></div>
+            <div class="form-group"><label class="form-label" for="violation-status">Status penyelesaian</label><select id="violation-status" class="form-input"><option value="false">Belum selesai</option><option value="true">Selesai</option></select></div>
+            <button class="btn-primary" type="submit">Simpan pelanggaran</button>
+            <p id="violation-form-status" role="status"></p>
+          </form>
+          <div id="violations-list" style="display:grid;gap:12px;margin-top:16px;" aria-live="polite"></div>
+        </section>
+
         <!-- View: Pengguna (Users) -->
         <section id="view-users" class="tab-view" style="display: none;">
           <div id="users-count-label" style="font-size: 13px; color: var(--ink-secondary); margin-bottom: 6px;">Data dari server • 0 pengguna</div>
@@ -793,6 +806,9 @@
         </span>
         <span>Invoice</span>
       </button>
+      <button id="drawer-tab-violations" class="drawer-item" data-tab="violations" style="display:none;">
+        <span class="drawer-item-icon" aria-hidden="true">⚑</span><span>Pelanggaran</span>
+      </button>
     </nav>
     <div class="drawer-footer">
       <button id="btn-drawer-refresh" class="btn-secondary" style="display: flex; align-items: center; justify-content: center; gap: 8px;">
@@ -1021,7 +1037,7 @@
   </audio>
 
   <!-- Application Main Script (Universal script for file://, localhost, & cloud hosting) -->
-  <script src="./js/app.js?v=30"></script>
+  <script src="./js/app.js?v=31"></script>
 
   <!-- Failsafe Watchdog & Service Worker -->
   <script>

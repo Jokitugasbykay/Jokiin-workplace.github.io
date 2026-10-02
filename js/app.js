@@ -53,11 +53,22 @@ const USER_MANAGEMENT_ADMIN_IDS = new Set([
 ]);
 
 function isOrderSupervisor(profile) {
-  return profile && profile.role === 'admin' && USER_MANAGEMENT_ADMIN_IDS.has(profile.id);
+  return profile?.role === 'admin' && ['founder', 'supervisor'].includes(workplaceRole(profile));
 }
 
+function workplaceRole(profile) {
+  if (profile?.role !== 'admin') return 'user';
+  return profile.workplace_role || (profile.id === '92e7a1cb-2136-496a-913b-00cd402c04f5' ? 'founder' : USER_MANAGEMENT_ADMIN_IDS.has(profile.id) ? 'supervisor' : 'admin');
+}
+
+function workplaceRoleLabel(profile) {
+  return { founder: 'Founder', supervisor: 'Supervisor', admin: 'Admin', user: 'User' }[workplaceRole(profile)];
+}
+
+function isFounder(profile) { return workplaceRole(profile) === 'founder'; }
+
 function canManageAdminBalances(profile) {
-  return profile && profile.role === 'admin' && USER_MANAGEMENT_ADMIN_IDS.has(profile.id);
+  return isOrderSupervisor(profile);
 }
 
 function canAccessPromos(profile) {
@@ -236,9 +247,9 @@ function showAppShell() {
   const nickname = profileNickname(state.admin);
   document.getElementById('welcome-admin-name').textContent = `Halo, Kak ${nickname}`;
   document.getElementById('drawer-admin-name').textContent = nickname;
-  document.getElementById('drawer-admin-role').textContent = isOrderSupervisor(state.admin) ? 'Supervisor' : 'Admin';
+  document.getElementById('drawer-admin-role').textContent = workplaceRoleLabel(state.admin);
   document.getElementById('header-account-name').textContent = nickname;
-  document.getElementById('header-account-role').textContent = isOrderSupervisor(state.admin) ? 'Supervisor' : 'Admin';
+  document.getElementById('header-account-role').textContent = workplaceRoleLabel(state.admin);
   const headerDate = document.getElementById('header-date');
   headerDate.textContent = new Intl.DateTimeFormat('id-ID', { day: 'numeric', month: 'long', year: 'numeric', timeZone: 'Asia/Jakarta' }).format(new Date());
   headerDate.dateTime = new Date().toISOString();
@@ -262,6 +273,8 @@ function showAppShell() {
   const isSupervisor = isOrderSupervisor(state.admin);
   document.getElementById('drawer-tab-performance').style.display = isSupervisor ? 'flex' : 'none';
   document.getElementById('drawer-tab-users').style.display = isSupervisor ? 'flex' : 'none';
+
+  document.getElementById('drawer-tab-violations').style.display = isFounder(state.admin) ? 'flex' : 'none';
 
   // Initialize active tab and bottom nav pill
   const notificationTab = new URLSearchParams(window.location.search).get('tab');
@@ -503,6 +516,7 @@ window.addEventListener('popstate', restoreActivity);
 
 let activePageTransition = null;
 function switchTab(tabName, forcedDirection = null) {
+  if (tabName === 'violations' && !isFounder(state.admin)) return;
   activePageTransition?.();
   const reduced = window.matchMedia?.('(prefers-reduced-motion: reduce)').matches;
   const previous = document.getElementById('view-' + state.activeTab);
@@ -537,6 +551,7 @@ function switchTab(tabName, forcedDirection = null) {
 }
 
 function performSwitchTab(tabName, forcedDirection = null) {
+  if (tabName === 'violations' && !isFounder(state.admin)) return;
   rememberActivity();
   const prevTab = state.activeTab;
   let direction = forcedDirection;
@@ -551,7 +566,7 @@ function performSwitchTab(tabName, forcedDirection = null) {
 
   state.activeTab = tabName;
   if (!activityHistoryReady || prevTab !== tabName) saveActivity();
-  const pageNames = { home: 'Beranda', orders: 'Pesanan', services: 'Layanan', payments: 'Pembayaran', reviews: 'Ulasan', performance: 'Performa tim', products: 'Produk & promo', 'task-files': 'Folder lampiran', users: 'Daftar pengguna', invoice: 'Invoice' };
+  const pageNames = { home: 'Beranda', orders: 'Pesanan', services: 'Layanan', payments: 'Pembayaran', reviews: 'Ulasan', performance: 'Performa tim', products: 'Produk & promo', 'task-files': 'Folder lampiran', users: 'Daftar pengguna', invoice: 'Invoice', violations: 'Pelanggaran' };
   document.getElementById('header-page-title').textContent = pageNames[tabName] || 'Workplace';
   document.querySelector('.welcome-card').style.display = tabName === 'home' ? 'block' : 'none';
   state.searchQuery = '';
@@ -579,7 +594,7 @@ function performSwitchTab(tabName, forcedDirection = null) {
   }
 
   // Hide Bottom Navigation on secondary tabs: ulasan, produk & promo, folder lampiran, peforma tim, daftar pengguna, invoice
-  const HIDE_NAVBAR_TABS = ['reviews', 'products', 'task-files', 'performance', 'users', 'invoice'];
+  const HIDE_NAVBAR_TABS = ['reviews', 'products', 'task-files', 'performance', 'users', 'invoice', 'violations'];
   const shouldHideNav = HIDE_NAVBAR_TABS.includes(tabName);
 
   const bottomNavContainer = document.querySelector('.bottom-nav-container');
@@ -669,6 +684,9 @@ function renderActiveTab() {
       break;
     case 'users':
       renderUsers();
+      break;
+    case 'violations':
+      renderViolations();
       break;
     case 'invoice':
       renderInvoice();
@@ -1761,6 +1779,68 @@ function renderTaskFiles() {
 // ========================================================
 // Tab: Pengguna (Users) - Supervisor Only
 // ========================================================
+async function renderViolations() {
+  if (!isFounder(state.admin)) return;
+  const list = document.getElementById('violations-list');
+  const form = document.getElementById('violation-form');
+  const admins = state.profiles.filter(p => p.role === 'admin');
+  document.getElementById('violation-admin').innerHTML = admins.map(p =>
+    `<option value="${escapeHtml(p.id)}">${escapeHtml(p.name || 'Admin')}</option>`).join('');
+  const date = document.getElementById('violation-date');
+  if (!date.value) date.value = new Intl.DateTimeFormat('en-CA', { timeZone: 'Asia/Jakarta' }).format(new Date());
+  form.onsubmit = async event => {
+    event.preventDefault();
+    if (!isFounder(state.admin) || !form.reportValidity()) return;
+    const button = form.querySelector('button');
+    const status = document.getElementById('violation-form-status');
+    const description = document.getElementById('violation-description').value.trim();
+    if (!description) { status.textContent = 'Isi keterangan pelanggaran.'; return; }
+    button.disabled = true;
+    try {
+      const db = await getSupabase();
+      const { error } = await db.from('workplace_violations').insert({
+        admin_id: document.getElementById('violation-admin').value,
+        violation_date: date.value, description,
+        resolved: document.getElementById('violation-status').value === 'true'
+      });
+      if (error) throw error;
+      document.getElementById('violation-description').value = '';
+      status.textContent = 'Pelanggaran tersimpan.';
+      await renderViolations();
+    } catch (error) { status.textContent = error.message || 'Gagal menyimpan pelanggaran.'; }
+    finally { button.disabled = false; }
+  };
+  list.textContent = 'Memuat pelanggaran…';
+  try {
+    const db = await getSupabase();
+    const { data, error } = await db.from('workplace_violations').select('*').order('violation_date', { ascending: false }).order('created_at', { ascending: false });
+    if (error) throw error;
+    list.replaceChildren();
+    if (!data.length) list.textContent = 'Belum ada catatan pelanggaran.';
+    for (const row of data) {
+      const admin = admins.find(p => p.id === row.admin_id);
+      const card = document.createElement('div');
+      card.className = 'entry-card';
+      card.innerHTML = `<strong>${escapeHtml(admin?.name || 'Admin')}</strong><span>${escapeHtml(row.violation_date)}</span><p style="white-space:pre-wrap;overflow-wrap:anywhere;">${escapeHtml(row.description)}</p><span class="status-badge">${row.resolved ? 'Selesai' : 'Belum selesai'}</span>`;
+      const button = document.createElement('button');
+      button.type = 'button';
+      button.className = 'btn-outline';
+      button.textContent = row.resolved ? 'Tandai belum selesai' : 'Tandai selesai';
+      button.onclick = async () => {
+        if (!isFounder(state.admin)) return;
+        button.disabled = true;
+        try {
+          const { error } = await db.from('workplace_violations').update({ resolved: !row.resolved }).eq('id', row.id);
+          if (error) throw error;
+          await renderViolations();
+        } catch (error) { showNotice(error.message || 'Gagal mengubah status.'); button.disabled = false; }
+      };
+      card.appendChild(button);
+      list.appendChild(card);
+    }
+  } catch (error) { list.textContent = error.message || 'Gagal memuat pelanggaran.'; }
+}
+
 function renderUsers() {
   const container = document.getElementById('users-list-container');
   container.innerHTML = '';
@@ -1769,6 +1849,8 @@ function renderUsers() {
   const filtered = state.profiles.filter(p => {
     return (p.name || '').toLowerCase().includes(q) || (p.email || '').toLowerCase().includes(q);
   });
+  const ranks = { founder: 0, supervisor: 1, admin: 2, user: 3 };
+  filtered.sort((a, b) => ranks[workplaceRole(a)] - ranks[workplaceRole(b)]);
 
   document.getElementById('users-count-label').textContent = `Data dari server • ${filtered.length} pengguna`;
 
@@ -1778,7 +1860,7 @@ function renderUsers() {
     card.innerHTML = `
       <div style="display: flex; justify-content: space-between; align-items: center;">
         <h4 style="font-size: 15px; font-weight: 700;">${escapeHtml(p.name || 'Pengguna')}</h4>
-        <span class="status-badge ${p.role === 'admin' ? 'active' : 'pending'}">${p.role || 'user'}</span>
+        <span class="status-badge ${p.role === 'admin' ? 'active' : 'pending'}">${workplaceRoleLabel(p)}</span>
       </div>
       <a href="mailto:${escapeHtml(p.email || '')}" style="font-size: 13px; color: var(--accent-blue); text-decoration: none;">${escapeHtml(p.email || '-')}</a>
       <div style="font-size: 12px; color: var(--ink-secondary);">${escapeHtml(p.phone || 'Nomor telepon belum tersedia')}</div>
