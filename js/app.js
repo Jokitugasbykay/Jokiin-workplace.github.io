@@ -753,9 +753,25 @@ function openWithdrawalForm() {
   const amount = document.getElementById('withdrawal-amount');
   amount.max = Number(state.admin.admin_balance);
   amount.value = Number(state.admin.admin_balance);
-  document.getElementById('withdrawal-available').textContent = `Saldo tersedia ${formatRupiah(state.admin.admin_balance)}. Minimal pencairan Rp50.000; Anda dapat mencairkan seluruh saldo.`;
+  document.getElementById('withdrawal-owner').textContent = profileNickname(state.admin);
+  document.getElementById('withdrawal-balance').textContent = formatRupiah(state.admin.admin_balance);
+  document.getElementById('withdrawal-available').textContent = 'Minimal pencairan Rp50.000.';
+  document.querySelectorAll('[data-withdrawal-amount]').forEach(button => {
+    button.disabled = Number(button.dataset.withdrawalAmount) > Number(state.admin.admin_balance);
+  });
   document.getElementById('withdrawal-error').textContent = '';
+  updateWithdrawalAmount();
   openModal('modal-withdrawal');
+}
+
+function updateWithdrawalAmount() {
+  const amount = Number(document.getElementById('withdrawal-amount').value);
+  document.querySelectorAll('[data-withdrawal-amount]').forEach(button => {
+    const selected = Number(button.dataset.withdrawalAmount) === amount;
+    button.classList.toggle('selected', selected);
+    button.setAttribute('aria-pressed', String(selected));
+  });
+  document.getElementById('btn-submit-withdrawal').disabled = !document.getElementById('withdrawal-form').checkValidity() || Boolean(withdrawalReason());
 }
 
 async function submitWithdrawal(event) {
@@ -2420,6 +2436,15 @@ function closeDrawer() {
 function setupEventListeners() {
   document.getElementById('btn-withdraw-balance')?.addEventListener('click', openWithdrawalForm);
   document.getElementById('withdrawal-form')?.addEventListener('submit', submitWithdrawal);
+  document.getElementById('withdrawal-form')?.addEventListener('input', updateWithdrawalAmount);
+  document.querySelectorAll('[data-withdrawal-amount]').forEach(button => button.addEventListener('click', () => {
+    document.getElementById('withdrawal-amount').value = button.dataset.withdrawalAmount;
+    updateWithdrawalAmount();
+  }));
+  document.getElementById('btn-withdraw-all')?.addEventListener('click', () => {
+    document.getElementById('withdrawal-amount').value = Number(state.admin.admin_balance);
+    updateWithdrawalAmount();
+  });
   document.getElementById('btn-toggle-password')?.addEventListener('click', () => {
     const input = document.getElementById('login-password');
     const button = document.getElementById('btn-toggle-password');

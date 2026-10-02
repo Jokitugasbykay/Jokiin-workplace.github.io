@@ -18,7 +18,7 @@
   <meta name="theme-color" content="#000000">
 
   <!-- Stylesheet -->
-  <link rel="stylesheet" href="./css/style.css?v=32">
+  <link rel="stylesheet" href="./css/style.css?v=33">
 
   <!-- Supabase JS Library -->
   <script defer src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
@@ -973,13 +973,29 @@
   <!-- Promo Editor Modal -->
   <div id="modal-withdrawal" class="modal-overlay">
     <form id="withdrawal-form" class="modal-sheet" role="dialog" aria-modal="true" aria-labelledby="withdrawal-title">
-      <div class="modal-header"><h2 id="withdrawal-title" class="modal-title">Tarik saldo</h2><button class="modal-close-btn" type="button" data-close-modal="modal-withdrawal" aria-label="Tutup">×</button></div>
+      <div class="modal-header"><button class="modal-close-btn" type="button" data-close-modal="modal-withdrawal" aria-label="Kembali">‹</button><h2 id="withdrawal-title" class="modal-title">Tarik saldo</h2></div>
       <div class="modal-body">
-        <p id="withdrawal-available" class="section-help"></p>
-        <div class="form-group"><label class="form-label" for="withdrawal-amount">Nominal (Rp)</label><input id="withdrawal-amount" name="amount" type="number" inputmode="numeric" class="form-input" min="50000" step="1" required></div>
+        <div class="withdrawal-wallet">
+          <div class="withdrawal-wallet-owner"><svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" aria-hidden="true"><path d="M3 5h16v4H3zM3 9h18v11H3zM16 13h5v4h-5z"/></svg><strong id="withdrawal-owner"></strong></div>
+          <span>Saldo tersedia</span><strong id="withdrawal-balance"></strong>
+        </div>
+        <div class="withdrawal-presets" aria-label="Pilihan nominal pencairan">
+          <button type="button" data-withdrawal-amount="50000"><strong>50</strong> ribu</button>
+          <button type="button" data-withdrawal-amount="100000"><strong>100</strong> ribu</button>
+          <button type="button" data-withdrawal-amount="200000"><strong>200</strong> ribu</button>
+          <button type="button" data-withdrawal-amount="300000"><strong>300</strong> ribu</button>
+          <button type="button" data-withdrawal-amount="500000"><strong>500</strong> ribu</button>
+          <button type="button" data-withdrawal-amount="1000000"><strong>1</strong> juta</button>
+        </div>
+        <button id="btn-withdraw-all" type="button" class="withdrawal-all">Tarik semua saldo</button>
+        <div class="withdrawal-nominal"><label for="withdrawal-amount">Nominal</label><div><span aria-hidden="true">Rp</span><input id="withdrawal-amount" name="amount" type="number" inputmode="numeric" min="50000" step="1" required></div><p id="withdrawal-available" class="section-help"></p></div>
+        <fieldset class="withdrawal-destination"><legend>Rekening tujuan</legend>
         <div class="form-group"><label class="form-label" for="withdrawal-bank">Bank atau e-wallet</label><input id="withdrawal-bank" name="bank" class="form-input" maxlength="80" autocomplete="off" required></div>
         <div class="form-group"><label class="form-label" for="withdrawal-account">Nomor rekening / e-wallet</label><input id="withdrawal-account" name="account" type="text" inputmode="numeric" class="form-input" minlength="3" maxlength="50" autocomplete="off" required></div>
         <div class="form-group"><label class="form-label" for="withdrawal-name">Nama pemilik rekening</label><input id="withdrawal-name" name="account_name" class="form-input" maxlength="120" autocomplete="off" required></div>
+        </fieldset>
+      </div>
+      <div class="withdrawal-footer">
         <p id="withdrawal-error" role="alert" tabindex="-1"></p>
         <button id="btn-submit-withdrawal" type="submit" class="btn-primary">Ajukan pencairan</button>
       </div>
@@ -1068,7 +1084,7 @@
   </audio>
 
   <!-- Application Main Script (Universal script for file://, localhost, & cloud hosting) -->
-  <script src="./js/app.js?v=32"></script>
+  <script src="./js/app.js?v=33"></script>
 
   <!-- Failsafe Watchdog & Service Worker -->
   <script>
