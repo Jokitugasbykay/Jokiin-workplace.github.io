@@ -1668,7 +1668,7 @@ function renderPromoCampaigns() {
         </label>
       </div>
 
-      <div style="display: flex; gap: 8px; margin-top: 6px;">
+      <div class="promo-actions">
         <button class="btn-outline btn-edit-promo" data-promo-id="${promo.id}" style="flex: 1; height: 36px;">Edit Promo</button>
         ${isSupervisor ? `
           <button class="btn-outline btn-delete-promo" data-promo-id="${promo.id}" style="color: var(--balance-red); border-color: rgba(212,53,70,0.3); height: 36px;">Hapus</button>
