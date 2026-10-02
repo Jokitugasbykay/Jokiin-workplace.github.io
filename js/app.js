@@ -386,6 +386,7 @@ async function loadData() {
     const [
       ordersRes,
       paymentOrdersRes,
+      paidCheckoutsRes,
       servicesRes,
       paymentsRes,
       reviewsRes,
@@ -395,6 +396,7 @@ async function loadData() {
     ] = await Promise.all([
       supabase.from('orders').select('*').order('created_at', { ascending: false }),
       supabase.from('payment_orders').select('*').order('created_at', { ascending: false }).range(0, 99),
+      supabase.from('payment_orders').select('*').eq('payment_status', 'PAID').order('created_at', { ascending: false }).limit(3),
       supabase.from('services').select('*').order('id', { ascending: true }),
       supabase.from('payments').select('*').order('created_at', { ascending: false }),
       supabase.from('reviews').select('*').order('created_at', { ascending: false }),
@@ -404,7 +406,7 @@ async function loadData() {
     ]);
 
     const newOrders = ordersRes.data || [];
-    const newPaymentOrders = paymentOrdersRes.data || [];
+    const newPaymentOrders = [...new Map([...(paymentOrdersRes.data || []), ...(paidCheckoutsRes.data || [])].map(order => [order.id, order])).values()];
 
     let newlyArrived = 0;
     if (!ordersRes.error) newlyArrived += trackIncomingOrders(newOrders, 'orders');
@@ -856,6 +858,28 @@ function renderWithdrawals() {
   }
 }
 
+function isOrderPaid(order) {
+  return String(order.payment_status || '').toUpperCase() === 'PAID' || !!order.paid_at ||
+    state.payments.some(payment => payment.order_id === order.id && String(payment.status).toLowerCase() === 'paid') ||
+    state.paymentOrders.some(checkout => checkout.order_code && checkout.order_code === order.order_code &&
+      (String(checkout.payment_status).toUpperCase() === 'PAID' || checkout.paid_at));
+}
+
+function homePriorityOrders(orders, now = Date.now()) {
+  return orders.filter(order => {
+    if (['cancelled', 'canceled'].includes(String(order.status).toLowerCase()) ||
+        ['CANCELLED', 'CANCELED'].includes(String(order.payment_status).toUpperCase())) return false;
+    return isOrderPaid(order) || String(order.status || 'pending').toLowerCase() !== 'pending' ||
+      !!order.assigned_to || !(Date.parse(order.created_at) <= now - 24 * 60 * 60 * 1000);
+  }).sort((a, b) => Number(isOrderPaid(b)) - Number(isOrderPaid(a)) || Date.parse(b.created_at) - Date.parse(a.created_at));
+}
+
+function checkoutPaymentBadge(order) {
+  const status = String(order.payment_status || 'PENDING').toUpperCase();
+  const style = status === 'PAID' ? 'completed' : ['CANCELED', 'CANCELLED'].includes(status) ? 'cancelled' : 'pending';
+  return `<span class="status-badge ${style}">${escapeHtml(status)}</span>`;
+}
+
 function renderHome() {
   // Saldo
   const balance = state.admin?.admin_balance || 0;
@@ -864,10 +888,11 @@ function renderHome() {
   renderWithdrawalButton();
 
   // Stat Counters
-  const pendingCount = state.orders.filter(o => o.status === 'pending').length;
+  const homeOrders = homePriorityOrders(state.orders);
+  const pendingCount = homeOrders.filter(o => o.status === 'pending').length;
   const processingCount = state.orders.filter(o => o.status === 'processing').length;
   const completedCount = state.orders.filter(o => o.status === 'completed').length;
-  const waitingPaymentCount = state.orders.filter(o => (o.payment_status || '').toLowerCase() === 'pending').length;
+  const waitingPaymentCount = homeOrders.filter(o => !isOrderPaid(o) && (o.payment_status || '').toLowerCase() === 'pending').length;
 
   document.getElementById('stat-pending').textContent = pendingCount;
   document.getElementById('stat-processing').textContent = processingCount;
@@ -878,7 +903,7 @@ function renderHome() {
   const recentOrdersList = document.getElementById('home-recent-orders-list');
   recentOrdersList.innerHTML = '';
 
-  const recent = state.orders.slice(0, 4);
+  const recent = homeOrders.slice(0, 4);
   if (recent.length === 0) {
     recentOrdersList.innerHTML = '<p style="color: var(--ink-secondary); font-size: 13px;">Belum ada pesanan.</p>';
   } else {
@@ -905,16 +930,17 @@ function renderHome() {
   // Recent Site Orders
   const siteSec = document.getElementById('home-site-orders-section');
   const siteList = document.getElementById('home-recent-site-orders');
-  if (state.paymentOrders.length > 0) {
+  const homeCheckouts = homePriorityOrders(state.paymentOrders);
+  if (homeCheckouts.length > 0) {
     siteSec.style.display = 'block';
     siteList.innerHTML = '';
-    state.paymentOrders.slice(0, 3).forEach(po => {
+    homeCheckouts.slice(0, 3).forEach(po => {
       const entry = document.createElement('div');
       entry.className = 'entry-card';
       entry.innerHTML = `
         <div style="display: flex; justify-content: space-between; align-items: center;">
           <span style="font-weight: 700;">${po.order_code}</span>
-          <span class="status-badge ${po.payment_status === 'paid' ? 'completed' : 'pending'}">${po.payment_status}</span>
+          ${checkoutPaymentBadge(po)}
         </div>
         <div style="font-size: 13px; color: var(--ink-secondary);">${escapeHtml(po.customer?.name || 'Pelanggan')} • ${po.customer?.email || '-'}</div>
         <div style="font-size: 15px; font-weight: 800;">${formatRupiah(po.total_price)}</div>
@@ -923,7 +949,7 @@ function renderHome() {
     });
   } else {
     siteSec.style.display = 'block';
-    siteList.innerHTML = '<p class="page-description">Belum ada checkout situs. Pesanan dari website akan muncul di sini.</p>';
+    siteList.innerHTML = '<p class="page-description">Belum ada checkout aktif. Pesanan PAID diprioritaskan; checkout belum dibayar dibatalkan setelah 24 jam.</p>';
   }
 }
 
@@ -1338,7 +1364,7 @@ function renderPayments() {
       card.innerHTML = `
         <div style="display: flex; justify-content: space-between;">
           <span style="font-weight: 800;">${po.order_code}</span>
-          <span class="status-badge ${po.payment_status === 'paid' ? 'completed' : 'pending'}">${po.payment_status}</span>
+          ${checkoutPaymentBadge(po)}
         </div>
         <div style="font-size: 13px;">${escapeHtml(po.customer?.name || 'Pelanggan')} • <a href="mailto:${po.customer?.email || ''}" style="color: var(--accent-blue);">${po.customer?.email || '-'}</a></div>
         <div style="font-size: 15px; font-weight: 800; color: var(--ink);">${formatRupiah(po.total_price)}</div>

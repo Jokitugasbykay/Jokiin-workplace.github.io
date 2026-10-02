@@ -1,0 +1,17 @@
+const assert = require('node:assert/strict');
+const fs = require('node:fs');
+const vm = require('node:vm');
+const context = vm.createContext({ Date, window: { addEventListener() {} }, document: { readyState: 'loading', addEventListener() {} } });
+vm.runInContext(fs.readFileSync('js/app.js', 'utf8'), context);
+const now = Date.parse('2026-10-02T12:00:00Z');
+const row = (id, hours, payment_status = 'PENDING', status = 'pending') => ({ id, order_code: id, payment_status, status, created_at: new Date(now - hours * 3600000).toISOString() });
+context.rows = [row('recent-unpaid', 1), row('old-paid', 72, 'PAID'), row('old-unpaid', 25), row('boundary', 24), row('recent-paid', 2, 'paid'), row('cancelled', 1, 'CANCELED', 'cancelled'), row('manual-cancel', 1, 'PAID', 'cancelled'), row('processing', 25, 'PENDING', 'processing')];
+context.now = now;
+assert.deepEqual(Array.from(vm.runInContext('homePriorityOrders(rows, now).map(row => row.id)', context)), ['recent-paid', 'old-paid', 'recent-unpaid', 'processing']);
+assert.equal(context.rows[0].id, 'recent-unpaid', 'sorting must not mutate server data');
+vm.runInContext("state.payments=[{order_id:'old-unpaid',status:'paid'}]", context);
+assert.ok(Array.from(vm.runInContext('homePriorityOrders(rows, now).map(row => row.id)', context)).includes('old-unpaid'));
+assert.match(vm.runInContext("checkoutPaymentBadge({payment_status:'PAID'})", context), /completed/);
+assert.match(vm.runInContext("checkoutPaymentBadge({payment_status:'CANCELED'})", context), /cancelled/);
+assert.match(fs.readFileSync('js/app.js', 'utf8'), /eq\('payment_status', 'PAID'\).*limit\(3\)/, 'paid checkouts must be fetched even beyond the latest 100');
+console.log('PASS: paid priority, 24-hour boundary, cancellation, payment proof, badge and history preservation.');
