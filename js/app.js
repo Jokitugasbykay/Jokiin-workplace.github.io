@@ -52,6 +52,11 @@ const USER_MANAGEMENT_ADMIN_IDS = new Set([
   '73a14e88-9421-4936-ba99-745768343a13'  // Riski
 ]);
 
+const CHECKOUT_SUMMARY_COLUMNS = 'id,order_code,customer,total_price,payment_status,status,created_at,paid_at,auto_cancelled_at';
+function canViewCheckoutTask(profile) {
+  return profile?.role === 'admin' && USER_MANAGEMENT_ADMIN_IDS.has(profile.id);
+}
+
 function isOrderSupervisor(profile) {
   return profile?.role === 'admin' && ['founder', 'supervisor'].includes(workplaceRole(profile));
 }
@@ -395,8 +400,8 @@ async function loadData() {
       driveRes
     ] = await Promise.all([
       supabase.from('orders').select('*').order('created_at', { ascending: false }),
-      supabase.from('payment_orders').select('*').order('created_at', { ascending: false }).range(0, 99),
-      supabase.from('payment_orders').select('*').eq('payment_status', 'PAID').order('created_at', { ascending: false }).limit(3),
+      supabase.from('payment_orders').select(CHECKOUT_SUMMARY_COLUMNS).order('created_at', { ascending: false }).range(0, 99),
+      supabase.from('payment_orders').select(CHECKOUT_SUMMARY_COLUMNS).eq('payment_status', 'PAID').order('created_at', { ascending: false }).limit(3),
       supabase.from('services').select('*').order('id', { ascending: true }),
       supabase.from('payments').select('*').order('created_at', { ascending: false }),
       supabase.from('reviews').select('*').order('created_at', { ascending: false }),
@@ -944,6 +949,7 @@ function renderHome() {
         </div>
         <div style="font-size: 13px; color: var(--ink-secondary);">${escapeHtml(po.customer?.name || 'Pelanggan')} • ${po.customer?.email || '-'}</div>
         <div style="font-size: 15px; font-weight: 800;">${formatRupiah(po.total_price)}</div>
+        ${checkoutDetailButton(po)}
       `;
       siteList.appendChild(entry);
     });
@@ -1118,8 +1124,27 @@ function renderPagination(totalPages) {
 // ========================================================
 // Order Detail Modal
 // ========================================================
-function openOrderDetail(orderId) {
-  const order = state.orders.find(o => o.id === orderId);
+function checkoutDetailButton(checkout) {
+  return canViewCheckoutTask(state.admin) ? `<button type="button" class="btn-outline btn-detail-checkout" data-checkout-id="${checkout.id}">Lihat detail tugas</button>` : '';
+}
+
+async function openCheckoutDetail(checkoutId, button) {
+  if (!canViewCheckoutTask(state.admin)) return;
+  if (button) button.disabled = true;
+  try {
+    const db = await getSupabase();
+    const { data, error } = await db.rpc('workplace_checkout_detail', { p_id: checkoutId });
+    if (error) throw error;
+    if (!data) throw new Error('Checkout tidak ditemukan.');
+    openOrderDetail(null, data);
+  } catch (error) {
+    showNotice(error.message || 'Detail tugas gagal dimuat. Silakan coba lagi.');
+  } finally { if (button) button.disabled = false; }
+}
+
+function openOrderDetail(orderId, checkout = null) {
+  if (checkout && !canViewCheckoutTask(state.admin)) return;
+  const order = checkout || state.orders.find(o => o.id === orderId);
   if (!order) return;
 
   document.getElementById('detail-order-code').textContent = order.order_code || '#' + order.id;
@@ -1150,7 +1175,7 @@ function openOrderDetail(orderId) {
   const maxOpt = ESTIMATE_OPTIONS.filter(o => o.hours <= maxHours).pop() || ESTIMATE_OPTIONS[0];
   document.getElementById('detail-max-estimate-label').textContent = maxOpt.label;
 
-  const canEdit = canChangeOrder(state.admin, order);
+  const canEdit = !checkout && canChangeOrder(state.admin, order);
   const estimateBtn = document.getElementById('btn-open-estimate-edit');
   const estimateEditor = document.getElementById('detail-estimate-editor');
 
@@ -1180,7 +1205,7 @@ function openOrderDetail(orderId) {
           <div style="font-weight: 600;">${escapeHtml(it.name || 'Item')}</div>
           <div style="font-size: 11px; color: var(--ink-secondary);">Jumlah: ${it.quantity || 1}</div>
         </div>
-        <div style="font-weight: 700; color: var(--accent-blue);">${formatRupiah(it.price)}</div>
+        <div style="font-weight: 700; color: var(--accent-blue);">${formatRupiah(it.price ?? it.unit_price)}</div>
       `;
       itemsContainer.appendChild(row);
     });
@@ -1229,7 +1254,7 @@ function openOrderDetail(orderId) {
   const invoiceBtn = document.getElementById('btn-order-create-invoice');
   if (invoiceBtn) {
     const isPaid = (order.payment_status || '').toLowerCase() === 'paid' || (order.status || '').toLowerCase() === 'completed';
-    invoiceBtn.style.display = isPaid ? 'flex' : 'none';
+    invoiceBtn.style.display = isPaid && !checkout ? 'flex' : 'none';
     invoiceBtn.onclick = () => {
       closeModal('modal-order-detail');
       loadOrderIntoInvoice(order);
@@ -1368,6 +1393,7 @@ function renderPayments() {
         </div>
         <div style="font-size: 13px;">${escapeHtml(po.customer?.name || 'Pelanggan')} • <a href="mailto:${po.customer?.email || ''}" style="color: var(--accent-blue);">${po.customer?.email || '-'}</a></div>
         <div style="font-size: 15px; font-weight: 800; color: var(--ink);">${formatRupiah(po.total_price)}</div>
+        ${checkoutDetailButton(po)}
       `;
       poContainer.appendChild(card);
     });
@@ -2737,6 +2763,11 @@ function setupEventListeners() {
 
   // Delegated dynamic events (Claim order, Status change, Detail modal, Promo actions)
   document.addEventListener('click', async (e) => {
+    const checkoutBtn = e.target.closest('.btn-detail-checkout');
+    if (checkoutBtn) {
+      await openCheckoutDetail(checkoutBtn.dataset.checkoutId, checkoutBtn);
+      return;
+    }
     // Detail Order Button
     const detailBtn = e.target.closest('.btn-detail-order');
     if (detailBtn) {
