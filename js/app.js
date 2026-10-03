@@ -1934,7 +1934,7 @@ function setupPromoCountdown(promoId, ends) {
   }
 
   tick();
-  const timer = setInterval(tick, 1000);
+  setInterval(tick, 1000);
 }
 
 function renderProductDiscountsList() {

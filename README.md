@@ -55,7 +55,6 @@ jokiin-workplace-website/
 │   └── style.css            # Desain styling responsif, tema gelap/terang, animasi
 ├── js/
 │   ├── app.js               # Logika aplikasi, swipe gesture, auth, manajemen data
-│   └── supabaseClient.js    # Konfigurasi Supabase Client & hak akses
 ├── index.html               # Halaman utama aplikasi (SPA)
 ├── manifest.json            # Web App Manifest untuk instalasi PWA
 ├── service-worker.js        # Service worker untuk caching & offline support

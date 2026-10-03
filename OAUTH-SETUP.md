@@ -23,7 +23,7 @@ Jangan mengganti URI callback ini dengan GitHub Pages, menghapus URI pelanggan, 
 
 ## Temuan dan perubahan
 
-- `index.html` menjalankan `js/app.js`; `js/supabaseClient.js` tidak dimuat oleh halaman tersebut. Perbaikan dilakukan pada kode yang benar-benar dipakai.
+- `index.html` menjalankan `js/app.js`; modul `js/supabaseClient.js` yang tidak digunakan telah dihapus. Perbaikan dilakukan pada kode yang benar-benar dipakai.
 - Sebelumnya `redirectTo` memakai `window.location.origin + window.location.pathname`. Tidak ditemukan tujuan jokiin.my.id yang ditulis langsung. Dugaan penyebabnya adalah URL Workplace belum cocok dengan allowlist Supabase, sehingga jatuh ke Site URL pelanggan; ZIP tidak menyertakan konfigurasi Auth dashboard untuk mengonfirmasinya.
 - `js/app.js` sekarang memakai konstanta `WORKPLACE_REDIRECT_URL` untuk tujuan Google yang tetap. Membuka `/index.html`, URL dengan query/hash, atau server lokal tetap mengembalikan login Google ke URL GitHub Pages di atas.
 - Tiga pemanggilan logout (logout biasa dan penolakan akun non-admin) memakai `scope: 'local'` agar tidak mencabut sesi lain milik pengguna di proyek Supabase yang sama. Pemeriksaan role admin tetap dipertahankan.
