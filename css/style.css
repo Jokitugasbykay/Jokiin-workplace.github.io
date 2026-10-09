@@ -430,6 +430,67 @@ input, textarea, select, button {
   box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.12);
 }
 
+/* Keep native select behavior while styling the opened menu where supported. */
+@supports (appearance: base-select) {
+  select.form-input,
+  select.form-input::picker(select) {
+    appearance: base-select;
+  }
+
+  select.form-input {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    cursor: pointer;
+    line-height: 1.35;
+  }
+
+  select.form-input::picker-icon {
+    color: var(--ink-secondary);
+    transition: transform 160ms ease-out;
+  }
+
+  select.form-input:open::picker-icon { transform: rotate(180deg); }
+
+  select.form-input::picker(select) {
+    width: max(220px, anchor-size(width));
+    max-width: min(480px, calc(100vw - 24px));
+    max-height: min(320px, 50dvh);
+    padding: 6px;
+    overflow: auto;
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    background: var(--bg-surface);
+    box-shadow: 0 14px 36px rgba(24, 34, 46, 0.16);
+  }
+
+  select.form-input option {
+    min-height: 42px;
+    padding: 10px 12px;
+    border-radius: 9px;
+    color: var(--ink);
+    background: var(--bg-surface);
+    line-height: 1.4;
+    white-space: normal;
+    overflow-wrap: anywhere;
+    cursor: pointer;
+  }
+
+  select.form-input option:hover,
+  select.form-input option:focus-visible {
+    background: var(--accent-blue-bg);
+    color: var(--accent-blue);
+  }
+
+  select.form-input option:checked {
+    background: var(--accent-blue-bg);
+    color: var(--accent-blue);
+    font-weight: 700;
+  }
+
+  select.form-input option::checkmark { color: var(--accent-blue); }
+}
+
 .btn-primary {
   width: 100%;
   height: 54px;
