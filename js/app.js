@@ -52,7 +52,7 @@ const USER_MANAGEMENT_ADMIN_IDS = new Set([
   '73a14e88-9421-4936-ba99-745768343a13'  // Riski
 ]);
 
-const CHECKOUT_SUMMARY_COLUMNS = 'id,order_code,customer,total_price,payment_status,status,created_at,paid_at,auto_cancelled_at';
+const CHECKOUT_SUMMARY_COLUMNS = 'id,order_code,tipe,customer,total_price,payment_status,status,created_at,paid_at,auto_cancelled_at';
 function canViewCheckoutTask(profile) {
   return profile?.role === 'admin' && USER_MANAGEMENT_ADMIN_IDS.has(profile.id);
 }
@@ -883,6 +883,15 @@ function homePriorityOrders(orders, now = Date.now()) {
   }).sort((a, b) => Number(isOrderPaid(b)) - Number(isOrderPaid(a)) || Date.parse(b.created_at) - Date.parse(a.created_at));
 }
 
+function renderOrderTypeBadge(order) {
+  const code = String(order?.order_code || '');
+  const isSpesial = code.startsWith('SPCL') || order?.tipe === 'SPESIAL';
+  if (isSpesial) {
+    return '<span style="display:inline-block;background:#fff8e6;color:#92400e;border:1px solid #f59e0b;padding:2px 8px;border-radius:999px;font-size:10px;font-weight:800;margin-left:6px;vertical-align:middle;">SPESIAL</span>';
+  }
+  return '<span style="display:inline-block;background:#eef2ff;color:#3b4ba8;border:1px solid #c7d2fe;padding:2px 8px;border-radius:999px;font-size:10px;font-weight:800;margin-left:6px;vertical-align:middle;">REGULER</span>';
+}
+
 function checkoutPaymentBadge(order) {
   const status = String(order.payment_status || 'PENDING').toUpperCase();
   const style = status === 'PAID' ? 'completed' : ['CANCELED', 'CANCELLED'].includes(status) ? 'cancelled' : 'pending';
@@ -922,7 +931,7 @@ function renderHome() {
       card.innerHTML = `
         <img src="./assets/logo-jokiin.png" alt="Logo" class="order-brand-logo">
         <div class="order-info">
-          <div class="order-code">${ord.order_code || '#' + ord.id}</div>
+          <div class="order-code">${escapeHtml(ord.order_code || String(ord.id))}${renderOrderTypeBadge(ord)}</div>
           <div class="order-customer">${escapeHtml(getCustomerName(ord))}</div>
           <div class="order-price">${formatRupiah(ord.total_price)}</div>
         </div>
@@ -948,7 +957,7 @@ function renderHome() {
       entry.className = 'entry-card';
       entry.innerHTML = `
         <div style="display: flex; justify-content: space-between; align-items: center;">
-          <span style="font-weight: 700;">${po.order_code}</span>
+          <span style="font-weight: 700;">${escapeHtml(po.order_code)}${renderOrderTypeBadge(po)}</span>
           ${checkoutPaymentBadge(po)}
         </div>
         <div style="font-size: 13px; color: var(--ink-secondary);">${escapeHtml(po.customer?.name || 'Pelanggan')} • ${po.customer?.email || '-'}</div>
@@ -1046,7 +1055,7 @@ function createOrderCard(ord) {
   card.innerHTML = `
     <div style="display: flex; justify-content: space-between; align-items: flex-start;">
       <div>
-        <h4 style="font-size: 16px; font-weight: 800;">${ord.order_code || '#' + ord.id}</h4>
+        <h4 style="font-size: 16px; font-weight: 800;">${escapeHtml(ord.order_code || String(ord.id))}${renderOrderTypeBadge(ord)}</h4>
         <div style="font-size: 13px; font-weight: 600; color: var(--ink);">${escapeHtml(custName)}</div>
         <a href="mailto:${escapeHtml(custEmail)}" style="font-size: 12px; color: var(--accent-blue); text-decoration: none;">${escapeHtml(custEmail)}</a>
       </div>
@@ -1394,7 +1403,7 @@ function renderPayments() {
       card.className = 'entry-card';
       card.innerHTML = `
         <div style="display: flex; justify-content: space-between;">
-          <span style="font-weight: 800;">${po.order_code}</span>
+          <span style="font-weight: 800;">${escapeHtml(po.order_code)}${renderOrderTypeBadge(po)}</span>
           ${checkoutPaymentBadge(po)}
         </div>
         <div style="font-size: 13px;">${escapeHtml(po.customer?.name || 'Pelanggan')} • <a href="mailto:${po.customer?.email || ''}" style="color: var(--accent-blue);">${po.customer?.email || '-'}</a></div>
