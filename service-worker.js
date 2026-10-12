@@ -1,10 +1,11 @@
-const CACHE_NAME = 'jokiin-admin-v38';
+const CACHE_NAME = 'jokiin-admin-v39';
 const ASSETS_TO_CACHE = [
   './',
   './index.html',
   './manifest.json',
   './css/style.css',
   './js/app.js',
+  './js/produk-promo.js',
   './assets/apple-touch-icon.png',
   './assets/icon-512.png',
   './assets/logo-jokiin.png',

@@ -84,6 +84,10 @@
     selectedProductId: DEFAULT_PRODUCTS[0].id,
     isCreatingNew: false,
     penawaranSpesialAktif: true,
+    promoJudul: 'Penawaran Spesial Minggu Ini',
+    promoDeadline: new Date(Date.now() + ((1 * 86400 + 3 * 3600 + 17 * 60 + 25) * 1000)).toISOString(),
+    serverTimeOffsetMs: 0,
+    countdownInterval: null,
     bannerUrl: '',
     bannerTitle: 'Gemini Pro 18 Bulan',
     pendingBannerFile: null,
@@ -93,6 +97,17 @@
     syncLogs: [],
     initialized: false
   };
+
+  function getServerNowMs() {
+    return Date.now() + (catalogState.serverTimeOffsetMs || 0);
+  }
+
+  function toDatetimeLocalValue(isoStr) {
+    const ms = isoStr ? Date.parse(isoStr) : NaN;
+    const d = Number.isFinite(ms) ? new Date(ms) : new Date(getServerNowMs() + 86400000);
+    const pad = (n) => String(n).padStart(2, '0');
+    return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`;
+  }
 
   function formatIdr(amount) {
     return new Intl.NumberFormat('id-ID', {
@@ -198,12 +213,6 @@
     style.id = 'jokiin-catalog-admin-styles';
     style.textContent = `
       .cat-admin-wrap { display:flex; flex-direction:column; gap:20px; font-family:"Plus Jakarta Sans",system-ui,sans-serif; color:#1b2430; }
-      .cat-sum { background:#4c5594; color:#fff; border-radius:20px; padding:18px; display:flex; flex-direction:column; gap:12px; }
-      .cat-sum h3 { margin:0; font-size:16px; font-weight:700; }
-      .cat-st { display:flex; gap:12px; }
-      .cat-st > div { flex:1; background:rgba(255,255,255,.14); border-radius:12px; padding:12px; }
-      .cat-st small { font-size:11px; display:block; opacity:.9; }
-      .cat-st b { font-size:22px; font-weight:800; }
       .cat-card { background:#fff; border:1px solid #e3e8ee; border-radius:16px; padding:20px; display:flex; flex-direction:column; gap:14px; }
       .cat-card.sp { background:#fff8e6; border-color:#f6d98a; }
       .cat-hd { display:flex; align-items:center; justify-content:space-between; gap:12px; }
@@ -216,6 +225,14 @@
       .cat-sw input:checked + span { background:#16a36b; }
       .cat-sw input:checked + span::after { left:25px; }
       .cat-sw input:focus-visible + span { outline:3px solid #9bb0ff; }
+      .cat-cd-wrap { background:#fff; border:1px solid #f2d279; border-radius:14px; padding:14px; display:flex; flex-wrap:wrap; align-items:center; justify-content:space-between; gap:14px; }
+      .cat-cd-boxes { display:flex; gap:8px; align-items:center; }
+      .cat-cd-box { background:#1b2430; color:#fff; border-radius:10px; padding:8px 12px; min-width:58px; text-align:center; display:flex; flex-direction:column; gap:2px; }
+      .cat-cd-box b { font-size:18px; font-weight:800; color:#ffd54a; line-height:1.1; font-variant-numeric:tabular-nums; }
+      .cat-cd-box small { font-size:10px; font-weight:700; color:#cbd5e1; text-transform:uppercase; letter-spacing:.05em; }
+      .cat-cd-controls { display:flex; flex-wrap:wrap; gap:8px; align-items:center; flex:1; min-width:240px; justify-content:flex-end; }
+      .cat-preset-btn { min-height:36px; padding:0 10px; border-radius:8px; border:1px solid #d9b64f; background:#fffbeb; color:#78350f; font:700 12px "Plus Jakarta Sans",sans-serif; cursor:pointer; }
+      .cat-preset-btn:hover { background:#fef3c7; }
       .cat-bn { display:flex; gap:16px; }
       .cat-pv { flex:1; min-height:140px; border-radius:12px; background:linear-gradient(135deg,#1b3b8f,#6a4bd8 55%,#1fd18b); display:flex; align-items:center; justify-content:center; color:#fff; font-weight:800; text-align:center; padding:12px; position:relative; overflow:hidden; background-size:cover; background-position:center; }
       .cat-dz { flex:1; border:2px dashed #d9b64f; border-radius:12px; padding:16px; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:8px; text-align:center; color:#6b7785; font-size:12px; transition:background .15s; }
@@ -250,6 +267,7 @@
         .cat-fr { grid-template-columns:1fr; }
         .cat-desktop-table-wrap { display:none; }
         .cat-mobile-list { display:flex; }
+        .cat-cd-controls { justify-content:flex-start; }
       }
     `;
     document.head.appendChild(style);
@@ -286,6 +304,13 @@
       if (bannerRes && bannerRes.ok) {
         const bData = await bannerRes.json();
         catalogState.penawaranSpesialAktif = Boolean(bData.penawaran_spesial_aktif);
+        if (bData.promo_judul) catalogState.promoJudul = bData.promo_judul;
+        if (bData.promo_deadline && Number.isFinite(Date.parse(bData.promo_deadline))) {
+          catalogState.promoDeadline = bData.promo_deadline;
+        }
+        if (bData.server_time && Number.isFinite(Date.parse(bData.server_time))) {
+          catalogState.serverTimeOffsetMs = Date.parse(bData.server_time) - Date.now();
+        }
         if (Array.isArray(bData.banners) && bData.banners[0]) {
           catalogState.bannerUrl = bData.banners[0].gambar_url || '';
           catalogState.bannerTitle = bData.banners[0].judul || 'Gemini Pro 18 Bulan';
@@ -381,13 +406,45 @@
     `;
   }
 
+  function startAdminCountdown(mount) {
+    if (catalogState.countdownInterval) {
+      clearInterval(catalogState.countdownInterval);
+      catalogState.countdownInterval = null;
+    }
+    const cdWrap = mount.querySelector('#cat-admin-countdown');
+    if (!cdWrap) return;
+
+    function tick() {
+      const targetMs = catalogState.promoDeadline && Number.isFinite(Date.parse(catalogState.promoDeadline))
+        ? Date.parse(catalogState.promoDeadline)
+        : (getServerNowMs() + 86400000);
+      const diff = Math.max(0, targetMs - getServerNowMs());
+      const d = Math.floor(diff / 86400000);
+      const h = Math.floor((diff % 86400000) / 3600000);
+      const m = Math.floor((diff % 3600000) / 60000);
+      const s = Math.floor((diff % 60000) / 1000);
+
+      const dEl = cdWrap.querySelector('[data-admin-cd="d"]');
+      const hEl = cdWrap.querySelector('[data-admin-cd="h"]');
+      const mEl = cdWrap.querySelector('[data-admin-cd="m"]');
+      const sEl = cdWrap.querySelector('[data-admin-cd="s"]');
+      if (dEl) dEl.textContent = String(d).padStart(2, '0');
+      if (hEl) hEl.textContent = String(h).padStart(2, '0');
+      if (mEl) mEl.textContent = String(m).padStart(2, '0');
+      if (sEl) sEl.textContent = String(s).padStart(2, '0');
+    }
+
+    tick();
+    catalogState.countdownInterval = setInterval(tick, 1000);
+  }
+
   function renderAllViews() {
     injectStyles();
 
     const activeCount = catalogState.products.filter(p => p.is_active).length;
     const discountCount = catalogState.products.filter(p => (p.diskon_persen || 0) > 0).length;
 
-    // Update existing summary counters for backward compatibility
+    // Update top Ringkasan produk card counters
     const oldActiveEl = document.getElementById('prod-active-count');
     const oldDiscEl = document.getElementById('prod-discount-count');
     const oldBannerEl = document.getElementById('prod-banner-status');
@@ -400,14 +457,18 @@
     }
 
     let mount = document.getElementById('catalog-workplace-mount');
+    const oldMenu = document.getElementById('product-menu-section');
     const viewProducts = document.getElementById('view-products');
-    if (!mount && viewProducts) {
+    if (!mount && (oldMenu || viewProducts)) {
       mount = document.createElement('div');
       mount.id = 'catalog-workplace-mount';
       mount.className = 'cat-admin-wrap';
-      viewProducts.insertBefore(mount, viewProducts.firstChild);
-      const oldMenu = document.getElementById('product-menu-section');
-      if (oldMenu) oldMenu.style.display = 'none';
+      mount.style.marginTop = '20px';
+      if (oldMenu) {
+        oldMenu.appendChild(mount);
+      } else if (viewProducts) {
+        viewProducts.appendChild(mount);
+      }
     }
 
     if (mount) {
@@ -461,26 +522,41 @@
         : '';
 
       mount.innerHTML = `
-        <div class="cat-sum">
-          <h3>Ringkasan produk</h3>
-          <div class="cat-st">
-            <div><small>Layanan aktif</small><b>${activeCount}</b></div>
-            <div><small>Diskon aktif</small><b>${discountCount}</b></div>
-          </div>
-          <small>${catalogState.penawaranSpesialAktif ? 'Banner promo sedang aktif' : 'Banner promo tidak aktif'}</small>
-        </div>
-
         <div class="cat-card sp">
           <div class="cat-hd">
             <div>
               <h3>Penawaran Spesial</h3>
-              <p>Tampilkan atau sembunyikan banner Promo Terbatas di paling atas katalog.</p>
+              <p>Tampilkan atau sembunyikan banner Promo Terbatas &amp; atur hitung mundur di katalog.</p>
             </div>
             <label class="cat-sw">
               <input type="checkbox" role="switch" aria-label="Penawaran Spesial aktif" id="cat-toggle-special-offer" ${catalogState.penawaranSpesialAktif ? 'checked' : ''} ${isWorker ? 'disabled' : ''}>
               <span></span>
             </label>
           </div>
+
+          <div class="cat-cd-wrap" id="cat-admin-countdown">
+            <div>
+              <b style="font-size:13px;display:block;color:#1b2430;">Hitung Mundur Promo (Waktu Server)</b>
+              <p style="margin:2px 0 8px;font-size:12px;color:#6b7785;">Sisa waktu tayang di halaman Harga &amp; Layanan:</p>
+              <div class="cat-cd-boxes" aria-label="Hitung mundur promo">
+                <div class="cat-cd-box"><b data-admin-cd="d">01</b><small>Hari</small></div>
+                <div class="cat-cd-box"><b data-admin-cd="h">03</b><small>Jam</small></div>
+                <div class="cat-cd-box"><b data-admin-cd="m">17</b><small>Menit</small></div>
+                <div class="cat-cd-box"><b data-admin-cd="s">25</b><small>Detik</small></div>
+              </div>
+            </div>
+            <div class="cat-cd-controls">
+              <label class="cat-label" style="min-width:210px;flex:1;">Batas akhir hitung mundur
+                <input type="datetime-local" class="cat-input" id="cat-promo-deadline-input" value="${escapeStr(toDatetimeLocalValue(catalogState.promoDeadline))}" ${isWorker ? 'disabled' : ''}>
+              </label>
+              <div style="display:flex;gap:6px;flex-wrap:wrap;align-self:flex-end;padding-bottom:4px;">
+                <button type="button" class="cat-preset-btn" data-preset-days="1" ${isWorker ? 'disabled' : ''}>+1 Hari</button>
+                <button type="button" class="cat-preset-btn" data-preset-days="3" ${isWorker ? 'disabled' : ''}>+3 Hari</button>
+                <button type="button" class="cat-preset-btn" data-preset-days="7" ${isWorker ? 'disabled' : ''}>+7 Hari</button>
+              </div>
+            </div>
+          </div>
+
           <div class="cat-bn">
             <div class="cat-pv" id="cat-banner-preview" style="${previewStyle}">
               <span>${escapeStr(catalogState.bannerTitle)}<br><small style="font-weight:600;opacity:.9;">${catalogState.bannerUrl ? 'Banner Siap Tayang' : '[PRATINJAU BANNER]'}</small></span>
@@ -582,6 +658,7 @@
       `;
 
       bindMountEvents(mount);
+      startAdminCountdown(mount);
     }
 
     // Also render inside dedicated #view-integration if present
@@ -639,6 +716,8 @@
       localStorage.setItem('jokiin_catalog_cache', JSON.stringify({
         updatedAt: Date.now(),
         penawaran_spesial_aktif: catalogState.penawaranSpesialAktif,
+        promo_deadline: catalogState.promoDeadline,
+        promo_judul: catalogState.promoJudul,
         bannerTitle: catalogState.bannerTitle,
         bannerUrl: catalogState.bannerUrl,
         products: catalogState.products
@@ -648,6 +727,42 @@
 
   function bindMountEvents(mount) {
     bindIntegrationEvents(mount);
+
+    // Countdown deadline input & preset buttons
+    const deadlineInput = mount.querySelector('#cat-promo-deadline-input');
+    if (deadlineInput) {
+      deadlineInput.addEventListener('change', () => {
+        const parsed = Date.parse(deadlineInput.value);
+        if (Number.isFinite(parsed)) {
+          catalogState.promoDeadline = new Date(parsed).toISOString();
+          broadcastCatalogChange();
+          startAdminCountdown(mount);
+        }
+      });
+    }
+
+    mount.querySelectorAll('[data-preset-days]').forEach(btn => {
+      btn.addEventListener('click', async () => {
+        const days = Number(btn.getAttribute('data-preset-days')) || 1;
+        const newTarget = new Date(getServerNowMs() + days * 86400000);
+        catalogState.promoDeadline = newTarget.toISOString();
+        if (deadlineInput) deadlineInput.value = toDatetimeLocalValue(catalogState.promoDeadline);
+        broadcastCatalogChange();
+        startAdminCountdown(mount);
+        try {
+          const authHeaders = await getAuthHeaders();
+          await fetch(`${CATALOG_API}/api/admin/promo/penawaran-spesial`, {
+            method: 'PATCH',
+            headers: { 'Content-Type': 'application/json', ...authHeaders },
+            body: JSON.stringify({
+              aktif: catalogState.penawaranSpesialAktif,
+              promo_deadline: catalogState.promoDeadline
+            })
+          });
+        } catch (_) {}
+        showCatalogToast(`Hitung mundur diatur ke +${days} hari dari sekarang!`);
+      });
+    });
 
     // Select product row
     mount.querySelectorAll('[data-select-product]').forEach(row => {
@@ -708,7 +823,10 @@
           await fetch(`${CATALOG_API}/api/admin/promo/penawaran-spesial`, {
             method: 'PATCH',
             headers,
-            body: JSON.stringify({ aktif: catalogState.penawaranSpesialAktif })
+            body: JSON.stringify({
+              aktif: catalogState.penawaranSpesialAktif,
+              promo_deadline: catalogState.promoDeadline
+            })
           });
         } catch (_) {}
         showCatalogToast(catalogState.penawaranSpesialAktif
@@ -758,13 +876,19 @@
       });
     }
 
-    // Save & publish banner
+    // Save & publish banner + countdown deadline
     const saveBannerBtn = mount.querySelector('#cat-btn-save-banner');
     if (saveBannerBtn) {
       saveBannerBtn.addEventListener('click', async () => {
         saveBannerBtn.disabled = true;
         saveBannerBtn.textContent = 'Menyimpan...';
         try {
+          if (deadlineInput && deadlineInput.value) {
+            const parsed = Date.parse(deadlineInput.value);
+            if (Number.isFinite(parsed)) {
+              catalogState.promoDeadline = new Date(parsed).toISOString();
+            }
+          }
           const authHeaders = await getAuthHeaders();
           if (catalogState.pendingBannerFile) {
             const fd = new FormData();
@@ -784,11 +908,15 @@
           await fetch(`${CATALOG_API}/api/admin/promo/penawaran-spesial`, {
             method: 'PATCH',
             headers: { 'Content-Type': 'application/json', ...authHeaders },
-            body: JSON.stringify({ aktif: catalogState.penawaranSpesialAktif })
+            body: JSON.stringify({
+              aktif: catalogState.penawaranSpesialAktif,
+              promo_deadline: catalogState.promoDeadline,
+              promo_judul: catalogState.promoJudul
+            })
           }).catch(() => null);
 
           broadcastCatalogChange();
-          showCatalogToast('Banner Penawaran Spesial disimpan & ditayangkan!');
+          showCatalogToast('Banner & Hitung Mundur disimpan & ditayangkan!');
           renderAllViews();
         } catch (_) {
           showCatalogToast('Gagal menyimpan banner.', true);
