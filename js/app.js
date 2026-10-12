@@ -581,7 +581,7 @@ function performSwitchTab(tabName, forcedDirection = null) {
 
   state.activeTab = tabName;
   if (!activityHistoryReady || prevTab !== tabName) saveActivity();
-  const pageNames = { home: 'Beranda', orders: 'Pesanan', services: 'Layanan', payments: 'Pembayaran', reviews: 'Ulasan', performance: 'Performa tim', products: 'Produk & promo', 'task-files': 'Folder lampiran', users: 'Daftar pengguna', invoice: 'Invoice', violations: 'Pelanggaran', withdrawals: 'Pengajuan pencairan dana' };
+  const pageNames = { home: 'Beranda', orders: 'Pesanan', services: 'Layanan', payments: 'Pembayaran', reviews: 'Ulasan', performance: 'Performa tim', products: 'Produk & promo', integration: 'Integrasi', 'task-files': 'Folder lampiran', users: 'Daftar pengguna', invoice: 'Invoice', violations: 'Pelanggaran', withdrawals: 'Pengajuan pencairan dana' };
   document.getElementById('header-page-title').textContent = pageNames[tabName] || 'Workplace';
   document.querySelector('.welcome-card').style.display = tabName === 'home' ? 'block' : 'none';
   state.searchQuery = '';
@@ -609,7 +609,7 @@ function performSwitchTab(tabName, forcedDirection = null) {
   }
 
   // Hide Bottom Navigation on secondary tabs: ulasan, produk & promo, folder lampiran, peforma tim, daftar pengguna, invoice
-  const HIDE_NAVBAR_TABS = ['reviews', 'products', 'task-files', 'performance', 'users', 'invoice', 'violations', 'withdrawals'];
+  const HIDE_NAVBAR_TABS = ['reviews', 'products', 'integration', 'task-files', 'performance', 'users', 'invoice', 'violations', 'withdrawals'];
   const shouldHideNav = HIDE_NAVBAR_TABS.includes(tabName);
 
   const bottomNavContainer = document.querySelector('.bottom-nav-container');
@@ -657,7 +657,7 @@ function performSwitchTab(tabName, forcedDirection = null) {
 
   // Toggle Search Section visibility
   const searchSec = document.getElementById('search-section');
-  if (tabName === 'home' || tabName === 'performance' || tabName === 'products' || tabName === 'task-files' || tabName === 'invoice' || tabName === 'violations' || tabName === 'withdrawals') {
+  if (tabName === 'home' || tabName === 'performance' || tabName === 'products' || tabName === 'integration' || tabName === 'task-files' || tabName === 'invoice' || tabName === 'violations' || tabName === 'withdrawals') {
     searchSec.style.display = 'none';
   } else {
     searchSec.style.display = 'block';
@@ -693,6 +693,10 @@ function renderActiveTab() {
       break;
     case 'products':
       renderProducts();
+      if (typeof window !== 'undefined' && window.ProdukPromo) window.ProdukPromo.render();
+      break;
+    case 'integration':
+      if (typeof window !== 'undefined' && window.ProdukPromo) window.ProdukPromo.render();
       break;
     case 'task-files':
       renderTaskFiles();
