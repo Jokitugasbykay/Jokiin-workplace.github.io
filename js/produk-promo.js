@@ -517,8 +517,9 @@
         `;
       }).join('');
 
-      const previewStyle = catalogState.bannerUrl
-        ? `background-image:linear-gradient(rgba(15,22,26,.35),rgba(15,22,26,.35)),url('${escapeStr(catalogState.bannerUrl)}');`
+      const hasBannerUrl = Boolean(catalogState.bannerUrl);
+      const previewStyle = hasBannerUrl
+        ? `background-image:url('${escapeStr(catalogState.bannerUrl)}'); background-size:cover; background-position:center;`
         : '';
 
       mount.innerHTML = `
@@ -559,7 +560,7 @@
 
           <div class="cat-bn">
             <div class="cat-pv" id="cat-banner-preview" style="${previewStyle}">
-              <span>${escapeStr(catalogState.bannerTitle)}<br><small style="font-weight:600;opacity:.9;">${catalogState.bannerUrl ? 'Banner Siap Tayang' : '[PRATINJAU BANNER]'}</small></span>
+              ${hasBannerUrl ? '' : `<span>${escapeStr(catalogState.bannerTitle)}<br><small style="font-weight:600;opacity:.9;">[PRATINJAU BANNER]</small></span>`}
             </div>
             <div class="cat-dz" id="cat-banner-dropzone">
               <span>Seret gambar ke sini atau pilih file<br>Maks 2 MB · JPG, PNG, WebP</span>
