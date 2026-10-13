@@ -89,8 +89,10 @@
     serverTimeOffsetMs: 0,
     countdownInterval: null,
     bannerUrl: '',
+    bannerMobileUrl: '',
     bannerTitle: 'Gemini Pro 18 Bulan',
     pendingBannerFile: null,
+    pendingBannerMobileFile: null,
     autoSync: true,
     lastSyncTime: null,
     catalogUrl: DEFAULT_CATALOG_URL,
@@ -311,9 +313,13 @@
         if (bData.server_time && Number.isFinite(Date.parse(bData.server_time))) {
           catalogState.serverTimeOffsetMs = Date.parse(bData.server_time) - Date.now();
         }
-        if (Array.isArray(bData.banners) && bData.banners[0]) {
-          catalogState.bannerUrl = bData.banners[0].gambar_url || '';
-          catalogState.bannerTitle = bData.banners[0].judul || 'Gemini Pro 18 Bulan';
+        if (Array.isArray(bData.banners) && bData.banners.length) {
+          catalogState.bannerUrl = bData.banners[0]?.gambar_url || '';
+          catalogState.bannerTitle = bData.banners[0]?.judul || 'Gemini Pro 18 Bulan';
+          const mob = bData.banners.find(b => b.urutan === 1 || /mobile/i.test(b.judul || ''));
+          if (mob?.gambar_url) {
+            catalogState.bannerMobileUrl = mob.gambar_url;
+          }
         }
       }
 
@@ -517,17 +523,26 @@
         `;
       }).join('');
 
+      const specialProd = catalogState.products.find(p => p.is_limited_edition) || catalogState.products[0];
+      const rawTitle = specialProd?.nama || catalogState.bannerTitle || catalogState.promoJudul || 'Gemini Pro';
+      const offerText = rawTitle.replace(/\s+\d+\s+Bulan$/i, '') || rawTitle;
+
       const hasBannerUrl = Boolean(catalogState.bannerUrl);
-      const previewStyle = hasBannerUrl
+      const hasMobileBannerUrl = Boolean(catalogState.bannerMobileUrl || catalogState.bannerUrl);
+
+      const desktopStyle = hasBannerUrl
         ? `background-image:url('${escapeStr(catalogState.bannerUrl)}'); background-size:cover; background-position:center;`
+        : '';
+      const mobileStyle = hasMobileBannerUrl
+        ? `background-image:url('${escapeStr(catalogState.bannerMobileUrl || catalogState.bannerUrl)}'); background-size:cover; background-position:center;`
         : '';
 
       mount.innerHTML = `
-        <div class="cat-card sp">
-          <div class="cat-hd">
+        <div class="cat-card sp" style="background:#fff8e6;border:1px solid #f6d98a;border-radius:12px;padding:1rem 1.25rem;display:flex;flex-direction:column;gap:14px;font-family:'Plus Jakarta Sans',system-ui,sans-serif;color:#1b2430">
+          <div style="display:flex;justify-content:space-between;align-items:center;gap:12px">
             <div>
-              <h3>Penawaran Spesial</h3>
-              <p>Tampilkan atau sembunyikan banner Promo Terbatas &amp; atur hitung mundur di katalog.</p>
+              <p style="font-size:16px;font-weight:700;margin:0;color:#1b2430">Penawaran Spesial</p>
+              <p style="font-size:13px;color:#6b7785;margin:2px 0 0">Tampilkan atau sembunyikan banner Promo Terbatas di katalog.</p>
             </div>
             <label class="cat-sw">
               <input type="checkbox" role="switch" aria-label="Penawaran Spesial aktif" id="cat-toggle-special-offer" ${catalogState.penawaranSpesialAktif ? 'checked' : ''} ${isWorker ? 'disabled' : ''}>
@@ -535,7 +550,8 @@
             </label>
           </div>
 
-          <div class="cat-cd-wrap" id="cat-admin-countdown">
+          <!-- Fitur Hitung Mundur Promo Tetap Dipertahankan (jangan dihapus) -->
+          <div class="cat-cd-wrap" id="cat-admin-countdown" style="background:#fff;border:1px solid #f2d279;border-radius:12px;padding:14px;display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:14px">
             <div>
               <b style="font-size:13px;display:block;color:#1b2430;">Hitung Mundur Promo (Waktu Server)</b>
               <p style="margin:2px 0 8px;font-size:12px;color:#6b7785;">Sisa waktu tayang di halaman Harga &amp; Layanan:</p>
@@ -558,20 +574,33 @@
             </div>
           </div>
 
-          <div class="cat-bn">
-            <div class="cat-pv" id="cat-banner-preview" style="${previewStyle}">
-              ${hasBannerUrl ? '' : `<span>${escapeStr(catalogState.bannerTitle)}<br><small style="font-weight:600;opacity:.9;">[PRATINJAU BANNER]</small></span>`}
+          <!-- Mockup Banner Grid (Desktop 1:1 & Mobile 16:9) -->
+          <div class="cat-banner-grid" style="display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.78fr);gap:14px;background:#fff;border-radius:12px;padding:14px">
+            <div style="display:flex;flex-direction:column;gap:8px">
+              <p style="font-size:13px;font-weight:600;margin:0;color:#1b2430">Desktop (1:1)</p>
+              <div id="cat-banner-preview-desktop" style="aspect-ratio:1/1;border-radius:10px;background:linear-gradient(135deg,#1b3b8f,#6a4bd8 55%,#1fd18b);display:flex;align-items:center;justify-content:center;color:#fff;font-size:16px;font-weight:600;text-align:center;padding:12px;background-size:cover;background-position:center;${desktopStyle}">
+                ${hasBannerUrl ? '' : escapeStr(offerText)}
+              </div>
+              <p style="font-size:12px;color:#6b7785;margin:0">Min. 1080 × 1080 px · JPG, PNG, WebP · maks 2 MB</p>
             </div>
-            <div class="cat-dz" id="cat-banner-dropzone">
-              <span>Seret gambar ke sini atau pilih file<br>Maks 2 MB · JPG, PNG, WebP</span>
-              <input type="file" id="cat-banner-file-input" accept="image/jpeg,image/png,image/webp" hidden>
-              <button type="button" class="cat-btn y" id="cat-btn-pick-banner" ${isWorker ? 'disabled' : ''}>Unggah Gambar Banner</button>
+            <div style="display:flex;flex-direction:column;gap:8px">
+              <p style="font-size:13px;font-weight:600;margin:0;color:#1b2430">Mobile (16:9)</p>
+              <div id="cat-banner-preview-mobile" style="aspect-ratio:16/9;border-radius:10px;background:linear-gradient(135deg,#1b3b8f,#6a4bd8 55%,#1fd18b);display:flex;align-items:center;justify-content:center;color:#fff;font-size:16px;font-weight:600;text-align:center;padding:12px;background-size:cover;background-position:center;${mobileStyle}">
+                ${hasMobileBannerUrl ? '' : escapeStr(offerText)}
+              </div>
+              <p style="font-size:12px;color:#6b7785;margin:0">Min. 1280 × 720 px · JPG, PNG, WebP · maks 2 MB</p>
             </div>
           </div>
-          <div class="cat-row">
-            <button type="button" class="cat-btn p" id="cat-btn-save-banner" ${isWorker ? 'disabled' : ''}>Simpan &amp; Tayangkan</button>
+
+          <!-- Buttons Sesuai Mockup -->
+          <div style="display:flex;gap:8px;flex-wrap:wrap">
+            <input type="file" id="cat-banner-file-input" accept="image/jpeg,image/png,image/webp" hidden>
+            <input type="file" id="cat-banner-mobile-file-input" accept="image/jpeg,image/png,image/webp" hidden>
+            <button type="button" class="cat-btn y" id="cat-btn-pick-banner" ${isWorker ? 'disabled' : ''}>Unggah banner desktop</button>
+            <button type="button" class="cat-btn y" id="cat-btn-pick-banner-mobile" ${isWorker ? 'disabled' : ''}>Unggah banner mobile</button>
             <button type="button" class="cat-btn" id="cat-btn-preview-catalog">Pratinjau</button>
-            ${catalogState.bannerUrl && !isWorker ? `<button type="button" class="cat-btn danger" id="cat-btn-remove-banner">Hapus Pratinjau Banner</button>` : ''}
+            <button type="button" class="cat-btn p" id="cat-btn-save-banner" ${isWorker ? 'disabled' : ''}>Simpan &amp; tayangkan</button>
+            ${(hasBannerUrl || hasMobileBannerUrl) && !isWorker ? `<button type="button" class="cat-btn danger" id="cat-btn-remove-banner">Hapus Pratinjau Banner</button>` : ''}
           </div>
         </div>
 
@@ -721,6 +750,7 @@
         promo_judul: catalogState.promoJudul,
         bannerTitle: catalogState.bannerTitle,
         bannerUrl: catalogState.bannerUrl,
+        bannerMobileUrl: catalogState.bannerMobileUrl,
         products: catalogState.products
       }));
     } catch (_) {}
@@ -837,12 +867,15 @@
       });
     }
 
-    // Banner file upload (drag & drop + file picker)
-    const dropzone = mount.querySelector('#cat-banner-dropzone');
+    // Banner file upload (desktop & mobile pickers + drag & drop on preview boxes)
     const fileInput = mount.querySelector('#cat-banner-file-input');
+    const mobileFileInput = mount.querySelector('#cat-banner-mobile-file-input');
     const pickBtn = mount.querySelector('#cat-btn-pick-banner');
+    const pickMobileBtn = mount.querySelector('#cat-btn-pick-banner-mobile');
+    const desktopPreview = mount.querySelector('#cat-banner-preview-desktop');
+    const mobilePreview = mount.querySelector('#cat-banner-preview-mobile');
 
-    function handleBannerFile(file) {
+    function handleBannerFile(file, type = 'desktop') {
       if (!file) return;
       const allowed = ['image/jpeg', 'image/png', 'image/webp'];
       if (!allowed.includes(file.type)) {
@@ -853,29 +886,44 @@
         showCatalogToast('Ukuran gambar maksimal 2 MB.', true);
         return;
       }
-      catalogState.pendingBannerFile = file;
       const reader = new FileReader();
       reader.onload = () => {
-        catalogState.bannerUrl = String(reader.result || '');
+        if (type === 'mobile') {
+          catalogState.pendingBannerMobileFile = file;
+          catalogState.bannerMobileUrl = String(reader.result || '');
+          showCatalogToast('Pratinjau banner mobile siap. Klik "Simpan & tayangkan".');
+        } else {
+          catalogState.pendingBannerFile = file;
+          catalogState.bannerUrl = String(reader.result || '');
+          showCatalogToast('Pratinjau banner desktop siap. Klik "Simpan & tayangkan".');
+        }
         renderAllViews();
-        showCatalogToast('Pratinjau gambar siap. Klik "Simpan & Tayangkan".');
       };
       reader.readAsDataURL(file);
     }
 
     if (pickBtn && fileInput) {
       pickBtn.addEventListener('click', () => fileInput.click());
-      fileInput.addEventListener('change', () => handleBannerFile(fileInput.files?.[0]));
+      fileInput.addEventListener('change', () => handleBannerFile(fileInput.files?.[0], 'desktop'));
     }
-    if (dropzone) {
-      dropzone.addEventListener('dragover', e => { e.preventDefault(); dropzone.classList.add('dragover'); });
-      dropzone.addEventListener('dragleave', () => dropzone.classList.remove('dragover'));
-      dropzone.addEventListener('drop', e => {
+    if (pickMobileBtn && mobileFileInput) {
+      pickMobileBtn.addEventListener('click', () => mobileFileInput.click());
+      mobileFileInput.addEventListener('change', () => handleBannerFile(mobileFileInput.files?.[0], 'mobile'));
+    }
+
+    [
+      { el: desktopPreview, type: 'desktop' },
+      { el: mobilePreview, type: 'mobile' }
+    ].forEach(({ el, type }) => {
+      if (!el) return;
+      el.addEventListener('dragover', (e) => { e.preventDefault(); el.style.filter = 'brightness(1.15)'; });
+      el.addEventListener('dragleave', () => { el.style.filter = ''; });
+      el.addEventListener('drop', (e) => {
         e.preventDefault();
-        dropzone.classList.remove('dragover');
-        handleBannerFile(e.dataTransfer?.files?.[0]);
+        el.style.filter = '';
+        handleBannerFile(e.dataTransfer?.files?.[0], type);
       });
-    }
+    });
 
     // Save & publish banner + countdown deadline
     const saveBannerBtn = mount.querySelector('#cat-btn-save-banner');
@@ -906,6 +954,21 @@
             }
             catalogState.pendingBannerFile = null;
           }
+          if (catalogState.pendingBannerMobileFile) {
+            const fdMobile = new FormData();
+            fdMobile.append('file', catalogState.pendingBannerMobileFile);
+            fdMobile.append('judul', `${catalogState.bannerTitle} (Mobile)`);
+            const upResM = await fetch(`${CATALOG_API}/api/admin/promo/banner/upload`, {
+              method: 'POST',
+              headers: authHeaders,
+              body: fdMobile
+            }).catch(() => null);
+            if (upResM && upResM.ok) {
+              const upDataM = await upResM.json();
+              if (upDataM.url) catalogState.bannerMobileUrl = upDataM.url;
+            }
+            catalogState.pendingBannerMobileFile = null;
+          }
           await fetch(`${CATALOG_API}/api/admin/promo/penawaran-spesial`, {
             method: 'PATCH',
             headers: { 'Content-Type': 'application/json', ...authHeaders },
@@ -923,7 +986,7 @@
           showCatalogToast('Gagal menyimpan banner.', true);
         } finally {
           saveBannerBtn.disabled = false;
-          saveBannerBtn.textContent = 'Simpan & Tayangkan';
+          saveBannerBtn.textContent = 'Simpan & tayangkan';
         }
       });
     }
@@ -938,7 +1001,9 @@
         );
         if (!confirmed) return;
         catalogState.bannerUrl = '';
+        catalogState.bannerMobileUrl = '';
         catalogState.pendingBannerFile = null;
+        catalogState.pendingBannerMobileFile = null;
         broadcastCatalogChange();
         renderAllViews();
         showCatalogToast('Gambar banner dihapus.');
