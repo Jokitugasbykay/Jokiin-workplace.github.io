@@ -303,12 +303,11 @@
           catalogState.serverTimeOffsetMs = Date.parse(bData.server_time) - Date.now();
         }
         if (Array.isArray(bData.banners) && bData.banners.length) {
-          catalogState.bannerUrl = bData.banners[0]?.gambar_url || '';
-          catalogState.bannerTitle = bData.banners[0]?.judul || 'Gemini Pro 18 Bulan';
-          const mob = bData.banners.find(b => b.urutan === 1 || /mobile/i.test(b.judul || ''));
-          if (mob?.gambar_url) {
-            catalogState.bannerMobileUrl = mob.gambar_url;
-          }
+          const desk = bData.banners.find(b => !/mobile/i.test(b.judul || '') && b.urutan !== 1);
+          const mob = bData.banners.find(b => /mobile/i.test(b.judul || '') || b.urutan === 1);
+          catalogState.bannerUrl = desk?.gambar_url || '';
+          catalogState.bannerMobileUrl = mob?.gambar_url || '';
+          catalogState.bannerTitle = desk?.judul || bData.banners[0]?.judul || 'Gemini Pro 18 Bulan';
         }
       }
 
@@ -521,13 +520,13 @@
       const offerText = rawTitle.replace(/\s+\d+\s+Bulan$/i, '') || rawTitle;
 
       const hasBannerUrl = Boolean(catalogState.bannerUrl);
-      const hasMobileBannerUrl = Boolean(catalogState.bannerMobileUrl || catalogState.bannerUrl);
+      const hasMobileBannerUrl = Boolean(catalogState.bannerMobileUrl);
 
       const desktopStyle = hasBannerUrl
         ? `background-image:url('${escapeStr(catalogState.bannerUrl)}'); background-size:cover; background-position:center;`
         : '';
       const mobileStyle = hasMobileBannerUrl
-        ? `background-image:url('${escapeStr(catalogState.bannerMobileUrl || catalogState.bannerUrl)}'); background-size:cover; background-position:center;`
+        ? `background-image:url('${escapeStr(catalogState.bannerMobileUrl)}'); background-size:cover; background-position:center;`
         : '';
 
       mount.innerHTML = `
