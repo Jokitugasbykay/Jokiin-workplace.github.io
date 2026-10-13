@@ -1,87 +1,41 @@
 // JOKI.IN Workplace — Produk, Promo & Integrasi Katalog Module
-// Mengelola produk, stok, harga, diskon, banner Penawaran Spesial, dan sinkronisasi langsung ke katalog publik.
+// Mengelola produk/layanan jasa, kuota, harga, diskon, banner Penawaran Spesial, dan sinkronisasi ke katalog publik.
 (function () {
   'use strict';
 
   const CATALOG_API = 'https://xdbnwjvxqtpkoaigedsk.supabase.co/functions/v1/jokiin-catalog';
+  const SUPABASE_REST_SERVICES = 'https://xdbnwjvxqtpkoaigedsk.supabase.co/rest/v1/services';
+  const SUPABASE_KEY = 'sb_publishable_WuihnHZo0ZJbVGCMe1sWJg_QVdRKw4z';
   const DEFAULT_CATALOG_URL = 'https://jokiin.my.id';
 
+  // Seed default 21 layanan riil dari database Supabase public.services
   const DEFAULT_PRODUCTS = [
-    {
-      id: '11111111-1111-4111-8111-111111111101',
-      nama: 'Gemini Pro 18 Bulan',
-      slug: 'gemini-pro-18-bulan',
-      kategori: 'Digital',
-      deskripsi: 'Akses penuh Gemini Advanced 18 bulan, garansi penuh, akun pribadi.',
-      harga_dasar: 50000,
-      diskon_persen: 60,
-      stok: 20,
-      batas_beli_per_orang: 1,
-      is_active: true,
-      is_limited_edition: true,
-      gambar_url: null
-    },
-    {
-      id: '11111111-1111-4111-8111-111111111102',
-      nama: 'Cek Turnitin',
-      slug: 'cek-turnitin',
-      kategori: 'Pengecekan',
-      deskripsi: 'Pengecekan plagiarisme Turnitin no-repository aman dan cepat.',
-      harga_dasar: 4000,
-      diskon_persen: 0,
-      stok: 999,
-      batas_beli_per_orang: 10,
-      is_active: true,
-      is_limited_edition: false,
-      gambar_url: null
-    },
-    {
-      id: '11111111-1111-4111-8111-111111111103',
-      nama: 'Joki Skripsi',
-      slug: 'joki-skripsi',
-      kategori: 'Penelitian',
-      deskripsi: 'Pendampingan dan pengerjaan skripsi lengkap hingga sidang.',
-      harga_dasar: 16000000,
-      diskon_persen: 19,
-      stok: 10,
-      batas_beli_per_orang: 1,
-      is_active: true,
-      is_limited_edition: false,
-      gambar_url: null
-    },
-    {
-      id: '11111111-1111-4111-8111-111111111104',
-      nama: 'Joki PPT',
-      slug: 'joki-ppt',
-      kategori: 'Desain',
-      deskripsi: 'Pembuatan slide presentasi profesional, menarik, dan rapi.',
-      harga_dasar: 13000,
-      diskon_persen: 0,
-      stok: 100,
-      batas_beli_per_orang: 5,
-      is_active: true,
-      is_limited_edition: false,
-      gambar_url: null
-    },
-    {
-      id: '11111111-1111-4111-8111-111111111105',
-      nama: 'Joki Proposal Skripsi',
-      slug: 'joki-proposal-skripsi',
-      kategori: 'Penelitian',
-      deskripsi: 'Penyusunan proposal skripsi Bab 1-3 lengkap beserta referensi.',
-      harga_dasar: 1300000,
-      diskon_persen: 0,
-      stok: 25,
-      batas_beli_per_orang: 2,
-      is_active: true,
-      is_limited_edition: false,
-      gambar_url: null
-    }
+    { id: 1, nama: 'Joki Makalah', slug: 'makalah', kategori: 'Akademik', deskripsi: 'Pengerjaan penyusunan makalah yang rapi dan terstruktur. Tarif Rp2.000 per lembar, minimal pemesanan 10 lembar.', harga_dasar: 2000, diskon_persen: 0, stok: null, is_active: true, is_limited_edition: false, status: 'active' },
+    { id: 2, nama: 'Joki PPT', slug: 'ppt', kategori: 'Desain', deskripsi: 'Presentasi yang lebih rapi, menarik, dan mudah dipahami.', harga_dasar: 13000, diskon_persen: 0, stok: null, is_active: true, is_limited_edition: false, status: 'active' },
+    { id: 3, nama: 'Joki Artikel', slug: 'artikel', kategori: 'Penulisan', deskripsi: 'Pengerjaan penulisan artikel populer atau tugas artikel sesuai tema. Tarif Rp8.000 per lembar.', harga_dasar: 8000, diskon_persen: 0, stok: null, is_active: true, is_limited_edition: false, status: 'active' },
+    { id: 4, nama: 'Desain Poster', slug: 'poster', kategori: 'Desain', deskripsi: 'Desain visual yang disesuaikan dengan kebutuhan dan identitas acara. Tarif mulai Rp80.000.', harga_dasar: 140000, diskon_persen: 0, stok: null, is_active: true, is_limited_edition: false, status: 'active' },
+    { id: 5, nama: 'Edit & Revisi Karya Ilmiah', slug: 'editing', kategori: 'Editing', deskripsi: 'Penyuntingan kata dan kalimat, revisi, serta perapian struktur dan format dokumen karya ilmiah. Tarif mulai Rp60.000.', harga_dasar: 60000, diskon_persen: 0, stok: null, is_active: true, is_limited_edition: false, status: 'active' },
+    { id: 6, nama: 'Joki Skripsi', slug: 'skripsi', kategori: 'Penelitian', deskripsi: 'Konsultasi dan pendampingan formatting untuk tugas akhir mahasiswa.', harga_dasar: 16000000, diskon_persen: 0, stok: null, is_active: false, is_limited_edition: false, status: 'active' },
+    { id: 7, nama: 'Cek Turnitin', slug: 'turnitin', kategori: 'Pengecekan', deskripsi: 'Pengecekan similarity untuk karya ilmiah dengan proses cepat.', harga_dasar: 4000, diskon_persen: 0, stok: null, is_active: true, is_limited_edition: false, status: 'active' },
+    { id: 8, nama: 'Joki Jurnal', slug: 'jurnal', kategori: 'Penelitian', deskripsi: 'Pengerjaan review jurnal dan penyesuaian format template.', harga_dasar: 80000, diskon_persen: 0, stok: null, is_active: true, is_limited_edition: false, status: 'active' },
+    { id: 9, nama: 'Joki Parafrase', slug: 'bimbingan-parafrase', kategori: 'Penulisan', deskripsi: 'Pengerjaan perbaikan kalimat, sitasi, dan gaya bahasa tanpa mengubah substansi karya.', harga_dasar: 50000, diskon_persen: 0, stok: null, is_active: true, is_limited_edition: false, status: 'active' },
+    { id: 10, nama: 'Joki Olah Data Kualitatif', slug: 'konsultasi-olah-data-kualitatif', kategori: 'Analisis', deskripsi: 'Pengerjaan analisis data kualitatif dan penggunaan NVivo berbasis data milik mahasiswa.', harga_dasar: 900000, diskon_persen: 0, stok: null, is_active: true, is_limited_edition: false, status: 'active' },
+    { id: 11, nama: 'Joki Olah Data Kuantitatif', slug: 'konsultasi-olah-data-kuantitatif', kategori: 'Analisis', deskripsi: 'Pengerjaan SPSS, regresi, dan PLS menggunakan data milik mahasiswa.', harga_dasar: 500000, diskon_persen: 0, stok: null, is_active: true, is_limited_edition: false, status: 'active' },
+    { id: 12, nama: 'Joki Konversi Artikel', slug: 'bimbingan-konversi-artikel', kategori: 'Publikasi', deskripsi: 'Pendampingan mengubah naskah menjadi format artikel sesuai panduan publikasi.', harga_dasar: 500000, diskon_persen: 0, stok: null, is_active: true, is_limited_edition: false, status: 'active' },
+    { id: 13, nama: 'Joki Laporan', slug: 'bimbingan-laporan', kategori: 'Akademik', deskripsi: 'Review struktur, format, dan penyusunan laporan berdasarkan data milik mahasiswa.', harga_dasar: 250000, diskon_persen: 0, stok: null, is_active: true, is_limited_edition: false, status: 'active' },
+    { id: 14, nama: 'Joki Mini Riset', slug: 'bimbingan-mini-riset', kategori: 'Penelitian', deskripsi: 'Pendampingan perencanaan mini riset, metodologi, dan interpretasi hasil.', harga_dasar: 500000, diskon_persen: 0, stok: null, is_active: true, is_limited_edition: false, status: 'active' },
+    { id: 15, nama: 'Joki Proposal Skripsi', slug: 'bimbingan-proposal-skripsi', kategori: 'Penelitian', deskripsi: 'Pendampingan proposal skripsi: struktur, metodologi, sitasi, dan review naskah.', harga_dasar: 1300000, diskon_persen: 0, stok: null, is_active: true, is_limited_edition: false, status: 'active' },
+    { id: 16, nama: 'Joki Proposal Tesis', slug: 'bimbingan-proposal-tesis', kategori: 'Penelitian', deskripsi: 'Pengerjaan proposal tesis: struktur, metodologi, sitasi, dan review naskah.', harga_dasar: 1800000, diskon_persen: 0, stok: null, is_active: false, is_limited_edition: false, status: 'active' },
+    { id: 17, nama: 'Joki Skripsi Bab 4', slug: 'bimbingan-bab-4', kategori: 'Penelitian', deskripsi: 'Pengerjaan membaca hasil analisis dan menyusun pembahasan berbasis data mahasiswa.', harga_dasar: 700000, diskon_persen: 0, stok: null, is_active: true, is_limited_edition: false, status: 'active' },
+    { id: 18, nama: 'Joki Skripsi Bab 5', slug: 'bimbingan-bab-5', kategori: 'Penelitian', deskripsi: 'Pengerjaan menyusun kesimpulan, implikasi, dan saran dari hasil penelitian.', harga_dasar: 800000, diskon_persen: 0, stok: null, is_active: true, is_limited_edition: false, status: 'active' },
+    { id: 19, nama: 'Joki Artikel Jurnal', slug: 'bimbingan-artikel-jurnal', kategori: 'Penelitian', deskripsi: 'Review struktur artikel jurnal studi literatur dan kesesuaian dengan template.', harga_dasar: 500000, diskon_persen: 0, stok: null, is_active: true, is_limited_edition: false, status: 'active' },
+    { id: 20, nama: 'Joki Systematic Literature Review', slug: 'bimbingan-slr', kategori: 'Penelitian', deskripsi: 'Pengerjaan alur SLR, strategi pencarian, seleksi artikel, dan pelaporan metode.', harga_dasar: 1300000, diskon_persen: 0, stok: null, is_active: true, is_limited_edition: false, status: 'active' },
+    { id: 21, nama: 'Gemini Pro 18 Bulan', slug: 'gemini-pro-18-bulan', kategori: 'Digital', deskripsi: 'Akses penuh Gemini Advanced 18 bulan, Garansi penuh selama masa aktif, Akun pribadi siap pakai', harga_dasar: 50000, diskon_persen: 60, stok: 13, is_active: true, is_limited_edition: true, status: 'active' }
   ];
 
   const catalogState = {
     products: [...DEFAULT_PRODUCTS],
-    selectedProductId: DEFAULT_PRODUCTS[0].id,
+    selectedProductId: 21,
     isCreatingNew: false,
     penawaranSpesialAktif: true,
     promoJudul: 'Penawaran Spesial Minggu Ini',
@@ -209,6 +163,25 @@
     });
   }
 
+  function mapDbServiceToProduct(s) {
+    const isLimited = Boolean(s.slug === 'gemini-pro-18-bulan' || s.is_limited_edition || s.sale_label === 'LIMITED EDITION');
+    const isActive = s.is_active !== undefined ? Boolean(s.is_active) : (s.status === 'active');
+    return {
+      id: s.id,
+      nama: s.name || s.title || s.nama || '',
+      slug: s.slug || slugify(s.name || ''),
+      kategori: s.category || s.kategori || 'Akademik',
+      deskripsi: s.description || s.deskripsi || '',
+      harga_dasar: Number(s.price || s.harga_dasar || 0),
+      diskon_persen: Number(s.sale_percent || s.diskon_persen || 0),
+      stok: isLimited ? (s.stok !== undefined && s.stok !== null ? s.stok : 13) : null,
+      is_active: isActive,
+      is_limited_edition: isLimited,
+      status: s.status || (isActive ? 'active' : 'inactive'),
+      gambar_url: s.image || s.gambar_url || null
+    };
+  }
+
   function injectStyles() {
     if (document.getElementById('jokiin-catalog-admin-styles')) return;
     const style = document.createElement('style');
@@ -235,10 +208,6 @@
       .cat-cd-controls { display:flex; flex-wrap:wrap; gap:8px; align-items:center; flex:1; min-width:240px; justify-content:flex-end; }
       .cat-preset-btn { min-height:36px; padding:0 10px; border-radius:8px; border:1px solid #d9b64f; background:#fffbeb; color:#78350f; font:700 12px "Plus Jakarta Sans",sans-serif; cursor:pointer; }
       .cat-preset-btn:hover { background:#fef3c7; }
-      .cat-bn { display:flex; gap:16px; }
-      .cat-pv { flex:1; min-height:140px; border-radius:12px; background:linear-gradient(135deg,#1b3b8f,#6a4bd8 55%,#1fd18b); display:flex; align-items:center; justify-content:center; color:#fff; font-weight:800; text-align:center; padding:12px; position:relative; overflow:hidden; background-size:cover; background-position:center; }
-      .cat-dz { flex:1; border:2px dashed #d9b64f; border-radius:12px; padding:16px; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:8px; text-align:center; color:#6b7785; font-size:12px; transition:background .15s; }
-      .cat-dz.dragover { background:rgba(245,158,11,.12); border-color:#f59e0b; }
       .cat-btn { min-height:44px; padding:0 18px; border-radius:12px; border:1px solid #cfd6e0; background:#fff; color:#1b2430; font:600 13px "Plus Jakarta Sans",sans-serif; cursor:pointer; display:inline-flex; align-items:center; justify-content:center; gap:8px; }
       .cat-btn.p { background:#3b4ba8; border-color:#3b4ba8; color:#fff; }
       .cat-btn.y { background:#f59e0b; border-color:#f59e0b; color:#2b1a00; }
@@ -252,19 +221,23 @@
       .cat-table tr.clickable-row { cursor:pointer; }
       .cat-lb { border:1px solid #d69a00; color:#8a5d00; font-weight:800; font-size:10px; letter-spacing:.08em; padding:3px 8px; border-radius:999px; display:inline-block; background:#fffbeb; }
       .cat-label { display:flex; flex-direction:column; gap:5px; font-size:12px; font-weight:600; color:#3a4654; }
-      .cat-input { min-height:44px; border:1px solid #cfd6e0; border-radius:10px; padding:0 12px; font:400 14px "Plus Jakarta Sans",sans-serif; background:#fff; color:#1b2430; width:100%; }
+      .cat-input { min-height:44px; border:1px solid #cfd6e0; border-radius:10px; padding:0 12px; font:400 14px "Plus Jakarta Sans",sans-serif; background:#fff; color:#1b2430; width:100%; box-sizing:border-box; }
       .cat-fr { display:grid; grid-template-columns:1fr 1fr; gap:12px; }
       .cat-ok { display:inline-flex; align-items:center; gap:6px; color:#0e8a5c; font-weight:700; font-size:12px; }
       .cat-ok::before { content:""; width:8px; height:8px; border-radius:50%; background:#16a36b; }
       .cat-row { display:flex; gap:10px; flex-wrap:wrap; align-items:center; }
       .cat-ln { display:flex; align-items:center; justify-content:space-between; gap:12px; padding:10px 0; border-top:1px solid #eef1f5; }
       .cat-mobile-list { display:none; flex-direction:column; }
-      .cat-new-badge { margin-left:auto; background:#f59e0b; color:#2b1a00; font-size:10px; font-weight:800; padding:2px 7px; border-radius:999px; }
-      .cat-toast { position:fixed; bottom:84px; right:20px; z-index:9999; background:#0f172a; color:#fff; padding:12px 18px; border-radius:12px; font-size:13px; font-weight:600; box-shadow:0 10px 25px rgba(0,0,0,.2); opacity:0; transform:translateY(10px); pointer-events:none; transition:opacity .2s,transform .2s; }
+      .cat-toast { position:fixed; bottom:84px; right:20px; z-index:99999; background:#0f172a; color:#fff; padding:12px 18px; border-radius:12px; font-size:13px; font-weight:600; box-shadow:0 10px 25px rgba(0,0,0,.2); opacity:0; transform:translateY(10px); pointer-events:none; transition:opacity .2s,transform .2s; }
       .cat-toast--visible { opacity:1; transform:translateY(0); }
       .cat-toast--error { background:#be123c; }
+
+      /* Modal Pop-up Tambah Layanan */
+      .cat-modal-overlay { position:fixed; inset:0; background:rgba(15,23,42,0.65); z-index:99999; display:none; align-items:center; justify-content:center; padding:16px; backdrop-filter:blur(3px); }
+      .cat-modal-sheet { background:#fff; border-radius:20px; max-width:540px; width:100%; max-height:92vh; overflow-y:auto; padding:24px; box-shadow:0 24px 48px rgba(0,0,0,0.24); display:flex; flex-direction:column; gap:16px; box-sizing:border-box; animation:cat-pop-modal .2s ease-out; }
+      @keyframes cat-pop-modal { from { opacity:0; transform:scale(0.95); } to { opacity:1; transform:scale(1); } }
+
       @media (max-width: 820px) {
-        .cat-bn { flex-direction:column; }
         .cat-g2 { grid-template-columns:1fr; }
         .cat-fr { grid-template-columns:1fr; }
         .cat-desktop-table-wrap { display:none; }
@@ -278,30 +251,46 @@
   async function fetchCatalogData() {
     try {
       const headers = await getAuthHeaders();
-      const [prodRes, bannerRes, syncRes] = await Promise.all([
-        fetch(`${CATALOG_API}/api/admin/products`, { headers }).catch(() => null),
+
+      // 1. Prioritaskan load dari Supabase public.services (tabel asli 21 layanan)
+      let dbServices = null;
+      if (window.state?.services && Array.isArray(window.state.services) && window.state.services.length) {
+        dbServices = window.state.services;
+      } else if (typeof window.getSupabase === 'function') {
+        try {
+          const sb = await window.getSupabase();
+          const { data } = await sb.from('services').select('*').order('id', { ascending: true });
+          if (Array.isArray(data) && data.length) dbServices = data;
+        } catch (_) {}
+      }
+
+      if (!dbServices || !dbServices.length) {
+        try {
+          const res = await fetch(`${SUPABASE_REST_SERVICES}?select=*&order=id.asc`, {
+            headers: {
+              apikey: SUPABASE_KEY,
+              Authorization: `Bearer ${SUPABASE_KEY}`
+            }
+          });
+          if (res.ok) {
+            const data = await res.json();
+            if (Array.isArray(data) && data.length) dbServices = data;
+          }
+        } catch (_) {}
+      }
+
+      if (dbServices && Array.isArray(dbServices) && dbServices.length) {
+        catalogState.products = dbServices.map(mapDbServiceToProduct);
+        if (!catalogState.products.some(p => p.id === catalogState.selectedProductId)) {
+          catalogState.selectedProductId = catalogState.products[0].id;
+        }
+      }
+
+      // 2. Fetch promo banners & sync logs
+      const [bannerRes, syncRes] = await Promise.all([
         fetch(`${CATALOG_API}/api/promo/banner`).catch(() => null),
         fetch(`${CATALOG_API}/api/admin/sync/status`, { headers }).catch(() => null)
       ]);
-
-      if (prodRes && prodRes.ok) {
-        const data = await prodRes.json();
-        if (Array.isArray(data.products) && data.products.length) {
-          catalogState.products = data.products;
-          if (!catalogState.products.some(p => p.id === catalogState.selectedProductId)) {
-            catalogState.selectedProductId = catalogState.products[0].id;
-          }
-        }
-      } else {
-        const pubRes = await fetch(`${CATALOG_API}/api/products`).catch(() => null);
-        if (pubRes && pubRes.ok) {
-          const data = await pubRes.json();
-          if (Array.isArray(data.products) && data.products.length) {
-            catalogState.products = data.products;
-            catalogState.selectedProductId = catalogState.products[0].id;
-          }
-        }
-      }
 
       if (bannerRes && bannerRes.ok) {
         const bData = await bannerRes.json();
@@ -332,26 +321,11 @@
         if (sData.catalog_url) catalogState.catalogUrl = sData.catalog_url;
       }
     } catch (_) {
-      // Fallback uses seeded DEFAULT_PRODUCTS when offline or before Edge Function deploy
+      // Fallback tetap menggunakan DEFAULT_PRODUCTS
     }
   }
 
   function getSelectedProduct() {
-    if (catalogState.isCreatingNew) {
-      return {
-        id: '',
-        nama: '',
-        slug: '',
-        kategori: 'Akademik',
-        deskripsi: '',
-        harga_dasar: 10000,
-        diskon_persen: 0,
-        stok: 20,
-        batas_beli_per_orang: 1,
-        is_active: true,
-        is_limited_edition: false
-      };
-    }
     return catalogState.products.find(p => p.id === catalogState.selectedProductId) || catalogState.products[0] || DEFAULT_PRODUCTS[0];
   }
 
@@ -377,7 +351,7 @@
         <div class="cat-hd">
           <div>
             <h3>Integrasi Langsung</h3>
-            <p>Perubahan produk, stok, dan banner tayang ke website katalog.</p>
+            <p>Perubahan produk, status aktif, dan banner tayang ke website katalog.</p>
           </div>
           <span class="cat-ok">Tersambung</span>
         </div>
@@ -447,10 +421,11 @@
   function renderAllViews() {
     injectStyles();
 
-    const activeCount = catalogState.products.filter(p => p.is_active).length;
+    // Hitung layanan aktif dari data riil (is_active !== false)
+    const activeCount = catalogState.products.filter(p => p.is_active !== false && p.status !== 'inactive').length;
     const discountCount = catalogState.products.filter(p => (p.diskon_persen || 0) > 0).length;
 
-    // Update top Ringkasan produk card counters
+    // Sinkronkan ke card Ringkasan Produk di bagian atas
     const oldActiveEl = document.getElementById('prod-active-count');
     const oldDiscEl = document.getElementById('prod-discount-count');
     const oldBannerEl = document.getElementById('prod-banner-status');
@@ -485,14 +460,28 @@
 
       const tableRowsHtml = catalogState.products.map(p => {
         const finalPrice = Math.round((p.harga_dasar || 0) * (1 - (p.diskon_persen || 0) / 100));
-        const isSelected = !catalogState.isCreatingNew && p.id === sel.id;
+        const isSelected = p.id === sel.id;
+
+        // Tampilan kuota/stok: Untuk jasa adalah "Tidak terbatas", untuk promo terbatas (Gemini Pro) adalah slot
+        let stockCellHtml = '';
+        if (p.is_limited_edition) {
+          stockCellHtml = `<span style="font-weight:700;color:#b45309;background:#fef3c7;padding:3px 8px;border-radius:6px;font-size:12px;">${p.stok || 13} Slot</span>`;
+        } else if (!p.stok || p.stok === 'Tidak terbatas' || p.stok === '-') {
+          stockCellHtml = `<span style="color:#0e8a5c;font-weight:600;font-size:12px;">Tidak terbatas</span>`;
+        } else {
+          stockCellHtml = `<span style="color:#6b7785;font-size:12px;">${escapeStr(p.stok)}</span>`;
+        }
+
         return `
           <tr class="clickable-row ${isSelected ? 'selected-row' : ''}" data-select-product="${escapeStr(p.id)}">
             <td>
               <b>${escapeStr(p.nama)}</b>
               ${p.is_limited_edition ? `<div style="margin-top:2px;"><span class="cat-lb">LIMITED EDITION</span></div>` : ''}
             </td>
-            <td>${p.stok === 0 ? '<span style="color:#be123c;font-weight:700;">Habis (0)</span>' : escapeStr(p.stok)}</td>
+            <td>
+              <span style="font-size:12px;color:#6b7785;background:#f1f5f9;padding:2px 8px;border-radius:6px;">${escapeStr(p.kategori || 'Akademik')}</span>
+            </td>
+            <td>${stockCellHtml}</td>
             <td>
               <b>${formatIdr(finalPrice)}</b>
               ${p.diskon_persen > 0 ? `<br><small style="color:#6b7785;text-decoration:line-through;">${formatIdr(p.harga_dasar)}</small>` : ''}
@@ -509,11 +498,15 @@
 
       const mobileRowsHtml = catalogState.products.map(p => {
         const finalPrice = Math.round((p.harga_dasar || 0) * (1 - (p.diskon_persen || 0) / 100));
+        const isSelected = p.id === sel.id;
+        const kuotaText = p.is_limited_edition ? `Slot: ${p.stok || 13}` : 'Tidak terbatas';
+
         return `
-          <div class="cat-ln" style="min-height:56px;cursor:pointer;" data-select-product="${escapeStr(p.id)}">
+          <div class="cat-ln ${isSelected ? 'selected-row' : ''}" style="min-height:56px;cursor:pointer;padding:12px 10px;border-bottom:1px solid #f1f5f9;" data-select-product="${escapeStr(p.id)}">
             <div>
-              <b>${escapeStr(p.nama)}</b>
-              <p style="font-size:12px;color:#6b7785;margin:2px 0 0;">Stok ${p.stok} · ${formatIdr(finalPrice)}</p>
+              <b style="font-size:14px;color:#1b2430;">${escapeStr(p.nama)}</b>
+              ${p.is_limited_edition ? `<div style="margin:2px 0;"><span class="cat-lb">LIMITED EDITION</span></div>` : ''}
+              <p style="font-size:12px;color:#6b7785;margin:2px 0 0;">${escapeStr(p.kategori || 'Akademik')} · ${kuotaText} · ${formatIdr(finalPrice)}</p>
             </div>
             <label class="cat-sw" onclick="event.stopPropagation()">
               <input type="checkbox" role="switch" aria-label="Aktifkan ${escapeStr(p.nama)}" data-toggle-product="${escapeStr(p.id)}" ${p.is_active ? 'checked' : ''} ${isWorker ? 'disabled' : ''}>
@@ -523,7 +516,7 @@
         `;
       }).join('');
 
-      const specialProd = catalogState.products.find(p => p.is_limited_edition) || catalogState.products[0];
+      const specialProd = catalogState.products.find(p => p.is_limited_edition) || catalogState.products.find(p => p.slug === 'gemini-pro-18-bulan') || catalogState.products[0];
       const rawTitle = specialProd?.nama || catalogState.bannerTitle || catalogState.promoJudul || 'Gemini Pro';
       const offerText = rawTitle.replace(/\s+\d+\s+Bulan$/i, '') || rawTitle;
 
@@ -538,6 +531,7 @@
         : '';
 
       mount.innerHTML = `
+        <!-- Card Penawaran Spesial (Mockup Light Mode #fff8e6) -->
         <div class="cat-card sp" style="background:#fff8e6;border:1px solid #f6d98a;border-radius:12px;padding:1rem 1.25rem;display:flex;flex-direction:column;gap:14px;font-family:'Plus Jakarta Sans',system-ui,sans-serif;color:#1b2430">
           <div style="display:flex;justify-content:space-between;align-items:center;gap:12px">
             <div>
@@ -550,7 +544,7 @@
             </label>
           </div>
 
-          <!-- Fitur Hitung Mundur Promo Tetap Dipertahankan (jangan dihapus) -->
+          <!-- Fitur Hitung Mundur Promo Tetap Dipertahankan (Waktu Server) -->
           <div class="cat-cd-wrap" id="cat-admin-countdown" style="background:#fff;border:1px solid #f2d279;border-radius:12px;padding:14px;display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:14px">
             <div>
               <b style="font-size:13px;display:block;color:#1b2430;">Hitung Mundur Promo (Waktu Server)</b>
@@ -574,11 +568,11 @@
             </div>
           </div>
 
-          <!-- Mockup Banner Grid (Desktop 1:1 & Mobile 16:9) -->
-          <div class="cat-banner-grid" style="display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.78fr);gap:14px;background:#fff;border-radius:12px;padding:14px">
+          <!-- Banner Preview Box: Desktop 1:1 & Mobile 16:9 Sesuai Mockup -->
+          <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:16px;align-items:start">
             <div style="display:flex;flex-direction:column;gap:8px">
               <p style="font-size:13px;font-weight:600;margin:0;color:#1b2430">Desktop (1:1)</p>
-              <div id="cat-banner-preview-desktop" style="aspect-ratio:1/1;border-radius:10px;background:linear-gradient(135deg,#1b3b8f,#6a4bd8 55%,#1fd18b);display:flex;align-items:center;justify-content:center;color:#fff;font-size:16px;font-weight:600;text-align:center;padding:12px;background-size:cover;background-position:center;${desktopStyle}">
+              <div id="cat-banner-preview-desktop" style="aspect-ratio:1/1;border-radius:10px;background:linear-gradient(135deg,#1b3b8f,#6a4bd8 55%,#1fd18b);display:flex;align-items:center;justify-content:center;color:#fff;font-size:18px;font-weight:700;text-align:center;padding:12px;background-size:cover;background-position:center;${desktopStyle}">
                 ${hasBannerUrl ? '' : escapeStr(offerText)}
               </div>
               <p style="font-size:12px;color:#6b7785;margin:0">Min. 1080 × 1080 px · JPG, PNG, WebP · maks 2 MB</p>
@@ -592,7 +586,7 @@
             </div>
           </div>
 
-          <!-- Buttons Sesuai Mockup -->
+          <!-- Buttons Banner -->
           <div style="display:flex;gap:8px;flex-wrap:wrap">
             <input type="file" id="cat-banner-file-input" accept="image/jpeg,image/png,image/webp" hidden>
             <input type="file" id="cat-banner-mobile-file-input" accept="image/jpeg,image/png,image/webp" hidden>
@@ -604,16 +598,26 @@
           </div>
         </div>
 
+        <!-- Bagian Tabel Layanan & Form Edit -->
         <div class="cat-g2">
           <div class="cat-card">
             <div class="cat-hd">
-              <h3>Detail Produk</h3>
-              ${!isWorker ? `<button type="button" class="cat-btn" id="cat-btn-add-product">+ Tambah Produk</button>` : ''}
+              <div>
+                <h3>Detail Layanan &amp; Produk</h3>
+                <p>Total ${catalogState.products.length} layanan terdaftar (${activeCount} aktif)</p>
+              </div>
+              ${!isWorker ? `<button type="button" class="cat-btn p" id="cat-btn-add-product" style="font-weight:700;">+ Tambah Layanan</button>` : ''}
             </div>
             <div class="cat-desktop-table-wrap">
               <table class="cat-table">
                 <thead>
-                  <tr><th>PRODUK</th><th>STOK</th><th>HARGA</th><th>AKTIF</th></tr>
+                  <tr>
+                    <th>LAYANAN</th>
+                    <th>KATEGORI</th>
+                    <th>KUOTA / STOK</th>
+                    <th>HARGA</th>
+                    <th>AKTIF</th>
+                  </tr>
                 </thead>
                 <tbody>${tableRowsHtml}</tbody>
               </table>
@@ -621,38 +625,31 @@
             <div class="cat-mobile-list">${mobileRowsHtml}</div>
           </div>
 
+          <!-- Panel Edit Layanan Terpilih -->
           <form class="cat-card" id="cat-product-edit-form">
             <div class="cat-hd">
               <div>
-                <h3>${catalogState.isCreatingNew ? 'Tambah Produk Baru' : escapeStr(sel.nama)}</h3>
+                <h3>Edit: ${escapeStr(sel.nama)}</h3>
                 <p>
                   ${sel.is_limited_edition ? '<span class="cat-lb">LIMITED EDITION</span>' : `<span style="font-size:12px;color:#6b7785;">Harga tayang: ${formatIdr(hargaAkhir)}</span>`}
                 </p>
               </div>
               <label class="cat-sw">
-                <input type="checkbox" role="switch" aria-label="Produk aktif" id="cat-form-active" ${sel.is_active ? 'checked' : ''} ${isWorker ? 'disabled' : ''}>
+                <input type="checkbox" role="switch" aria-label="Layanan aktif" id="cat-form-active" ${sel.is_active ? 'checked' : ''} ${isWorker ? 'disabled' : ''}>
                 <span></span>
               </label>
             </div>
 
-            ${catalogState.isCreatingNew || !isWorker ? `
-              <div class="cat-fr">
-                <label class="cat-label">Nama produk
-                  <input class="cat-input" id="cat-form-nama" value="${escapeStr(sel.nama)}" required ${isWorker ? 'disabled' : ''}>
-                </label>
-                <label class="cat-label">Kategori
-                  <input class="cat-input" id="cat-form-kategori" value="${escapeStr(sel.kategori)}" required ${isWorker ? 'disabled' : ''}>
-                </label>
-              </div>
-            ` : ''}
+            <div class="cat-fr">
+              <label class="cat-label">Nama layanan
+                <input class="cat-input" id="cat-form-nama" value="${escapeStr(sel.nama)}" required ${isWorker ? 'disabled' : ''}>
+              </label>
+              <label class="cat-label">Kategori
+                <input class="cat-input" id="cat-form-kategori" value="${escapeStr(sel.kategori || 'Akademik')}" required ${isWorker ? 'disabled' : ''}>
+              </label>
+            </div>
 
             <div class="cat-fr">
-              <label class="cat-label">Stok
-                <input class="cat-input" type="number" min="0" step="1" id="cat-form-stok" value="${escapeStr(sel.stok)}" required>
-              </label>
-              <label class="cat-label">Batas beli per orang
-                <input class="cat-input" type="number" min="1" step="1" id="cat-form-batas" value="${escapeStr(sel.batas_beli_per_orang || 1)}" ${isWorker ? 'disabled' : ''} required>
-              </label>
               <label class="cat-label">Harga dasar (Rp)
                 <input class="cat-input" type="number" min="0" step="500" id="cat-form-harga" value="${escapeStr(sel.harga_dasar)}" required>
               </label>
@@ -661,6 +658,11 @@
               </label>
             </div>
 
+            <label class="cat-label">Kuota / Stok Layanan
+              <input class="cat-input" type="text" id="cat-form-stok" value="${escapeStr(sel.stok === null || sel.stok === undefined ? 'Tidak terbatas' : sel.stok)}" placeholder="Tidak terbatas">
+              <small style="color:#6b7785;font-size:11px;margin-top:2px;display:block;">Untuk penjualan jasa on-demand, isi <b>Tidak terbatas</b> (bisa ditulis teks tanpa nomor).</small>
+            </label>
+
             <label class="cat-label">Deskripsi &amp; manfaat
               <input class="cat-input" id="cat-form-deskripsi" value="${escapeStr(sel.deskripsi || '')}" placeholder="Pisahkan poin manfaat dengan koma" ${isWorker ? 'disabled' : ''}>
             </label>
@@ -668,7 +670,7 @@
             <div class="cat-ln" style="padding:6px 0;">
               <div>
                 <b style="font-size:13px;">Badge Limited Edition</b>
-                <p style="font-size:11px;color:#6b7785;">Tampilkan badge terpisah dari judul produk</p>
+                <p style="font-size:11px;color:#6b7785;">Tampilkan badge khusus terpisah dari judul</p>
               </div>
               <label class="cat-sw">
                 <input type="checkbox" role="switch" aria-label="Limited Edition" id="cat-form-limited" ${sel.is_limited_edition ? 'checked' : ''} ${isWorker ? 'disabled' : ''}>
@@ -677,21 +679,71 @@
             </div>
 
             <div class="cat-row">
-              <button type="submit" class="cat-btn p">Simpan Produk</button>
-              <button type="button" class="cat-btn" id="cat-btn-cancel-edit">Batal</button>
-              ${!catalogState.isCreatingNew && !isWorker ? `<button type="button" class="cat-btn danger" id="cat-btn-delete-product" style="margin-left:auto;">Hapus Produk</button>` : ''}
+              <button type="submit" class="cat-btn p">Simpan Perubahan</button>
+              ${!isWorker && catalogState.products.length > 1 ? `<button type="button" class="cat-btn danger" id="cat-btn-delete-product" style="margin-left:auto;">Hapus Layanan</button>` : ''}
             </div>
           </form>
         </div>
 
         ${renderIntegrationCardHtml()}
+
+        <!-- Modal Dialog Pop-up: Tambah Layanan Baru -->
+        <div id="cat-modal-add-service" class="cat-modal-overlay">
+          <div class="cat-modal-sheet" role="dialog" aria-modal="true" aria-labelledby="modal-add-title">
+            <div style="display:flex;justify-content:space-between;align-items:center;border-bottom:1px solid #e2e8f0;padding-bottom:12px;">
+              <div>
+                <h3 id="modal-add-title" style="margin:0;font-size:18px;font-weight:700;color:#1b2430;">Tambah Layanan Baru</h3>
+                <p style="margin:2px 0 0;font-size:12px;color:#6b7785;">Layanan jasa baru akan langsung tersimpan ke database.</p>
+              </div>
+              <button type="button" id="btn-close-modal-add" style="background:transparent;border:none;font-size:24px;cursor:pointer;color:#64748b;line-height:1;padding:4px 8px;">&times;</button>
+            </div>
+            <form id="form-modal-add-service" style="display:flex;flex-direction:column;gap:14px;">
+              <label class="cat-label">Nama Layanan
+                <input class="cat-input" id="modal-add-nama" placeholder="Contoh: Joki Analisis Data SPSS" required>
+              </label>
+              <div class="cat-fr">
+                <label class="cat-label">Kategori
+                  <input class="cat-input" id="modal-add-kategori" placeholder="Akademik / Desain / dll." value="Akademik" required>
+                </label>
+                <label class="cat-label">Harga Dasar (Rp)
+                  <input class="cat-input" type="number" min="0" step="500" id="modal-add-harga" placeholder="Contoh: 50000" required>
+                </label>
+              </div>
+              <div class="cat-fr">
+                <label class="cat-label">Diskon (%)
+                  <input class="cat-input" type="number" min="0" max="100" step="1" id="modal-add-diskon" value="0">
+                </label>
+                <label class="cat-label">Kuota / Stok Layanan
+                  <input class="cat-input" type="text" id="modal-add-stok" value="Tidak terbatas" placeholder="Tidak terbatas">
+                </label>
+              </div>
+              <label class="cat-label">Deskripsi Layanan &amp; Manfaat
+                <textarea class="cat-input" id="modal-add-deskripsi" rows="3" placeholder="Jelaskan cakupan pengerjaan atau poin manfaat..." style="resize:vertical;padding:8px 12px;height:auto;min-height:70px;"></textarea>
+              </label>
+              <div style="display:flex;align-items:center;justify-content:space-between;padding:4px 0;">
+                <div>
+                  <b style="font-size:13px;">Status Langsung Aktif</b>
+                  <p style="margin:2px 0 0;font-size:11px;color:#6b7785;">Layanan akan langsung aktif dan tayang di website katalog.</p>
+                </div>
+                <label class="cat-sw">
+                  <input type="checkbox" id="modal-add-active" checked>
+                  <span></span>
+                </label>
+              </div>
+              <div style="display:flex;gap:10px;justify-content:flex-end;margin-top:8px;">
+                <button type="button" class="cat-btn" id="btn-cancel-modal-add">Batal</button>
+                <button type="submit" class="cat-btn p" id="btn-submit-modal-add">Simpan Layanan</button>
+              </div>
+            </form>
+          </div>
+        </div>
       `;
 
       bindMountEvents(mount);
       startAdminCountdown(mount);
     }
 
-    // Also render inside dedicated #view-integration if present
+    // Render inside dedicated #view-integration if present
     const viewIntegration = document.getElementById('view-integration');
     if (viewIntegration) {
       viewIntegration.innerHTML = `<div class="cat-admin-wrap">${renderIntegrationCardHtml()}</div>`;
@@ -707,16 +759,16 @@
         syncBtn.textContent = 'Menyinkronkan...';
         try {
           const headers = await getAuthHeaders();
-          const res = await fetch(`${CATALOG_API}/api/admin/sync`, { method: 'POST', headers });
+          const res = await fetch(`${CATALOG_API}/api/admin/sync`, { method: 'POST', headers }).catch(() => null);
           const nowIso = new Date().toISOString();
           catalogState.lastSyncTime = nowIso;
           catalogState.syncLogs.unshift({
             id: String(Date.now()),
             waktu: nowIso,
             status: 'success',
-            pesan: `Sinkron ke katalog selesai (${catalogState.products.filter(p => p.is_active).length} produk aktif).`
+            pesan: `Sinkron ke katalog selesai (${catalogState.products.filter(p => p.is_active).length} layanan aktif).`
           });
-          if (res.ok) {
+          if (res && res.ok) {
             showCatalogToast('Katalog berhasil disinkronkan!');
           } else {
             showCatalogToast('Sinkron lokal berhasil dicatat.');
@@ -795,26 +847,27 @@
       });
     });
 
-    // Select product row
+    // Select service row to edit
     mount.querySelectorAll('[data-select-product]').forEach(row => {
       row.addEventListener('click', () => {
-        catalogState.isCreatingNew = false;
-        catalogState.selectedProductId = row.getAttribute('data-select-product');
+        const pid = row.getAttribute('data-select-product');
+        catalogState.selectedProductId = isNaN(Number(pid)) ? pid : Number(pid);
         renderAllViews();
       });
     });
 
-    // Toggle product active switch with confirmation before deactivating
+    // Toggle product active switch with live Supabase update
     mount.querySelectorAll('[data-toggle-product]').forEach(input => {
       input.addEventListener('change', async () => {
-        const pid = input.getAttribute('data-toggle-product');
-        const prod = catalogState.products.find(p => p.id === pid);
+        const rawPid = input.getAttribute('data-toggle-product');
+        const pid = isNaN(Number(rawPid)) ? rawPid : Number(rawPid);
+        const prod = catalogState.products.find(p => p.id === pid || String(p.id) === String(pid));
         if (!prod) return;
 
         if (!input.checked) {
           const confirmed = await askConfirm(
-            'Nonaktifkan Produk?',
-            `Produk "${prod.nama}" akan disembunyikan dari katalog publik.`
+            'Nonaktifkan Layanan?',
+            `Layanan "${prod.nama}" akan dinonaktifkan dari katalog website.`
           );
           if (!confirmed) {
             input.checked = true;
@@ -822,13 +875,32 @@
           }
         }
 
+        const nextStatus = input.checked ? 'active' : 'inactive';
         prod.is_active = input.checked;
-        broadcastCatalogChange();
+        prod.status = nextStatus;
+
+        // Update in Supabase public.services directly
         try {
-          const headers = { 'Content-Type': 'application/json', ...(await getAuthHeaders()) };
-          await fetch(`${CATALOG_API}/api/admin/products/${pid}/toggle`, { method: 'PATCH', headers });
+          if (typeof window.getSupabase === 'function') {
+            const sb = await window.getSupabase();
+            await sb.from('services').update({
+              status: nextStatus,
+              is_active: input.checked
+            }).eq('id', pid);
+          }
         } catch (_) {}
-        showCatalogToast(`Status "${prod.nama}" diperbarui.`);
+
+        // Sinkronkan ke window.state.services di app.js
+        if (window.state?.services && Array.isArray(window.state.services)) {
+          const match = window.state.services.find(s => s.id === pid || String(s.id) === String(pid));
+          if (match) {
+            match.status = nextStatus;
+            match.is_active = input.checked;
+          }
+        }
+
+        broadcastCatalogChange();
+        showCatalogToast(`Status "${prod.nama}" diperbarui (${input.checked ? 'Aktif' : 'Nonaktif'}).`);
         renderAllViews();
       });
     });
@@ -867,7 +939,7 @@
       });
     }
 
-    // Banner file upload (desktop & mobile pickers + drag & drop on preview boxes)
+    // Banner file upload (desktop & mobile pickers + drag & drop)
     const fileInput = mount.querySelector('#cat-banner-file-input');
     const mobileFileInput = mount.querySelector('#cat-banner-mobile-file-input');
     const pickBtn = mount.querySelector('#cat-btn-pick-banner');
@@ -925,19 +997,13 @@
       });
     });
 
-    // Save & publish banner + countdown deadline
+    // Save & publish banner
     const saveBannerBtn = mount.querySelector('#cat-btn-save-banner');
     if (saveBannerBtn) {
       saveBannerBtn.addEventListener('click', async () => {
         saveBannerBtn.disabled = true;
         saveBannerBtn.textContent = 'Menyimpan...';
         try {
-          if (deadlineInput && deadlineInput.value) {
-            const parsed = Date.parse(deadlineInput.value);
-            if (Number.isFinite(parsed)) {
-              catalogState.promoDeadline = new Date(parsed).toISOString();
-            }
-          }
           const authHeaders = await getAuthHeaders();
           if (catalogState.pendingBannerFile) {
             const fd = new FormData();
@@ -974,14 +1040,13 @@
             headers: { 'Content-Type': 'application/json', ...authHeaders },
             body: JSON.stringify({
               aktif: catalogState.penawaranSpesialAktif,
-              promo_deadline: catalogState.promoDeadline,
-              promo_judul: catalogState.promoJudul
+              promo_deadline: catalogState.promoDeadline
             })
           }).catch(() => null);
 
           broadcastCatalogChange();
-          showCatalogToast('Banner & Hitung Mundur disimpan & ditayangkan!');
           renderAllViews();
+          showCatalogToast('Banner promo berhasil disimpan dan ditayangkan!');
         } catch (_) {
           showCatalogToast('Gagal menyimpan banner.', true);
         } finally {
@@ -991,13 +1056,13 @@
       });
     }
 
-    // Remove banner preview with confirmation
+    // Remove banner preview
     const removeBannerBtn = mount.querySelector('#cat-btn-remove-banner');
     if (removeBannerBtn) {
       removeBannerBtn.addEventListener('click', async () => {
         const confirmed = await askConfirm(
-          'Hapus Gambar Banner?',
-          'Gambar pratinjau banner saat ini akan dihapus.'
+          'Hapus Banner?',
+          'Gambar banner pratinjau akan dihapus.'
         );
         if (!confirmed) return;
         catalogState.bannerUrl = '';
@@ -1018,21 +1083,183 @@
       });
     }
 
-    // Add product button
+    // ── MODAL POP-UP: Tambah Layanan Baru ──
     const addProdBtn = mount.querySelector('#cat-btn-add-product');
+    const modalAdd = mount.querySelector('#cat-modal-add-service');
+    const closeAddBtn = mount.querySelector('#btn-close-modal-add');
+    const cancelAddBtn = mount.querySelector('#btn-cancel-modal-add');
+    const formModalAdd = mount.querySelector('#form-modal-add-service');
+
+    function openAddModal() {
+      if (!modalAdd) return;
+      modalAdd.style.display = 'flex';
+      const inputNama = modalAdd.querySelector('#modal-add-nama');
+      if (inputNama) inputNama.focus();
+    }
+
+    function closeAddModal() {
+      if (!modalAdd) return;
+      modalAdd.style.display = 'none';
+      if (formModalAdd) formModalAdd.reset();
+    }
+
     if (addProdBtn) {
-      addProdBtn.addEventListener('click', () => {
-        catalogState.isCreatingNew = true;
+      addProdBtn.addEventListener('click', (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        openAddModal();
+      });
+    }
+    if (closeAddBtn) closeAddBtn.addEventListener('click', closeAddModal);
+    if (cancelAddBtn) cancelAddBtn.addEventListener('click', closeAddModal);
+    if (modalAdd) {
+      modalAdd.addEventListener('click', (e) => {
+        if (e.target === modalAdd) closeAddModal();
+      });
+    }
+
+    if (formModalAdd) {
+      formModalAdd.addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const nama = (formModalAdd.querySelector('#modal-add-nama')?.value || '').trim();
+        const kategori = (formModalAdd.querySelector('#modal-add-kategori')?.value || 'Akademik').trim();
+        const harga = Math.max(0, parseInt(formModalAdd.querySelector('#modal-add-harga')?.value || '0', 10) || 0);
+        const diskon = Math.min(100, Math.max(0, parseInt(formModalAdd.querySelector('#modal-add-diskon')?.value || '0', 10) || 0));
+        const stokInput = (formModalAdd.querySelector('#modal-add-stok')?.value || '').trim();
+        const deskripsi = (formModalAdd.querySelector('#modal-add-deskripsi')?.value || '').trim();
+        const isActive = Boolean(formModalAdd.querySelector('#modal-add-active')?.checked);
+
+        if (!nama) {
+          showCatalogToast('Nama layanan wajib diisi.', true);
+          return;
+        }
+
+        const isStockNumber = /^\d+$/.test(stokInput);
+        const finalStok = isStockNumber ? parseInt(stokInput, 10) : (stokInput || 'Tidak terbatas');
+
+        const newServiceObj = {
+          name: nama,
+          description: deskripsi,
+          price: harga,
+          sale_percent: diskon,
+          status: isActive ? 'active' : 'inactive',
+          is_active: isActive,
+          slug: slugify(nama)
+        };
+
+        let createdId = Date.now();
+
+        // 1. Simpan ke database Supabase public.services
+        try {
+          if (typeof window.getSupabase === 'function') {
+            const sb = await window.getSupabase();
+            const { data } = await sb.from('services').insert([newServiceObj]).select().single();
+            if (data?.id) createdId = data.id;
+          }
+        } catch (_) {}
+
+        const newProduct = {
+          id: createdId,
+          nama: nama,
+          slug: slugify(nama),
+          kategori: kategori,
+          deskripsi: deskripsi,
+          harga_dasar: harga,
+          diskon_persen: diskon,
+          stok: finalStok === 'Tidak terbatas' ? null : finalStok,
+          is_active: isActive,
+          is_limited_edition: false,
+          status: isActive ? 'active' : 'inactive'
+        };
+
+        catalogState.products.unshift(newProduct);
+        catalogState.selectedProductId = createdId;
+
+        // Sync ke state.services di app.js
+        if (window.state?.services && Array.isArray(window.state.services)) {
+          window.state.services.unshift({
+            id: createdId,
+            ...newServiceObj
+          });
+        }
+
+        broadcastCatalogChange();
+        closeAddModal();
+        showCatalogToast(`Layanan "${nama}" berhasil ditambahkan!`);
         renderAllViews();
       });
     }
 
-    // Cancel edit
-    const cancelEditBtn = mount.querySelector('#cat-btn-cancel-edit');
-    if (cancelEditBtn) {
-      cancelEditBtn.addEventListener('click', () => {
-        catalogState.isCreatingNew = false;
+    // ── FORM EDIT LAYANAN (Panel Kanan) ──
+    const editForm = mount.querySelector('#cat-product-edit-form');
+    if (editForm) {
+      editForm.addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const sel = getSelectedProduct();
+        const namaInput = editForm.querySelector('#cat-form-nama');
+        const kategoriInput = editForm.querySelector('#cat-form-kategori');
+        const nama = namaInput ? namaInput.value.trim() : sel.nama;
+        const kategori = kategoriInput ? kategoriInput.value.trim() : sel.kategori;
+        const harga = Math.max(0, parseInt(editForm.querySelector('#cat-form-harga')?.value || '0', 10) || 0);
+        const diskon = Math.min(100, Math.max(0, parseInt(editForm.querySelector('#cat-form-diskon')?.value || '0', 10) || 0));
+        const stokRaw = (editForm.querySelector('#cat-form-stok')?.value || '').trim();
+        const deskripsi = (editForm.querySelector('#cat-form-deskripsi')?.value || '').trim();
+        const isLimited = Boolean(editForm.querySelector('#cat-form-limited')?.checked);
+        const isActive = Boolean(editForm.querySelector('#cat-form-active')?.checked);
+
+        if (!nama) {
+          showCatalogToast('Nama layanan wajib diisi.', true);
+          return;
+        }
+
+        const isStockNumber = /^\d+$/.test(stokRaw);
+        const finalStok = isStockNumber ? parseInt(stokRaw, 10) : (stokRaw || 'Tidak terbatas');
+
+        const updatedData = {
+          nama,
+          kategori: kategori || 'Akademik',
+          deskripsi,
+          harga_dasar: harga,
+          diskon_persen: diskon,
+          stok: finalStok === 'Tidak terbatas' ? null : finalStok,
+          is_active: isActive,
+          is_limited_edition: isLimited,
+          status: isActive ? 'active' : 'inactive'
+        };
+
+        Object.assign(sel, updatedData);
+
+        // Update ke database Supabase
+        try {
+          if (typeof window.getSupabase === 'function') {
+            const sb = await window.getSupabase();
+            await sb.from('services').update({
+              name: nama,
+              description: deskripsi,
+              price: harga,
+              sale_percent: diskon,
+              status: isActive ? 'active' : 'inactive',
+              is_active: isActive
+            }).eq('id', sel.id);
+          }
+        } catch (_) {}
+
+        // Sinkronkan ke state.services di app.js
+        if (window.state?.services && Array.isArray(window.state.services)) {
+          const match = window.state.services.find(s => s.id === sel.id || String(s.id) === String(sel.id));
+          if (match) {
+            match.name = nama;
+            match.description = deskripsi;
+            match.price = harga;
+            match.sale_percent = diskon;
+            match.status = isActive ? 'active' : 'inactive';
+            match.is_active = isActive;
+          }
+        }
+
+        broadcastCatalogChange();
         renderAllViews();
+        showCatalogToast(`Perubahan "${nama}" berhasil disimpan!`);
       });
     }
 
@@ -1042,86 +1269,28 @@
       deleteProdBtn.addEventListener('click', async () => {
         const sel = getSelectedProduct();
         const confirmed = await askConfirm(
-          'Hapus Produk?',
-          `Apakah Anda yakin ingin menghapus "${sel.nama}" secara permanen?`
+          'Hapus Layanan?',
+          `Apakah Anda yakin ingin menghapus "${sel.nama}" dari database?`
         );
         if (!confirmed) return;
 
         catalogState.products = catalogState.products.filter(p => p.id !== sel.id);
-        catalogState.selectedProductId = catalogState.products[0]?.id || '';
-        broadcastCatalogChange();
-        try {
-          const headers = await getAuthHeaders();
-          await fetch(`${CATALOG_API}/api/admin/products/${sel.id}`, { method: 'DELETE', headers });
-        } catch (_) {}
-        showCatalogToast(`Produk "${sel.nama}" dihapus.`);
-        renderAllViews();
-      });
-    }
-
-    // Save product form
-    const form = mount.querySelector('#cat-product-edit-form');
-    if (form) {
-      form.addEventListener('submit', async e => {
-        e.preventDefault();
-        const sel = getSelectedProduct();
-        const stok = Math.max(0, parseInt(mount.querySelector('#cat-form-stok')?.value || '0', 10) || 0);
-        const batas = Math.max(1, parseInt(mount.querySelector('#cat-form-batas')?.value || '1', 10) || 1);
-        const harga = Math.max(0, parseInt(mount.querySelector('#cat-form-harga')?.value || '0', 10) || 0);
-        const diskon = Math.min(100, Math.max(0, parseInt(mount.querySelector('#cat-form-diskon')?.value || '0', 10) || 0));
-        const deskripsi = (mount.querySelector('#cat-form-deskripsi')?.value || '').trim();
-        const isLimited = Boolean(mount.querySelector('#cat-form-limited')?.checked);
-        const isActive = Boolean(mount.querySelector('#cat-form-active')?.checked);
-        const namaInput = mount.querySelector('#cat-form-nama');
-        const kategoriInput = mount.querySelector('#cat-form-kategori');
-        const nama = namaInput ? namaInput.value.trim() : sel.nama;
-        const kategori = kategoriInput ? kategoriInput.value.trim() : sel.kategori;
-
-        if (!nama) {
-          showCatalogToast('Nama produk wajib diisi.', true);
-          return;
-        }
-
-        const payload = {
-          nama,
-          slug: catalogState.isCreatingNew ? slugify(nama) : sel.slug,
-          kategori: kategori || 'Umum',
-          deskripsi,
-          harga_dasar: harga,
-          diskon_persen: diskon,
-          stok,
-          batas_beli_per_orang: batas,
-          is_active: isActive,
-          is_limited_edition: isLimited
-        };
+        catalogState.selectedProductId = catalogState.products[0]?.id || 1;
 
         try {
-          const headers = { 'Content-Type': 'application/json', ...(await getAuthHeaders()) };
-          if (catalogState.isCreatingNew) {
-            const newProd = { id: crypto.randomUUID ? crypto.randomUUID() : String(Date.now()), ...payload };
-            catalogState.products.unshift(newProd);
-            catalogState.selectedProductId = newProd.id;
-            catalogState.isCreatingNew = false;
-            await fetch(`${CATALOG_API}/api/admin/products`, {
-              method: 'POST',
-              headers,
-              body: JSON.stringify(payload)
-            }).catch(() => null);
-            showCatalogToast(`Produk "${nama}" berhasil ditambahkan!`);
-          } else {
-            Object.assign(sel, payload);
-            await fetch(`${CATALOG_API}/api/admin/products/${sel.id}`, {
-              method: 'PUT',
-              headers,
-              body: JSON.stringify(payload)
-            }).catch(() => null);
-            showCatalogToast(`Perubahan "${nama}" berhasil disimpan!`);
+          if (typeof window.getSupabase === 'function') {
+            const sb = await window.getSupabase();
+            await sb.from('services').delete().eq('id', sel.id);
           }
-          broadcastCatalogChange();
-          renderAllViews();
-        } catch (_) {
-          showCatalogToast('Gagal menyimpan produk.', true);
+        } catch (_) {}
+
+        if (window.state?.services && Array.isArray(window.state.services)) {
+          window.state.services = window.state.services.filter(s => s.id !== sel.id && String(s.id) !== String(sel.id));
         }
+
+        broadcastCatalogChange();
+        showCatalogToast(`Layanan "${sel.nama}" telah dihapus.`);
+        renderAllViews();
       });
     }
   }
