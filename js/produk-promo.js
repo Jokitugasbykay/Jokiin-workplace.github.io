@@ -30,7 +30,7 @@
     { id: 18, nama: 'Joki Skripsi Bab 5', slug: 'bimbingan-bab-5', kategori: 'Penelitian', deskripsi: 'Pengerjaan menyusun kesimpulan, implikasi, dan saran dari hasil penelitian.', harga_dasar: 800000, diskon_persen: 0, stok: null, is_active: true, is_limited_edition: false, status: 'active' },
     { id: 19, nama: 'Joki Artikel Jurnal', slug: 'bimbingan-artikel-jurnal', kategori: 'Penelitian', deskripsi: 'Review struktur artikel jurnal studi literatur dan kesesuaian dengan template.', harga_dasar: 500000, diskon_persen: 0, stok: null, is_active: true, is_limited_edition: false, status: 'active' },
     { id: 20, nama: 'Joki Systematic Literature Review', slug: 'bimbingan-slr', kategori: 'Penelitian', deskripsi: 'Pengerjaan alur SLR, strategi pencarian, seleksi artikel, dan pelaporan metode.', harga_dasar: 1300000, diskon_persen: 0, stok: null, is_active: true, is_limited_edition: false, status: 'active' },
-    { id: 21, nama: 'Gemini Pro 18 Bulan', slug: 'gemini-pro-18-bulan', kategori: 'Digital', deskripsi: 'Akses penuh Gemini Advanced 18 bulan, Garansi penuh selama masa aktif, Akun pribadi siap pakai', harga_dasar: 50000, diskon_persen: 60, stok: 13, is_active: true, is_limited_edition: true, status: 'active' }
+    { id: 21, nama: 'Gemini Pro 18 Bulan', slug: 'gemini-pro-18-bulan', kategori: 'Digital', deskripsi: 'Akses penuh Gemini Advanced 18 bulan, Garansi penuh selama masa aktif, Akun pribadi siap pakai', harga_dasar: 50000, diskon_persen: 60, stok: 0, is_active: true, is_limited_edition: true, status: 'active' }
   ];
 
   const catalogState = {
@@ -174,7 +174,7 @@
       deskripsi: s.description || s.deskripsi || '',
       harga_dasar: Number(s.price || s.harga_dasar || 0),
       diskon_persen: Number(s.sale_percent || s.diskon_persen || 0),
-      stok: isLimited ? (s.stok !== undefined && s.stok !== null ? s.stok : 13) : null,
+      stok: typeof s.stok === 'number' ? s.stok : (s.stok !== undefined && s.stok !== null && s.stok !== '' && !isNaN(Number(s.stok)) ? Number(s.stok) : (isLimited ? 0 : null)),
       is_active: isActive,
       is_limited_edition: isLimited,
       status: s.status || (isActive ? 'active' : 'inactive'),
@@ -886,6 +886,10 @@
               status: nextStatus,
               is_active: input.checked
             }).eq('id', pid);
+
+            await sb.from('products').update({
+              is_active: input.checked
+            }).eq('slug', prod.slug || slugify(prod.nama));
           }
         } catch (_) {}
 
@@ -1238,8 +1242,19 @@
               price: harga,
               sale_percent: diskon,
               status: isActive ? 'active' : 'inactive',
-              is_active: isActive
+              is_active: isActive,
+              stok: finalStok === 'Tidak terbatas' ? null : finalStok
             }).eq('id', sel.id);
+
+            await sb.from('products').update({
+              nama,
+              deskripsi,
+              harga_dasar: harga,
+              diskon_persen: diskon,
+              stok: typeof finalStok === 'number' ? finalStok : 0,
+              is_active: isActive,
+              is_limited_edition: isLimited
+            }).eq('slug', sel.slug || slugify(nama));
           }
         } catch (_) {}
 
