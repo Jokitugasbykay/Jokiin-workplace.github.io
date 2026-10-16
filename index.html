@@ -457,6 +457,10 @@
                   <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="8" r="7"/><polyline points="8.21 13.89 7 23 12 20 17 23 15.79 13.88"/></svg>
                   Bonus Tim
                 </button>
+                <button id="btn-add-reseller-quick" class="btn-outline" style="height: 40px; padding: 0 14px; font-size: 13px; font-weight: 700; display: inline-flex; align-items: center; gap: 6px;">
+                  <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 2L3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z"/><line x1="3" y1="6" x2="21" y2="6"/><path d="M16 10a4 4 0 0 1-8 0"/></svg>
+                  Modal Reseller
+                </button>
               </div>
             </div>
 
@@ -556,7 +560,7 @@
                 <div class="section-header" style="margin-bottom: 4px;">
                   <h4 class="section-title" style="font-size: 16px;">Alokasi Sisa Dana Operasional</h4>
                 </div>
-                <p class="chart-caption" style="margin-bottom: 16px;">Pembagian persentase terhadap sisa dana operasional (Rp13.196) di luar kewajiban domain.</p>
+                <p class="chart-caption" style="margin-bottom: 16px;">Pembagian target alokasi rata 20% terhadap sisa dana operasional (Rp13.196) untuk 5 pos pengeluaran di luar kewajiban domain.</p>
                 
                 <div id="op-donut-container" style="display: flex; flex-direction: column; align-items: center; justify-content: center; position: relative; min-height: 240px;">
                   <div id="op-donut-svg-wrap" style="width: 100%; max-width: 260px; height: 260px; position: relative;"></div>
@@ -654,6 +658,142 @@
               </article>
             </div>
 
+            <!-- Modul Reseller Produk Digital (Subsystem Modal Reseller) -->
+            <article class="performance-chart-card" id="op-reseller-panel" style="margin-top: 0; margin-bottom: 24px; border-top: 4px solid #0EA5E9;">
+              <div style="display: flex; justify-content: space-between; align-items: flex-start; flex-wrap: wrap; gap: 14px; margin-bottom: 16px;">
+                <div style="display: flex; align-items: flex-start; gap: 12px;">
+                  <div style="width: 42px; height: 42px; border-radius: 12px; background: rgba(14, 165, 233, 0.12); display: flex; align-items: center; justify-content: center; color: #0EA5E9; flex-shrink: 0;">
+                    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                      <path d="M6 2L3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z"></path>
+                      <line x1="3" y1="6" x2="21" y2="6"></line>
+                      <path d="M16 10a4 4 0 0 1-8 0"></path>
+                    </svg>
+                  </div>
+                  <div>
+                    <div style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">
+                      <h4 class="section-title" style="margin: 0; font-size: 17px;">Modal Reseller Produk Digital</h4>
+                      <span id="op-reseller-budget-badge" class="status-badge" style="background: rgba(14, 165, 233, 0.12); color: #0EA5E9; font-weight: 700; font-size: 11px;">Anggaran: Rp2.640 (20%)</span>
+                    </div>
+                    <p class="chart-caption" style="margin-top: 4px;">Pusat pengelolaan perputaran modal reseller: pengadaan stok akun/layanan digital, penjualan, dan pemisahan tegas antara omzet dengan laba bersih.</p>
+                  </div>
+                </div>
+                <div style="display: flex; gap: 10px; flex-wrap: wrap;">
+                  <button id="btn-reseller-add-stock" class="btn-primary" style="height: 38px; padding: 0 14px; font-size: 12px; font-weight: 700; background: #0EA5E9; border-color: #0EA5E9; display: inline-flex; align-items: center; gap: 6px;">
+                    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M12 5v14M5 12h14"/></svg>
+                    Catat Beli Stok (Modal)
+                  </button>
+                  <button id="btn-reseller-add-sale" class="btn-outline" style="height: 38px; padding: 0 14px; font-size: 12px; font-weight: 700; display: inline-flex; align-items: center; gap: 6px;">
+                    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
+                    Catat Penjualan
+                  </button>
+                </div>
+              </div>
+
+              <!-- Metric 4-Card Grid for Reseller -->
+              <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 12px; margin-bottom: 20px;">
+                <!-- 1. Sisa Modal Kas -->
+                <div style="background: var(--bg-body); border: 1px solid var(--border-light); border-radius: 12px; padding: 14px;">
+                  <span style="font-size: 11px; color: var(--ink-secondary); font-weight: 600; display: block;">Sisa Modal Kas Reseller</span>
+                  <div style="display: flex; align-items: baseline; gap: 4px; margin-top: 4px;">
+                    <span style="font-size: 13px; font-weight: 700; color: #0EA5E9;">Rp</span>
+                    <strong id="op-reseller-cash-remaining" style="font-size: 20px; font-weight: 800; color: var(--ink); font-variant-numeric: tabular-nums;">2.640</strong>
+                  </div>
+                  <span id="op-reseller-spent-note" style="font-size: 11px; color: var(--ink-secondary); display: block; margin-top: 4px;">Belanja stok: Rp0</span>
+                </div>
+
+                <!-- 2. Valuasi Stok Aktif -->
+                <div style="background: var(--bg-body); border: 1px solid var(--border-light); border-radius: 12px; padding: 14px;">
+                  <span style="font-size: 11px; color: var(--ink-secondary); font-weight: 600; display: block;">Nilai Aset Stok (HPP)</span>
+                  <div style="display: flex; align-items: baseline; gap: 4px; margin-top: 4px;">
+                    <span style="font-size: 13px; font-weight: 700; color: var(--accent-blue);">Rp</span>
+                    <strong id="op-reseller-stock-valuation" style="font-size: 20px; font-weight: 800; color: var(--ink); font-variant-numeric: tabular-nums;">0</strong>
+                  </div>
+                  <span id="op-reseller-stock-count-note" style="font-size: 11px; color: var(--ink-secondary); display: block; margin-top: 4px;">0 unit produk tersedia</span>
+                </div>
+
+                <!-- 3. Omzet Penjualan -->
+                <div style="background: var(--bg-body); border: 1px solid var(--border-light); border-radius: 12px; padding: 14px;">
+                  <span style="font-size: 11px; color: var(--ink-secondary); font-weight: 600; display: block;">Omzet Penjualan Kotor</span>
+                  <div style="display: flex; align-items: baseline; gap: 4px; margin-top: 4px;">
+                    <span style="font-size: 13px; font-weight: 700; color: var(--revenue-green);">Rp</span>
+                    <strong id="op-reseller-total-revenue" style="font-size: 20px; font-weight: 800; color: var(--ink); font-variant-numeric: tabular-nums;">0</strong>
+                  </div>
+                  <span style="font-size: 11px; color: var(--ink-secondary); display: block; margin-top: 4px;">Penerimaan total pelanggan</span>
+                </div>
+
+                <!-- 4. Laba Bersih & Margin -->
+                <div style="background: var(--bg-body); border: 1px solid var(--border-light); border-radius: 12px; padding: 14px; position: relative;">
+                  <div style="display: flex; justify-content: space-between; align-items: center;">
+                    <span style="font-size: 11px; color: var(--ink-secondary); font-weight: 600;">Laba Bersih Riil</span>
+                    <span id="op-reseller-margin-badge" class="status-badge" style="background: #E6F8F0; color: #10B981; font-size: 10px; font-weight: 700; padding: 2px 6px;">Margin 0%</span>
+                  </div>
+                  <div style="display: flex; align-items: baseline; gap: 4px; margin-top: 4px;">
+                    <span style="font-size: 13px; font-weight: 700; color: #10B981;">Rp</span>
+                    <strong id="op-reseller-net-profit" style="font-size: 20px; font-weight: 800; color: #10B981; font-variant-numeric: tabular-nums;">0</strong>
+                  </div>
+                  <span id="op-reseller-profit-note" style="font-size: 11px; color: var(--ink-secondary); display: block; margin-top: 4px;">Omzet - Modal Pokok - Biaya</span>
+                </div>
+              </div>
+
+              <!-- Dual Tab for Reseller: Stok vs Riwayat Transaksi -->
+              <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px; border-bottom: 1px solid var(--border-light); padding-bottom: 10px; margin-bottom: 14px;">
+                <div style="display: flex; gap: 8px;">
+                  <button id="op-reseller-tab-inventory" class="btn-outline active" style="height: 30px; padding: 0 12px; font-size: 12px; font-weight: 700; border-radius: 6px; cursor: pointer;">Stok Produk Digital</button>
+                  <button id="op-reseller-tab-history" class="btn-outline" style="height: 30px; padding: 0 12px; font-size: 12px; font-weight: 700; border-radius: 6px; cursor: pointer;">Riwayat Transaksi Reseller</button>
+                </div>
+                <span id="op-reseller-table-caption" style="font-size: 12px; color: var(--ink-secondary);">Katalog stok produk digital yang dimiliki sistem</span>
+              </div>
+
+              <!-- View 1: Reseller Inventory Table -->
+              <div id="op-reseller-inventory-wrap" class="chart-table-wrap">
+                <table class="op-table" style="width: 100%; border-collapse: collapse; font-size: 13px;">
+                  <thead>
+                    <tr style="border-bottom: 1px solid var(--border-light); color: var(--ink-secondary); font-size: 12px;">
+                      <th style="text-align: left; padding: 8px;">Nama Produk</th>
+                      <th style="text-align: left; padding: 8px;">Kategori</th>
+                      <th style="text-align: center; padding: 8px;">Sisa Stok</th>
+                      <th style="text-align: right; padding: 8px;">Harga Modal / Unit</th>
+                      <th style="text-align: right; padding: 8px;">Harga Jual Acuan</th>
+                      <th style="text-align: right; padding: 8px;">Total Valuasi Stok</th>
+                      <th style="text-align: center; padding: 8px;">Aksi</th>
+                    </tr>
+                  </thead>
+                  <tbody id="op-reseller-inventory-tbody">
+                    <tr>
+                      <td colspan="7" style="text-align: center; padding: 24px; color: var(--ink-secondary);">
+                        Belum ada stok produk digital. Klik tombol "Catat Beli Stok (Modal)" di atas untuk memulai pengadaan stok menggunakan modal reseller.
+                      </td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+
+              <!-- View 2: Reseller Transactions Table -->
+              <div id="op-reseller-transactions-wrap" class="chart-table-wrap" style="display: none;">
+                <table class="op-table" style="width: 100%; border-collapse: collapse; font-size: 13px;">
+                  <thead>
+                    <tr style="border-bottom: 1px solid var(--border-light); color: var(--ink-secondary); font-size: 12px;">
+                      <th style="text-align: left; padding: 8px;">Kode</th>
+                      <th style="text-align: left; padding: 8px;">Tanggal</th>
+                      <th style="text-align: left; padding: 8px;">Jenis</th>
+                      <th style="text-align: left; padding: 8px;">Produk & Pembeli</th>
+                      <th style="text-align: center; padding: 8px;">Qty</th>
+                      <th style="text-align: right; padding: 8px;">Modal (HPP)</th>
+                      <th style="text-align: right; padding: 8px;">Omzet Kotor</th>
+                      <th style="text-align: right; padding: 8px;">Laba Bersih</th>
+                    </tr>
+                  </thead>
+                  <tbody id="op-reseller-transactions-tbody">
+                    <tr>
+                      <td colspan="8" style="text-align: center; padding: 24px; color: var(--ink-secondary);">
+                        Belum ada riwayat transaksi reseller.
+                      </td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+            </article>
+
             <!-- Transaction History Table Card (Pengeluaran & Pemasukan 10%) -->
             <article class="performance-chart-card" style="margin-top: 0;">
               <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 12px; margin-bottom: 14px;">
@@ -672,6 +812,7 @@
                     <option value="bonus">Bonus tim aktif</option>
                     <option value="ai_tools">AI & tools</option>
                     <option value="emergency">Dana darurat</option>
+                    <option value="reseller">Modal reseller</option>
                   </select>
                   <input type="text" id="op-filter-search" class="form-input" placeholder="Cari keterangan/penerima..." style="height: 36px; font-size: 13px; padding: 0 12px; border-radius: 8px; width: 200px;">
                 </div>
@@ -1504,6 +1645,117 @@
     </div>
   </div>
 
+  <!-- Modal 4: Catat Pembelian Stok Modal Reseller -->
+  <div id="modal-add-reseller-purchase" class="modal-overlay">
+    <div class="modal-sheet" style="border-radius: 28px; max-width: 480px; margin: auto; padding: 24px;">
+      <div class="modal-header" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 14px;">
+        <h3 class="modal-title" style="font-size: 18px; margin: 0;">Pengadaan Stok Modal Reseller</h3>
+        <button class="modal-close-btn" data-close-modal="modal-add-reseller-purchase" aria-label="Tutup" style="background: transparent; border: none; font-size: 20px; cursor: pointer;">&times;</button>
+      </div>
+      <p id="reseller-purchase-available-info" style="font-size: 13px; color: #0284C7; font-weight: 600; margin-bottom: 16px; background: rgba(14, 165, 233, 0.12); padding: 8px 12px; border-radius: 8px;">
+        Sisa modal kas reseller tersedia: Rp2.640
+      </p>
+      <form id="form-add-reseller-purchase" style="display: flex; flex-direction: column; gap: 14px;">
+        <div class="form-group">
+          <label class="form-label" for="reseller-buy-name-input" style="font-size: 12px; font-weight: 700; color: var(--ink);">Nama Produk / Layanan Digital</label>
+          <input type="text" id="reseller-buy-name-input" class="form-input" placeholder="Contoh: Akun Gemini Advance 1 Bulan" required style="width: 100%; height: 42px; border-radius: 10px; border: 1px solid var(--border); padding: 0 12px; font-size: 13px; margin-top: 4px;">
+        </div>
+        <div class="form-group">
+          <label class="form-label" for="reseller-buy-category-input" style="font-size: 12px; font-weight: 700; color: var(--ink);">Kategori Produk</label>
+          <input type="text" id="reseller-buy-category-input" class="form-input" value="Akun & Layanan Digital" required style="width: 100%; height: 42px; border-radius: 10px; border: 1px solid var(--border); padding: 0 12px; font-size: 13px; margin-top: 4px;">
+        </div>
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
+          <div class="form-group">
+            <label class="form-label" for="reseller-buy-qty-input" style="font-size: 12px; font-weight: 700; color: var(--ink);">Jumlah Unit (Qty)</label>
+            <input type="number" id="reseller-buy-qty-input" class="form-input" min="1" value="1" required style="width: 100%; height: 42px; border-radius: 10px; border: 1px solid var(--border); padding: 0 12px; font-size: 14px; margin-top: 4px;">
+          </div>
+          <div class="form-group">
+            <label class="form-label" for="reseller-buy-cost-input" style="font-size: 12px; font-weight: 700; color: var(--ink);">Harga Modal / Unit (Rp)</label>
+            <input type="number" id="reseller-buy-cost-input" class="form-input" min="100" placeholder="Contoh: 1500" required style="width: 100%; height: 42px; border-radius: 10px; border: 1px solid var(--border); padding: 0 12px; font-size: 14px; margin-top: 4px;">
+          </div>
+        </div>
+        <div style="background: var(--bg-body); border: 1px dashed var(--border); border-radius: 10px; padding: 10px 14px; display: flex; justify-content: space-between; align-items: center; font-size: 13px;">
+          <span style="color: var(--ink-secondary);">Total Modal yang Diperlukan:</span>
+          <strong id="reseller-buy-total-calc" style="color: var(--ink); font-size: 15px;">Rp0</strong>
+        </div>
+        <div class="form-group">
+          <label class="form-label" for="reseller-buy-notes-input" style="font-size: 12px; font-weight: 700; color: var(--ink);">Catatan Pengadaan / Supplier (Opsional)</label>
+          <input type="text" id="reseller-buy-notes-input" class="form-input" placeholder="Supplier / ID invoice pengadaan" style="width: 100%; height: 42px; border-radius: 10px; border: 1px solid var(--border); padding: 0 12px; font-size: 13px; margin-top: 4px;">
+        </div>
+        <div style="display: flex; gap: 10px; margin-top: 10px;">
+          <button type="button" class="btn-outline" data-close-modal="modal-add-reseller-purchase" style="flex: 1; height: 44px; font-weight: 700;">Batal</button>
+          <button type="submit" id="btn-submit-reseller-purchase" class="btn-primary" style="flex: 1; height: 44px; font-weight: 700; background: #0EA5E9; border-color: #0EA5E9;">Beli Stok (Modal)</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Modal 5: Catat Penjualan Produk Reseller -->
+  <div id="modal-add-reseller-sale" class="modal-overlay">
+    <div class="modal-sheet" style="border-radius: 28px; max-width: 480px; margin: auto; padding: 24px;">
+      <div class="modal-header" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 14px;">
+        <h3 class="modal-title" style="font-size: 18px; margin: 0;">Catat Penjualan Produk Reseller</h3>
+        <button class="modal-close-btn" data-close-modal="modal-add-reseller-sale" aria-label="Tutup" style="background: transparent; border: none; font-size: 20px; cursor: pointer;">&times;</button>
+      </div>
+      <form id="form-add-reseller-sale" style="display: flex; flex-direction: column; gap: 14px;">
+        <div class="form-group">
+          <label class="form-label" for="reseller-sale-product-select" style="font-size: 12px; font-weight: 700; color: var(--ink);">Pilih Produk dari Stok</label>
+          <select id="reseller-sale-product-select" class="form-select" required style="width: 100%; height: 42px; border-radius: 10px; border: 1px solid var(--border); padding: 0 12px; font-size: 13px; margin-top: 4px;"></select>
+        </div>
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
+          <div class="form-group">
+            <label class="form-label" for="reseller-sale-qty-input" style="font-size: 12px; font-weight: 700; color: var(--ink);">Jumlah Terjual (Qty)</label>
+            <input type="number" id="reseller-sale-qty-input" class="form-input" min="1" value="1" required style="width: 100%; height: 42px; border-radius: 10px; border: 1px solid var(--border); padding: 0 12px; font-size: 14px; margin-top: 4px;">
+          </div>
+          <div class="form-group">
+            <label class="form-label" for="reseller-sale-price-input" style="font-size: 12px; font-weight: 700; color: var(--ink);">Harga Jual Satuan (Rp)</label>
+            <input type="number" id="reseller-sale-price-input" class="form-input" min="100" placeholder="Contoh: 3000" required style="width: 100%; height: 42px; border-radius: 10px; border: 1px solid var(--border); padding: 0 12px; font-size: 14px; margin-top: 4px;">
+          </div>
+        </div>
+        <div class="form-group">
+          <label class="form-label" for="reseller-sale-fee-input" style="font-size: 12px; font-weight: 700; color: var(--ink);">Biaya Transaksi / Gateway / Potongan (Rp, Opsional)</label>
+          <input type="number" id="reseller-sale-fee-input" class="form-input" min="0" value="0" placeholder="Contoh: 50" style="width: 100%; height: 42px; border-radius: 10px; border: 1px solid var(--border); padding: 0 12px; font-size: 13px; margin-top: 4px;">
+        </div>
+        <div class="form-group">
+          <label class="form-label" for="reseller-sale-buyer-input" style="font-size: 12px; font-weight: 700; color: var(--ink);">Nama Pembeli / Akun Pelanggan (Opsional)</label>
+          <input type="text" id="reseller-sale-buyer-input" class="form-input" placeholder="Contoh: Budi (WhatsApp)" style="width: 100%; height: 42px; border-radius: 10px; border: 1px solid var(--border); padding: 0 12px; font-size: 13px; margin-top: 4px;">
+        </div>
+        <div class="form-group">
+          <label class="form-label" for="reseller-sale-notes-input" style="font-size: 12px; font-weight: 700; color: var(--ink);">Catatan Penjualan (Opsional)</label>
+          <input type="text" id="reseller-sale-notes-input" class="form-input" placeholder="ID order atau catatan pengiriman akun" style="width: 100%; height: 42px; border-radius: 10px; border: 1px solid var(--border); padding: 0 12px; font-size: 13px; margin-top: 4px;">
+        </div>
+
+        <!-- Realtime Profit Margin Preview Breakdown -->
+        <div style="background: var(--bg-body); border: 1px solid var(--border-light); border-radius: 12px; padding: 12px 14px; display: flex; flex-direction: column; gap: 6px; font-size: 12px;">
+          <div style="display: flex; justify-content: space-between; color: var(--ink-secondary);">
+            <span>Omzet Kotor Penjualan:</span>
+            <strong id="reseller-sale-calc-rev" style="color: var(--ink);">Rp0</strong>
+          </div>
+          <div style="display: flex; justify-content: space-between; color: var(--ink-secondary);">
+            <span>Modal Pokok Barang (HPP):</span>
+            <strong id="reseller-sale-calc-cogs" style="color: var(--balance-red);">Rp0</strong>
+          </div>
+          <div style="display: flex; justify-content: space-between; color: var(--ink-secondary);">
+            <span>Biaya Transaksi / Gateway:</span>
+            <strong id="reseller-sale-calc-fee" style="color: var(--ink-secondary);">Rp0</strong>
+          </div>
+          <div style="border-top: 1px dashed var(--border); padding-top: 6px; margin-top: 2px; display: flex; justify-content: space-between; align-items: center; font-size: 13px;">
+            <strong style="color: var(--ink);">Estimasi Laba Bersih:</strong>
+            <span style="display: flex; align-items: center; gap: 6px;">
+              <span id="reseller-sale-calc-margin" class="status-badge" style="background: #E6F8F0; color: #10B981; font-size: 11px; font-weight: 700;">Margin 0%</span>
+              <strong id="reseller-sale-calc-profit" style="color: #10B981; font-size: 15px;">Rp0</strong>
+            </span>
+          </div>
+        </div>
+
+        <div style="display: flex; gap: 10px; margin-top: 10px;">
+          <button type="button" class="btn-outline" data-close-modal="modal-add-reseller-sale" style="flex: 1; height: 44px; font-weight: 700;">Batal</button>
+          <button type="submit" id="btn-submit-reseller-sale" class="btn-primary" style="flex: 1; height: 44px; font-weight: 700; background: #10B981; border-color: #10B981;">Simpan Penjualan</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
   <!-- Audio Chime for In-App Notifications -->
   <audio id="notification-sound" preload="auto">
     <source src="data:audio/wav;base64,UklGRnoGAABXQVZFZm10IBAAAAABAAEAQB8AAEAfAAABAAgAZGF0YQoGAACBhYqFbF1fdJivrJBhNjVgodDbq2EcBj+a2/LDciUFLI7L8M98KAUkg8vwz3woBSyPy/DPfCgFLI/L8M98KAUkg8vwz3woBSyPy/DPfCgFLI/L8M98KAUkg8vwz3woBSyPy/DPfCgFLI/L8M98KAUkg8vwz3woBSyPy/DPfCg=" type="audio/wav">
@@ -1512,7 +1764,7 @@
   <!-- Application Main Script (Universal script for file://, localhost, & cloud hosting) -->
   <script src="./js/app.js?v=38"></script>
   <script src="./js/produk-promo.js?v=2"></script>
-  <script src="./js/operational-fund.js?v=3"></script>
+  <script src="./js/operational-fund.js?v=4"></script>
 
   <!-- Failsafe Watchdog & Service Worker -->
   <script>

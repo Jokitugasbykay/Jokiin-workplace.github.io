@@ -11,6 +11,20 @@
     bonuses: [],
     promos: [],
     inflows: [],
+    resellerInventory: [],
+    resellerTransactions: [],
+    resellerSummary: {
+      budget_allocated: 2640,
+      capital_spent: 0,
+      capital_remaining: 2640,
+      stock_valuation: 0,
+      total_units: 0,
+      total_revenue: 0,
+      total_cogs: 0,
+      net_profit: 0,
+      profit_margin: 0
+    },
+    activeResellerTab: 'inventory',
     summary: {
       initial_fund: 35196,
       total_inflow: 0,
@@ -30,10 +44,11 @@
 
   const DEFAULT_BUDGETS = [
     { id: 'domain', name: 'Perpanjangan domain', allocated_amount: 22000, percentage: null, is_fixed_obligation: true, due_date: '2027-09-12', payment_status: 'unpaid', color: '#3158A8', icon: 'globe' },
-    { id: 'promo', name: 'Promo dan diskon pelanggan', allocated_amount: 4648, percentage: 35.22, is_fixed_obligation: false, color: '#10B981', icon: 'tag' },
-    { id: 'bonus', name: 'Bonus tim paling aktif', allocated_amount: 2789, percentage: 21.13, is_fixed_obligation: false, color: '#F59E0B', icon: 'award' },
-    { id: 'ai_tools', name: 'AI dan tools produktivitas', allocated_amount: 3718, percentage: 28.18, is_fixed_obligation: false, color: '#8B5CF6', icon: 'cpu' },
-    { id: 'emergency', name: 'Dana darurat', allocated_amount: 2041, percentage: 15.47, is_fixed_obligation: false, color: '#EC4899', icon: 'shield-alert' }
+    { id: 'promo', name: 'Promo dan diskon pelanggan', allocated_amount: 2639, percentage: 20.00, is_fixed_obligation: false, color: '#10B981', icon: 'tag' },
+    { id: 'bonus', name: 'Bonus tim paling aktif', allocated_amount: 2639, percentage: 20.00, is_fixed_obligation: false, color: '#F59E0B', icon: 'award' },
+    { id: 'ai_tools', name: 'AI dan tools produktivitas', allocated_amount: 2639, percentage: 20.00, is_fixed_obligation: false, color: '#8B5CF6', icon: 'cpu' },
+    { id: 'emergency', name: 'Dana darurat', allocated_amount: 2639, percentage: 20.00, is_fixed_obligation: false, color: '#EC4899', icon: 'shield-alert' },
+    { id: 'reseller', name: 'Modal reseller produk digital', allocated_amount: 2640, percentage: 20.00, is_fixed_obligation: false, color: '#0EA5E9', icon: 'shopping-bag' }
   ];
 
   async function fetchOperationalData() {
@@ -47,6 +62,8 @@
         { data: bonusesData, error: errBonuses },
         { data: promosData, error: errPromos },
         { data: inflowsData, error: errInflows },
+        { data: resellerInvData, error: errResellerInv },
+        { data: resellerTxData, error: errResellerTx },
         { data: settingsData },
         { data: summaryData }
       ] = await Promise.all([
@@ -55,6 +72,8 @@
         supabase.from('operational_team_bonuses').select('*').order('created_at', { ascending: false }),
         supabase.from('operational_promo_subsidies').select('*').order('created_at', { ascending: false }),
         supabase.from('operational_inflows').select('*').order('created_at', { ascending: false }),
+        supabase.from('operational_reseller_inventory').select('*').order('product_name', { ascending: true }),
+        supabase.from('operational_reseller_transactions').select('*').order('created_at', { ascending: false }),
         supabase.from('operational_settings').select('*'),
         supabase.from('operational_fund_summary').select('*').single()
       ]);
@@ -84,6 +103,51 @@
       opData.bonuses = bonusesData || [];
       opData.promos = promosData || [];
       opData.inflows = inflowsData || [];
+
+      // Process Reseller Subsystem Data
+      opData.resellerInventory = (resellerInvData || []).map(item => ({
+        ...item,
+        stock_qty: parseInt(item.stock_qty, 10) || 0,
+        unit_cost: parseFloat(item.unit_cost) || 0,
+        default_selling_price: parseFloat(item.default_selling_price) || 0
+      }));
+
+      opData.resellerTransactions = (resellerTxData || []).map(tx => ({
+        ...tx,
+        qty: parseInt(tx.qty, 10) || 0,
+        unit_cost: parseFloat(tx.unit_cost) || 0,
+        selling_price: parseFloat(tx.selling_price) || 0,
+        total_cost: parseFloat(tx.total_cost) || 0,
+        total_revenue: parseFloat(tx.total_revenue) || 0,
+        net_profit: parseFloat(tx.net_profit) || 0,
+        payment_fee: parseFloat(tx.payment_fee) || 0
+      }));
+
+      const resellerBudget = opData.budgets.find(b => b.id === 'reseller') || {
+        allocated_amount: 2640,
+        spent_amount: 0,
+        remaining_amount: 2640
+      };
+
+      const stockValuation = opData.resellerInventory.reduce((sum, item) => sum + (item.stock_qty * item.unit_cost), 0);
+      const totalUnits = opData.resellerInventory.reduce((sum, item) => sum + item.stock_qty, 0);
+      const salesTx = opData.resellerTransactions.filter(t => t.type === 'sale');
+      const totalRevenue = salesTx.reduce((sum, t) => sum + t.total_revenue, 0);
+      const totalCogs = salesTx.reduce((sum, t) => sum + t.total_cost, 0);
+      const totalNetProfit = salesTx.reduce((sum, t) => sum + t.net_profit, 0);
+      const profitMargin = totalRevenue > 0 ? ((totalNetProfit / totalRevenue) * 100).toFixed(1) : '0';
+
+      opData.resellerSummary = {
+        budget_allocated: resellerBudget.allocated_amount,
+        capital_spent: resellerBudget.spent_amount,
+        capital_remaining: resellerBudget.remaining_amount,
+        stock_valuation: stockValuation,
+        total_units: totalUnits,
+        total_revenue: totalRevenue,
+        total_cogs: totalCogs,
+        net_profit: totalNetProfit,
+        profit_margin: profitMargin
+      };
 
       // Calculate Summary
       let initialFund = 35196;
@@ -246,7 +310,7 @@
     legendEl.innerHTML = '';
 
     // STRICT REQUIREMENT: Domain is NOT included in percentage donut chart.
-    // Donut chart only visualizes the 4 remaining categories: Promo, Bonus, AI, Emergency.
+    // Donut chart visualizes the 5 remaining categories: Promo, Bonus, AI, Emergency, Reseller (each 20%).
     const variableBudgets = opData.budgets.filter(b => !b.is_fixed_obligation && b.id !== 'domain');
     const totalVar = variableBudgets.reduce((sum, b) => sum + b.allocated_amount, 0) || 1;
 
@@ -314,7 +378,7 @@
 
       path.addEventListener('mouseleave', () => {
         path.setAttribute('opacity', '1');
-        updateDonutCenterText('Sisa Dana', formatRupiah(totalVar), '100% (4 Pos)');
+        updateDonutCenterText('Sisa Dana', formatRupiah(totalVar), '100% (5 Pos)');
       });
 
       svg.appendChild(path);
@@ -352,7 +416,7 @@
     centerSub.setAttribute('font-weight', '600');
     centerSub.setAttribute('fill', '#10B981');
     centerSub.setAttribute('id', 'op-donut-center-sub');
-    centerSub.textContent = '100% (4 Pos)';
+    centerSub.textContent = '100% (5 Pos)';
 
     textGroup.appendChild(centerLabel);
     textGroup.appendChild(centerVal);
@@ -549,6 +613,171 @@
         });
       }
     }
+  }
+
+  function renderResellerSubsystem() {
+    const s = opData.resellerSummary;
+    const badge = document.getElementById('op-reseller-budget-badge');
+    const elCash = document.getElementById('op-reseller-cash-remaining');
+    const elSpentNote = document.getElementById('op-reseller-spent-note');
+    const elValuation = document.getElementById('op-reseller-stock-valuation');
+    const elStockNote = document.getElementById('op-reseller-stock-count-note');
+    const elRevenue = document.getElementById('op-reseller-total-revenue');
+    const elNetProfit = document.getElementById('op-reseller-net-profit');
+    const elMarginBadge = document.getElementById('op-reseller-margin-badge');
+    const wrapInv = document.getElementById('op-reseller-inventory-wrap');
+    const wrapTx = document.getElementById('op-reseller-transactions-wrap');
+    const btnTabInv = document.getElementById('op-reseller-tab-inventory');
+    const btnTabTx = document.getElementById('op-reseller-tab-history');
+    const captionEl = document.getElementById('op-reseller-table-caption');
+
+    if (badge) badge.textContent = `Anggaran: ${formatRupiah(s.budget_allocated)} (20%)`;
+    if (elCash) elCash.textContent = Math.round(s.capital_remaining).toLocaleString('id-ID');
+    if (elSpentNote) elSpentNote.textContent = `Belanja stok: ${formatRupiah(s.capital_spent)}`;
+    if (elValuation) elValuation.textContent = Math.round(s.stock_valuation).toLocaleString('id-ID');
+    if (elStockNote) elStockNote.textContent = `${s.total_units} unit produk tersedia`;
+    if (elRevenue) elRevenue.textContent = Math.round(s.total_revenue).toLocaleString('id-ID');
+    if (elNetProfit) elNetProfit.textContent = Math.round(s.net_profit).toLocaleString('id-ID');
+    if (elMarginBadge) {
+      elMarginBadge.textContent = `Margin ${s.profit_margin}%`;
+      elMarginBadge.style.background = s.net_profit >= 0 ? '#E6F8F0' : '#FEE2E2';
+      elMarginBadge.style.color = s.net_profit >= 0 ? '#10B981' : '#EF4444';
+    }
+
+    const isInventory = opData.activeResellerTab === 'inventory';
+    if (btnTabInv) btnTabInv.className = `btn-outline ${isInventory ? 'active' : ''}`;
+    if (btnTabTx) btnTabTx.className = `btn-outline ${!isInventory ? 'active' : ''}`;
+    if (wrapInv) wrapInv.style.display = isInventory ? 'block' : 'none';
+    if (wrapTx) wrapTx.style.display = !isInventory ? 'block' : 'none';
+
+    if (captionEl) {
+      captionEl.textContent = isInventory 
+        ? 'Katalog stok produk digital yang dimiliki sistem dan siap dijual' 
+        : 'Catatan perputaran modal barang, omzet kotor, dan laba bersih reseller';
+    }
+
+    if (isInventory) {
+      renderResellerInventoryTable();
+    } else {
+      renderResellerTransactionsTable();
+    }
+  }
+
+  function renderResellerInventoryTable() {
+    const tbody = document.getElementById('op-reseller-inventory-tbody');
+    if (!tbody) return;
+
+    if (opData.resellerInventory.length === 0) {
+      tbody.innerHTML = `
+        <tr>
+          <td colspan="7" style="text-align: center; padding: 24px; color: var(--ink-secondary);">
+            Belum ada stok produk digital. Klik tombol "Catat Beli Stok (Modal)" di atas untuk memulai pengadaan stok menggunakan modal reseller.
+          </td>
+        </tr>
+      `;
+      return;
+    }
+
+    tbody.innerHTML = opData.resellerInventory.map(item => {
+      const isOut = item.stock_qty <= 0;
+      const totalVal = item.stock_qty * item.unit_cost;
+      return `
+        <tr style="border-bottom: 1px solid var(--border-light); ${isOut ? 'opacity: 0.65;' : ''}">
+          <td style="padding: 10px 8px;">
+            <div style="font-weight: 700; color: var(--ink);">${escapeHtml(item.product_name)}</div>
+            ${item.notes ? `<span style="font-size: 11px; color: var(--ink-secondary);">${escapeHtml(item.notes)}</span>` : ''}
+          </td>
+          <td style="padding: 10px 8px; color: var(--ink-secondary); font-size: 12px;">
+            ${escapeHtml(item.category || 'Akun & Layanan Digital')}
+          </td>
+          <td style="padding: 10px 8px; text-align: center;">
+            <span class="status-badge" style="background: ${isOut ? '#FEE2E2' : '#E6F8F0'}; color: ${isOut ? '#EF4444' : '#10B981'}; font-weight: 700; font-size: 11px;">
+              ${item.stock_qty} unit
+            </span>
+          </td>
+          <td style="padding: 10px 8px; text-align: right; font-weight: 600; color: var(--ink); font-variant-numeric: tabular-nums;">
+            ${formatRupiah(item.unit_cost)}
+          </td>
+          <td style="padding: 10px 8px; text-align: right; font-weight: 600; color: var(--ink-secondary); font-variant-numeric: tabular-nums;">
+            ${formatRupiah(item.default_selling_price || item.unit_cost * 1.25)}
+          </td>
+          <td style="padding: 10px 8px; text-align: right; font-weight: 800; color: var(--accent-blue); font-variant-numeric: tabular-nums;">
+            ${formatRupiah(totalVal)}
+          </td>
+          <td style="padding: 10px 8px; text-align: center;">
+            <button class="btn-primary btn-quick-reseller-sell" data-id="${item.id}" ${isOut ? 'disabled' : ''} style="height: 30px; padding: 0 10px; font-size: 11px; font-weight: 700; background: #10B981; border-color: #10B981; ${isOut ? 'opacity: 0.5; cursor: not-allowed;' : ''}">
+              Jual
+            </button>
+          </td>
+        </tr>
+      `;
+    }).join('');
+
+    tbody.querySelectorAll('.btn-quick-reseller-sell').forEach(btn => {
+      btn.addEventListener('click', (e) => {
+        const prodId = e.currentTarget.getAttribute('data-id');
+        openResellerSaleModal(prodId);
+      });
+    });
+  }
+
+  function renderResellerTransactionsTable() {
+    const tbody = document.getElementById('op-reseller-transactions-tbody');
+    if (!tbody) return;
+
+    if (opData.resellerTransactions.length === 0) {
+      tbody.innerHTML = `
+        <tr>
+          <td colspan="8" style="text-align: center; padding: 24px; color: var(--ink-secondary);">
+            Belum ada riwayat transaksi reseller yang dicatat.
+          </td>
+        </tr>
+      `;
+      return;
+    }
+
+    tbody.innerHTML = opData.resellerTransactions.map(tx => {
+      const isBuy = tx.type === 'purchase_stock';
+      const dateStr = tx.created_at ? new Date(tx.created_at).toLocaleDateString('id-ID', {
+        day: 'numeric',
+        month: 'short',
+        year: 'numeric',
+        hour: '2-digit',
+        minute: '2-digit'
+      }) : '-';
+
+      return `
+        <tr style="border-bottom: 1px solid var(--border-light);">
+          <td style="padding: 10px 8px; font-weight: 700; font-family: monospace; color: var(--accent-blue); font-size: 12px;">
+            ${escapeHtml(tx.tx_code || '-')}
+          </td>
+          <td style="padding: 10px 8px; white-space: nowrap; color: var(--ink-secondary); font-size: 12px;">
+            ${dateStr}
+          </td>
+          <td style="padding: 10px 8px;">
+            <span class="status-badge" style="background: ${isBuy ? 'rgba(14, 165, 233, 0.12)' : '#E6F8F0'}; color: ${isBuy ? '#0EA5E9' : '#10B981'}; font-weight: 700; font-size: 11px;">
+              ${isBuy ? 'Beli Stok (Modal)' : 'Penjualan'}
+            </span>
+          </td>
+          <td style="padding: 10px 8px;">
+            <div style="font-weight: 600; color: var(--ink);">${escapeHtml(tx.product_name)}</div>
+            ${tx.buyer_name ? `<span style="font-size: 11px; color: var(--ink-secondary);">${escapeHtml(tx.buyer_name)}</span>` : ''}
+          </td>
+          <td style="padding: 10px 8px; text-align: center; font-weight: 700;">
+            ${tx.qty}
+          </td>
+          <td style="padding: 10px 8px; text-align: right; font-weight: 600; color: var(--balance-red); font-variant-numeric: tabular-nums;">
+            ${formatRupiah(tx.total_cost)}
+          </td>
+          <td style="padding: 10px 8px; text-align: right; font-weight: 700; color: ${isBuy ? 'var(--ink-secondary)' : 'var(--ink)'}; font-variant-numeric: tabular-nums;">
+            ${isBuy ? '-' : formatRupiah(tx.total_revenue)}
+          </td>
+          <td style="padding: 10px 8px; text-align: right; font-weight: 800; color: ${isBuy ? 'var(--ink-secondary)' : '#10B981'}; font-variant-numeric: tabular-nums;">
+            ${isBuy ? '-' : `+${formatRupiah(tx.net_profit)}`}
+          </td>
+        </tr>
+      `;
+    }).join('');
   }
 
   function renderHistoryTables() {
@@ -880,11 +1109,177 @@
     }
   }
 
+  async function recordResellerPurchase(productName, category, qty, unitCost, notes) {
+    const totalNeeded = Math.round(qty * unitCost);
+    if (totalNeeded <= 0) {
+      alert('Total modal pengadaan harus lebih besar dari Rp0.');
+      return false;
+    }
+
+    if (totalNeeded > opData.resellerSummary.capital_remaining) {
+      alert(`Sisa modal kas reseller tidak mencukupi (Tersedia: ${formatRupiah(opData.resellerSummary.capital_remaining)}, Diperlukan: ${formatRupiah(totalNeeded)}).`);
+      return false;
+    }
+
+    try {
+      const supabase = await getSupabase();
+      const currentAdmin = (typeof state !== 'undefined' && state.admin) ? state.admin : {};
+      const adminName = currentAdmin.name || currentAdmin.email?.split('@')[0] || 'Kayla';
+
+      const { data, error } = await supabase.rpc('record_reseller_purchase', {
+        p_product_name: productName,
+        p_qty: qty,
+        p_unit_cost: unitCost,
+        p_category: category,
+        p_notes: notes || null,
+        p_admin_name: adminName
+      });
+
+      if (error) {
+        alert('Gagal mencatat pengadaan stok reseller: ' + error.message);
+        return false;
+      }
+
+      await fetchOperationalData();
+      renderAll();
+      closeModal('modal-add-reseller-purchase');
+      alert(`Pengadaan stok ${escapeHtml(productName)} (${qty} unit) berhasil dicatat menggunakan modal reseller ${formatRupiah(totalNeeded)}.`);
+      return true;
+    } catch (err) {
+      alert('Terjadi kesalahan: ' + err.message);
+      return false;
+    }
+  }
+
+  async function recordResellerSale(inventoryId, qty, sellingPrice, fee, buyerName, notes) {
+    if (qty <= 0) {
+      alert('Jumlah unit terjual harus lebih besar dari 0.');
+      return false;
+    }
+    if (sellingPrice <= 0) {
+      alert('Harga jual satuan harus lebih besar dari Rp0.');
+      return false;
+    }
+
+    const targetItem = opData.resellerInventory.find(i => i.id === inventoryId);
+    if (!targetItem) {
+      alert('Produk yang dipilih tidak valid.');
+      return false;
+    }
+
+    if (targetItem.stock_qty < qty) {
+      alert(`Stok tidak mencukupi (Tersedia: ${targetItem.stock_qty} unit, Diminta: ${qty} unit).`);
+      return false;
+    }
+
+    try {
+      const supabase = await getSupabase();
+      const currentAdmin = (typeof state !== 'undefined' && state.admin) ? state.admin : {};
+      const adminName = currentAdmin.name || currentAdmin.email?.split('@')[0] || 'Kayla';
+
+      const { data, error } = await supabase.rpc('record_reseller_sale', {
+        p_inventory_id: inventoryId,
+        p_qty: qty,
+        p_selling_price: sellingPrice,
+        p_payment_fee: fee || 0,
+        p_buyer_name: buyerName || null,
+        p_notes: notes || null,
+        p_admin_name: adminName
+      });
+
+      if (error) {
+        alert('Gagal mencatat penjualan reseller: ' + error.message);
+        return false;
+      }
+
+      await fetchOperationalData();
+      renderAll();
+      closeModal('modal-add-reseller-sale');
+      alert(`Penjualan ${qty} unit ${targetItem.product_name} berhasil dicatat.`);
+      return true;
+    } catch (err) {
+      alert('Terjadi kesalahan: ' + err.message);
+      return false;
+    }
+  }
+
+  function openResellerSaleModal(preselectedId) {
+    const select = document.getElementById('reseller-sale-product-select');
+    if (!select) return;
+
+    const availableProds = opData.resellerInventory.filter(p => p.stock_qty > 0);
+    if (availableProds.length === 0) {
+      alert('Belum ada persediaan produk digital yang tersedia untuk dijual. Silakan catat pembelian stok modal terlebih dahulu.');
+      return;
+    }
+
+    select.innerHTML = '<option value="">Pilih Produk Digital</option>' + availableProds.map(p => `
+      <option value="${p.id}" data-cost="${p.unit_cost}" data-stock="${p.stock_qty}" data-default-price="${p.default_selling_price || p.unit_cost * 1.25}" ${preselectedId === p.id ? 'selected' : ''}>
+        ${escapeHtml(p.product_name)} (Stok: ${p.stock_qty} | Modal: ${formatRupiah(p.unit_cost)})
+      </option>
+    `).join('');
+
+    const targetItem = preselectedId ? opData.resellerInventory.find(p => p.id === preselectedId) : availableProds[0];
+    if (targetItem) {
+      if (!preselectedId) select.value = targetItem.id;
+      const priceInput = document.getElementById('reseller-sale-price-input');
+      if (priceInput) priceInput.value = targetItem.default_selling_price || Math.round(targetItem.unit_cost * 1.25);
+    }
+
+    recalcResellerSalePreview();
+    openModal('modal-add-reseller-sale');
+  }
+
+  function recalcResellerSalePreview() {
+    const select = document.getElementById('reseller-sale-product-select');
+    const qtyInput = document.getElementById('reseller-sale-qty-input');
+    const priceInput = document.getElementById('reseller-sale-price-input');
+    const feeInput = document.getElementById('reseller-sale-fee-input');
+
+    const revEl = document.getElementById('reseller-sale-calc-rev');
+    const cogsEl = document.getElementById('reseller-sale-calc-cogs');
+    const feeEl = document.getElementById('reseller-sale-calc-fee');
+    const marginBadge = document.getElementById('reseller-sale-calc-margin');
+    const profitEl = document.getElementById('reseller-sale-calc-profit');
+
+    const selectedOpt = select ? select.selectedOptions[0] : null;
+    const unitCost = selectedOpt ? parseFloat(selectedOpt.getAttribute('data-cost')) || 0 : 0;
+    const qty = qtyInput ? parseInt(qtyInput.value, 10) || 0 : 0;
+    const price = priceInput ? parseFloat(priceInput.value) || 0 : 0;
+    const fee = feeInput ? parseFloat(feeInput.value) || 0 : 0;
+
+    const totalRev = qty * price;
+    const totalCogs = qty * unitCost;
+    const netProfit = totalRev - totalCogs - fee;
+    const marginPct = totalRev > 0 ? ((netProfit / totalRev) * 100).toFixed(1) : 0;
+
+    if (revEl) revEl.textContent = formatRupiah(totalRev);
+    if (cogsEl) cogsEl.textContent = formatRupiah(totalCogs);
+    if (feeEl) feeEl.textContent = formatRupiah(fee);
+    if (profitEl) profitEl.textContent = formatRupiah(netProfit);
+    if (marginBadge) {
+      marginBadge.textContent = `Margin ${marginPct}%`;
+      marginBadge.style.background = netProfit >= 0 ? '#E6F8F0' : '#FEE2E2';
+      marginBadge.style.color = netProfit >= 0 ? '#10B981' : '#EF4444';
+    }
+  }
+
+  function populateExpenseCategorySelect() {
+    const select = document.getElementById('expense-category-input');
+    if (!select) return;
+    select.innerHTML = opData.budgets.map(b => `
+      <option value="${b.id}">${escapeHtml(b.name)} (Sisa: ${formatRupiah(b.remaining_amount || 0)})</option>
+    `).join('');
+  }
+
   function setupEventListeners() {
     // Action Buttons
     const btnExpense = document.getElementById('btn-add-expense');
     if (btnExpense) {
-      btnExpense.addEventListener('click', () => openModal('modal-add-expense'));
+      btnExpense.addEventListener('click', () => {
+        populateExpenseCategorySelect();
+        openModal('modal-add-expense');
+      });
     }
 
     const btnPromo = document.getElementById('btn-add-promo-subsidy');
@@ -897,6 +1292,59 @@
       btnBonus.addEventListener('click', () => {
         populateBonusAdminSelect();
         openModal('modal-add-team-bonus');
+      });
+    }
+
+    const btnResellerQuick = document.getElementById('btn-add-reseller-quick');
+    if (btnResellerQuick) {
+      btnResellerQuick.addEventListener('click', () => {
+        const panel = document.getElementById('op-reseller-panel');
+        if (panel) {
+          panel.scrollIntoView({ behavior: 'smooth' });
+        }
+      });
+    }
+
+    const btnResellerAddStock = document.getElementById('btn-reseller-add-stock');
+    if (btnResellerAddStock) {
+      btnResellerAddStock.addEventListener('click', () => {
+        const info = document.getElementById('reseller-purchase-available-info');
+        if (info) {
+          info.textContent = `Sisa modal kas reseller tersedia: ${formatRupiah(opData.resellerSummary.capital_remaining)}`;
+        }
+        const calcEl = document.getElementById('reseller-buy-total-calc');
+        const qtyIn = document.getElementById('reseller-buy-qty-input');
+        const costIn = document.getElementById('reseller-buy-cost-input');
+        if (calcEl && qtyIn && costIn) {
+          const q = parseInt(qtyIn.value, 10) || 1;
+          const c = parseFloat(costIn.value) || 0;
+          calcEl.textContent = formatRupiah(q * c);
+        }
+        openModal('modal-add-reseller-purchase');
+      });
+    }
+
+    const btnResellerAddSale = document.getElementById('btn-reseller-add-sale');
+    if (btnResellerAddSale) {
+      btnResellerAddSale.addEventListener('click', () => {
+        openResellerSaleModal();
+      });
+    }
+
+    // Reseller Subsystem Tabs
+    const btnResellerTabInv = document.getElementById('op-reseller-tab-inventory');
+    if (btnResellerTabInv) {
+      btnResellerTabInv.addEventListener('click', () => {
+        opData.activeResellerTab = 'inventory';
+        renderResellerSubsystem();
+      });
+    }
+
+    const btnResellerTabHist = document.getElementById('op-reseller-tab-history');
+    if (btnResellerTabHist) {
+      btnResellerTabHist.addEventListener('click', () => {
+        opData.activeResellerTab = 'history';
+        renderResellerSubsystem();
       });
     }
 
@@ -967,6 +1415,78 @@
         }
 
         await createTeamBonus(adminId, amt, reason, period);
+      });
+    }
+
+    // Reseller Purchase Form & Input Watchers
+    const formResellerBuy = document.getElementById('form-add-reseller-purchase');
+    const buyQtyInput = document.getElementById('reseller-buy-qty-input');
+    const buyCostInput = document.getElementById('reseller-buy-cost-input');
+    const buyCalcEl = document.getElementById('reseller-buy-total-calc');
+
+    function updateBuyCalc() {
+      if (!buyCalcEl) return;
+      const q = parseInt(buyQtyInput?.value, 10) || 0;
+      const c = parseFloat(buyCostInput?.value) || 0;
+      buyCalcEl.textContent = formatRupiah(q * c);
+    }
+
+    if (buyQtyInput) buyQtyInput.addEventListener('input', updateBuyCalc);
+    if (buyCostInput) buyCostInput.addEventListener('input', updateBuyCalc);
+
+    if (formResellerBuy) {
+      formResellerBuy.addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const name = document.getElementById('reseller-buy-name-input').value.trim();
+        const cat = document.getElementById('reseller-buy-category-input').value.trim();
+        const qty = parseInt(buyQtyInput.value, 10) || 0;
+        const cost = parseFloat(buyCostInput.value) || 0;
+        const notes = document.getElementById('reseller-buy-notes-input').value.trim();
+
+        if (!name) {
+          alert('Nama produk digital wajib diisi.');
+          return;
+        }
+        await recordResellerPurchase(name, cat, qty, cost, notes);
+      });
+    }
+
+    // Reseller Sale Form & Input Watchers
+    const formResellerSale = document.getElementById('form-add-reseller-sale');
+    const saleSelect = document.getElementById('reseller-sale-product-select');
+    const saleQtyInput = document.getElementById('reseller-sale-qty-input');
+    const salePriceInput = document.getElementById('reseller-sale-price-input');
+    const saleFeeInput = document.getElementById('reseller-sale-fee-input');
+
+    if (saleSelect) {
+      saleSelect.addEventListener('change', () => {
+        const opt = saleSelect.selectedOptions[0];
+        if (opt && salePriceInput) {
+          const defaultPrice = opt.getAttribute('data-default-price');
+          if (defaultPrice) salePriceInput.value = Math.round(parseFloat(defaultPrice));
+        }
+        recalcResellerSalePreview();
+      });
+    }
+    if (saleQtyInput) saleQtyInput.addEventListener('input', recalcResellerSalePreview);
+    if (salePriceInput) salePriceInput.addEventListener('input', recalcResellerSalePreview);
+    if (saleFeeInput) saleFeeInput.addEventListener('input', recalcResellerSalePreview);
+
+    if (formResellerSale) {
+      formResellerSale.addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const invId = saleSelect.value;
+        const qty = parseInt(saleQtyInput.value, 10) || 0;
+        const price = parseFloat(salePriceInput.value) || 0;
+        const fee = parseFloat(saleFeeInput.value) || 0;
+        const buyer = document.getElementById('reseller-sale-buyer-input').value.trim();
+        const notes = document.getElementById('reseller-sale-notes-input').value.trim();
+
+        if (!invId) {
+          alert('Pilih produk digital dari persediaan.');
+          return;
+        }
+        await recordResellerSale(invId, qty, price, fee, buyer, notes);
       });
     }
 
@@ -1081,6 +1601,8 @@
         .on('postgres_changes', { event: '*', schema: 'public', table: 'operational_budgets' }, handleRealtimeChange)
         .on('postgres_changes', { event: '*', schema: 'public', table: 'operational_settings' }, handleRealtimeChange)
         .on('postgres_changes', { event: '*', schema: 'public', table: 'operational_inflows' }, handleRealtimeChange)
+        .on('postgres_changes', { event: '*', schema: 'public', table: 'operational_reseller_inventory' }, handleRealtimeChange)
+        .on('postgres_changes', { event: '*', schema: 'public', table: 'operational_reseller_transactions' }, handleRealtimeChange)
         .on('postgres_changes', { event: '*', schema: 'public', table: 'orders' }, handleRealtimeChange)
         .subscribe((status, err) => {
           updateRealtimeBadge(status);
@@ -1123,6 +1645,7 @@
     renderComparisonBars();
     renderPromoSubsystem();
     renderBonusSubsystem();
+    renderResellerSubsystem();
     renderHistoryTables();
   }
 
