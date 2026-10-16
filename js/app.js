@@ -1530,11 +1530,18 @@ function renderPerformance() {
   // Count-Up KPI Metrics Cards Animations (CodeFronts Component)
   animateCountUp('perf-net-revenue', net, 950, true);
   animateCountUp('perf-completed-orders', completedCount, 750, false);
+  animateCountUp('perf-dev-fund', devCut, 950, true);
 
   const revPill = document.getElementById('perf-pill-revenue');
   if (revPill) {
     revPill.textContent = net > 0 ? '+Aktif' : 'Netto';
     revPill.className = `ac-12__pill ${net > 0 ? 'ac-12__pill--up' : 'ac-12__pill--flat'}`;
+  }
+
+  const devPill = document.getElementById('perf-pill-dev');
+  if (devPill) {
+    devPill.textContent = devCut > 0 ? '+10% Sistem' : '10% Sistem';
+    devPill.className = `ac-12__pill ${devCut > 0 ? 'ac-12__pill--up' : 'ac-12__pill--flat'}`;
   }
 
   const orderPill = document.getElementById('perf-pill-orders');
@@ -1650,6 +1657,14 @@ function updateKpiSparkline(periodOrders, range, monthOffset) {
 
   const d = `M${coords[0]} ` + coords.slice(1).map(c => `L${c}`).join(' ');
   path.setAttribute('d', d);
+
+  const devPath = document.getElementById('perf-sparkline-dev-path');
+  if (devPath) {
+    devPath.style.animation = 'none';
+    devPath.offsetHeight;
+    devPath.style.animation = null;
+    devPath.setAttribute('d', d);
+  }
 }
 
 function updateKpiBars(points) {
@@ -1676,15 +1691,17 @@ function renderCombinedChart(orders, range, monthOffset) {
         return d.toDateString() === now.toDateString() && d.getHours() === h;
       });
       const amt = match.filter(o => o.status === 'completed' || o.payment_status === 'paid').reduce((s, o) => s + (o.total_price || 0), 0);
-      points.push({ label: `${h}:00`, amount: amt, count: match.filter(o => o.status === 'completed').length });
+      const devAmt = Math.round(amt * 0.10);
+      points.push({ label: `${h}:00`, amount: amt, devAmount: devAmt, count: match.filter(o => o.status === 'completed').length });
     }
   } else if (range === 'week') {
     for (let i = 6; i >= 0; i--) {
       const day = new Date(now.getTime() - i * 24 * 3600 * 1000);
       const match = orders.filter(o => new Date(o.created_at).toDateString() === day.toDateString());
       const amt = match.filter(o => o.status === 'completed' || o.payment_status === 'paid').reduce((s, o) => s + (o.total_price || 0), 0);
+      const devAmt = Math.round(amt * 0.10);
       const dayLabel = day.toLocaleDateString('id-ID', { weekday: 'short' });
-      points.push({ label: dayLabel, amount: amt, count: match.filter(o => o.status === 'completed').length });
+      points.push({ label: dayLabel, amount: amt, devAmount: devAmt, count: match.filter(o => o.status === 'completed').length });
     }
   } else {
     const targetMonth = new Date(now.getFullYear(), now.getMonth() + monthOffset, 1);
@@ -1695,7 +1712,8 @@ function renderCombinedChart(orders, range, monthOffset) {
       const day = new Date(targetMonth.getFullYear(), targetMonth.getMonth(), d);
       const match = orders.filter(o => new Date(o.created_at).toDateString() === day.toDateString());
       const amt = match.filter(o => o.status === 'completed' || o.payment_status === 'paid').reduce((s, o) => s + (o.total_price || 0), 0);
-      points.push({ label: `${d}`, amount: amt, count: match.filter(o => o.status === 'completed').length });
+      const devAmt = Math.round(amt * 0.10);
+      points.push({ label: `${d}`, amount: amt, devAmount: devAmt, count: match.filter(o => o.status === 'completed').length });
     }
   }
 
@@ -1705,12 +1723,13 @@ function renderCombinedChart(orders, range, monthOffset) {
   svg.setAttribute('class', 'chart-svg');
   svg.setAttribute('viewBox', '0 0 500 180');
   svg.setAttribute('role', 'img');
-  svg.setAttribute('aria-label', 'Tren pendapatan dan pesanan selesai. Rincian tersedia pada tabel data grafik.');
+  svg.setAttribute('aria-label', 'Tren pendapatan, dana operasional dan pesanan selesai. Rincian tersedia pada tabel data grafik.');
 
   const maxAmount = Math.max(1000, ...points.map(p => p.amount));
+  const maxDev = Math.max(100, ...points.map(p => p.devAmount));
   const maxCount = Math.max(1, ...points.map(p => p.count));
-  document.getElementById('perf-chart-empty').hidden = points.some(p => p.amount > 0 || p.count > 0);
-  document.getElementById('perf-chart-data').innerHTML = points.map(p => `<tr><th scope="row">${p.label}</th><td>${formatRupiah(p.amount)}</td><td>${p.count}</td></tr>`).join('');
+  document.getElementById('perf-chart-empty').hidden = points.some(p => p.amount > 0 || p.count > 0 || p.devAmount > 0);
+  document.getElementById('perf-chart-data').innerHTML = points.map(p => `<tr><th scope="row">${p.label}</th><td>${formatRupiah(p.amount)}</td><td style="color: var(--accent-blue); font-weight: 600;">${formatRupiah(p.devAmount)}</td><td>${p.count}</td></tr>`).join('');
 
   // Grid lines
   for (let s = 0; s < 4; s++) {
@@ -1728,7 +1747,7 @@ function renderCombinedChart(orders, range, monthOffset) {
   const slotW = 450 / Math.max(1, points.length);
   const barW = Math.min(16, slotW * 0.55);
 
-  // Bars (Orders Yellow)
+  // 1. Bars (Orders Yellow)
   points.forEach((p, idx) => {
     if (idx % Math.max(1, Math.ceil(points.length / 7)) === 0 || idx === points.length - 1) {
       const label = document.createElementNS(svgNS, 'text');
@@ -1751,12 +1770,63 @@ function renderCombinedChart(orders, range, monthOffset) {
       rect.setAttribute('height', barH);
       rect.setAttribute('fill', '#E2AE16');
       rect.setAttribute('rx', '3');
+      const title = document.createElementNS(svgNS, 'title');
+      title.textContent = `${p.label} - Selesai: ${p.count} pesanan`;
+      rect.appendChild(title);
       svg.appendChild(rect);
     }
   });
 
-  // Line (Revenue Green)
+  // 2. Line & Soft Area (Dana Pengembangan / Operasional Blue)
+  let devPathD = '';
+  let devAreaD = '';
+  const devCircles = [];
+  points.forEach((p, idx) => {
+    const x = 30 + idx * slotW + slotW / 2;
+    const h = (p.devAmount / maxDev) * 65;
+    const y = 150 - h;
+    if (idx === 0) {
+      devPathD += `M ${x} ${y}`;
+      devAreaD = `M ${x} 150 L ${x} ${y}`;
+    } else {
+      devPathD += ` L ${x} ${y}`;
+      devAreaD += ` L ${x} ${y}`;
+    }
+    if (idx === points.length - 1) {
+      devAreaD += ` L ${x} 150 Z`;
+    }
+
+    const circle = document.createElementNS(svgNS, 'circle');
+    circle.setAttribute('cx', x);
+    circle.setAttribute('cy', y);
+    circle.setAttribute('r', '3');
+    circle.setAttribute('fill', '#3158A8');
+    const title = document.createElementNS(svgNS, 'title');
+    title.textContent = `${p.label} - Dana Operasional: ${formatRupiah(p.devAmount)}`;
+    circle.appendChild(title);
+    devCircles.push(circle);
+  });
+
+  if (points.some(p => p.devAmount > 0)) {
+    const area = document.createElementNS(svgNS, 'path');
+    area.setAttribute('d', devAreaD);
+    area.setAttribute('fill', 'rgba(49, 88, 168, 0.08)');
+    svg.appendChild(area);
+  }
+
+  const devPath = document.createElementNS(svgNS, 'path');
+  devPath.setAttribute('d', devPathD);
+  devPath.setAttribute('fill', 'none');
+  devPath.setAttribute('stroke', '#3158A8');
+  devPath.setAttribute('stroke-width', '2');
+  devPath.setAttribute('stroke-linecap', 'round');
+  svg.appendChild(devPath);
+
+  devCircles.forEach(c => svg.appendChild(c));
+
+  // 3. Line (Revenue Green)
   let pathD = '';
+  const revCircles = [];
   points.forEach((p, idx) => {
     const x = 30 + idx * slotW + slotW / 2;
     const y = 150 - (p.amount / maxAmount) * 120;
@@ -1767,9 +1837,12 @@ function renderCombinedChart(orders, range, monthOffset) {
     const circle = document.createElementNS(svgNS, 'circle');
     circle.setAttribute('cx', x);
     circle.setAttribute('cy', y);
-    circle.setAttribute('r', '3');
+    circle.setAttribute('r', '3.5');
     circle.setAttribute('fill', '#16834B');
-    svg.appendChild(circle);
+    const title = document.createElementNS(svgNS, 'title');
+    title.textContent = `${p.label} - Pendapatan: ${formatRupiah(p.amount)}`;
+    circle.appendChild(title);
+    revCircles.push(circle);
   });
 
   const path = document.createElementNS(svgNS, 'path');
@@ -1778,7 +1851,9 @@ function renderCombinedChart(orders, range, monthOffset) {
   path.setAttribute('stroke', '#16834B');
   path.setAttribute('stroke-width', '2.5');
   path.setAttribute('stroke-linecap', 'round');
-  svg.insertBefore(path, svg.querySelector('circle'));
+  svg.appendChild(path);
+
+  revCircles.forEach(c => svg.appendChild(c));
 
   wrapper.appendChild(svg);
   return points;

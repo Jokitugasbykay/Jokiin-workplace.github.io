@@ -355,7 +355,23 @@
                 <p id="perf-orders-foot" class="ac-12__foot">Pesanan sukses pada periode ini</p>
               </article>
 
-              <!-- Card 3: Efisiensi Pendapatan Tim with Animated Meter -->
+              <!-- Card 3: Dana Pengembangan/Operasional with Count-Up & Animated Sparkline -->
+              <article class="ac-12__card">
+                <div class="ac-12__top">
+                  <p class="ac-12__key">Dana pengembangan/operasional</p>
+                  <span id="perf-pill-dev" class="ac-12__pill ac-12__pill--up">10% Sistem</span>
+                </div>
+                <p class="ac-12__val">
+                  <span class="ac-12__cur">Rp</span>
+                  <span id="perf-dev-fund" class="ac-12__num">0</span>
+                </p>
+                <svg class="ac-12__spark" viewBox="0 0 120 34" preserveAspectRatio="none" aria-hidden="true">
+                  <path id="perf-sparkline-dev-path" class="ac-12__line" stroke="var(--accent-blue)" d="M0 28 L15 24 L30 26 L45 18 L60 20 L75 12 L90 14 L105 6 L120 3"/>
+                </svg>
+                <p class="ac-12__foot">Alokasi 10% untuk operasional & server JOKI.IN</p>
+              </article>
+
+              <!-- Card 4: Efisiensi Pendapatan Tim with Animated Meter -->
               <article class="ac-12__card">
                 <div class="ac-12__top">
                   <p class="ac-12__key">Efisiensi pendapatan tim</p>
@@ -379,13 +395,13 @@
           <div class="performance-analysis-grid">
           <article class="performance-chart-card">
             <div class="section-header">
-              <h3 class="section-title">Tren pendapatan & pesanan</h3>
+              <h3 class="section-title">Tren pendapatan, operasional & pesanan</h3>
             </div>
             <p class="chart-caption">Pendapatan tercatat sebelum potongan. Setiap seri memakai skala tersendiri.</p>
-            <div class="chart-legend"><span><i class="legend-revenue"></i>Pendapatan</span><span><i class="legend-orders"></i>Pesanan selesai</span></div>
+            <div class="chart-legend"><span><i class="legend-revenue"></i>Pendapatan</span><span><i class="legend-dev"></i>Dana pengembangan/operasional</span><span><i class="legend-orders"></i>Pesanan selesai</span></div>
             <div id="perf-chart-svg-wrapper"></div>
             <p id="perf-chart-empty" class="chart-caption" hidden>Belum ada pendapatan atau pesanan selesai pada periode ini.</p>
-            <details class="chart-data"><summary>Lihat data grafik</summary><div class="chart-table-wrap"><table><caption>Data per interval pada periode terpilih</caption><thead><tr><th scope="col">Waktu</th><th scope="col">Pendapatan</th><th scope="col">Selesai</th></tr></thead><tbody id="perf-chart-data"></tbody></table></div></details>
+            <details class="chart-data"><summary>Lihat data grafik</summary><div class="chart-table-wrap"><table><caption>Data per interval pada periode terpilih</caption><thead><tr><th scope="col">Waktu</th><th scope="col">Pendapatan</th><th scope="col">Dana Operasional</th><th scope="col">Selesai</th></tr></thead><tbody id="perf-chart-data"></tbody></table></div></details>
           </article>
 
           <!-- Net Income Breakdown -->

@@ -2150,6 +2150,7 @@ input:checked + .toggle-slider:before {
 .chart-legend span { display: flex; align-items: center; gap: 8px; }
 .chart-legend i { width: 12px; height: 12px; border-radius: 3px; }
 .legend-revenue { background: var(--revenue-green); }
+.legend-dev { background: var(--accent-blue); }
 .legend-orders { background: var(--orders-yellow); }
 .chart-svg { display: block; width: 100%; height: auto; min-height: 180px; }
 .chart-data summary { cursor: pointer; padding: 12px 0; color: #10653C; font-size: 13px; font-weight: 600; }
@@ -2268,7 +2269,10 @@ p { text-wrap: pretty; }
   .performance-toolbar { flex-direction: row; align-items: center; justify-content: space-between; }
   .performance-toolbar .mode-selector { min-width: 300px; margin: 0; }
   #perf-month-switcher { max-width: 480px; margin: 20px 0 !important; gap: 12px; }
-  .ac-12__grid { grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 20px; }
+  .ac-12__grid { grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 16px; }
+  @media (max-width: 1200px) {
+    .ac-12__grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  }
   .ac-12__card { padding: 24px; gap: 14px; animation: none; }
   .ac-12__val { font-size: clamp(26px, 2.6vw, 40px); flex-wrap: wrap; }
   .ac-12__key { font-size: 13px; }
