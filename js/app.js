@@ -1268,9 +1268,14 @@ function openOrderDetail(orderId, checkout = null) {
   const invoiceBtn = document.getElementById('btn-order-create-invoice');
   if (invoiceBtn) {
     const isPaid = (order.payment_status || '').toLowerCase() === 'paid' || (order.status || '').toLowerCase() === 'completed';
-    invoiceBtn.style.display = isPaid && !checkout ? 'flex' : 'none';
+    invoiceBtn.style.display = isPaid ? 'flex' : 'none';
     invoiceBtn.onclick = () => {
-      closeModal('modal-order-detail');
+      // Close modal directly without triggering window.history.back() to prevent popstate race condition
+      const modal = document.getElementById('modal-order-detail');
+      if (modal) modal.classList.remove('open');
+      if (window.history?.state?.modal) {
+        window.history.replaceState({ ...window.history.state, modal: null }, '', window.location.href);
+      }
       loadOrderIntoInvoice(order);
       switchTab('invoice');
     };
@@ -2114,6 +2119,64 @@ function priceValue(val) {
   return Number.isFinite(n) && n > 0 ? n : 0;
 }
 
+function formatPrintDate(isoDateStr) {
+  if (!isoDateStr) return '-';
+  try {
+    const parts = String(isoDateStr).split('T')[0].split('-');
+    if (parts.length === 3) {
+      const y = parseInt(parts[0], 10);
+      const m = parseInt(parts[1], 10);
+      const d = parseInt(parts[2], 10);
+      const months = ['Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni', 'Juli', 'Agustus', 'September', 'Oktober', 'November', 'Desember'];
+      if (y && m >= 1 && m <= 12 && d) {
+        return `${d} ${months[m - 1]} ${y}`;
+      }
+    }
+    return isoDateStr;
+  } catch (_) {
+    return isoDateStr;
+  }
+}
+
+function syncPrintValues() {
+  const fields = [
+    { inputId: 'inv-freelancer', isDate: false },
+    { inputId: 'inv-client', isDate: false },
+    { inputId: 'inv-number', isDate: false },
+    { inputId: 'inv-date', isDate: true },
+    { inputId: 'inv-due', isDate: true }
+  ];
+
+  fields.forEach(f => {
+    const input = document.getElementById(f.inputId);
+    const container = input?.closest('.invoice-field');
+    if (!input || !container) return;
+    let span = container.querySelector('.inv-print-text');
+    if (!span) {
+      span = document.createElement('span');
+      span.className = 'inv-print-text';
+      container.appendChild(span);
+    }
+    const val = input.value.trim();
+    span.textContent = f.isDate ? formatPrintDate(val) : (val || '-');
+    container.classList.toggle('is-empty', !val);
+  });
+
+  document.querySelectorAll('#inv-items tr').forEach(row => {
+    const dInput = row.querySelector('.inv-description');
+    const qInput = row.querySelector('.inv-quantity');
+    const pInput = row.querySelector('.inv-price');
+
+    const descSpan = row.querySelector('.inv-print-desc');
+    const qtySpan = row.querySelector('.inv-print-qty');
+    const priceSpan = row.querySelector('.inv-print-price');
+
+    if (descSpan && dInput) descSpan.textContent = dInput.value || '-';
+    if (qtySpan && qInput) qtySpan.textContent = qInput.value || '1';
+    if (priceSpan && pInput) priceSpan.textContent = pInput.value || formatRupiah(0);
+  });
+}
+
 function recalculateInvoice() {
   let subtotal = 0;
   const rows = document.querySelectorAll('#inv-items tr');
@@ -2128,6 +2191,13 @@ function recalculateInvoice() {
     const lineTotal = row.querySelector('.inv-line-total');
     if (lineTotal) lineTotal.textContent = formatRupiah(amount);
     subtotal += amount;
+
+    const descSpan = row.querySelector('.inv-print-desc');
+    const qtySpan = row.querySelector('.inv-print-qty');
+    const priceSpan = row.querySelector('.inv-print-price');
+    if (descSpan && dInput) descSpan.textContent = dInput.value || '-';
+    if (qtySpan && qInput) qtySpan.textContent = String(qty);
+    if (priceSpan && pInput) priceSpan.textContent = formatRupiah(price);
   });
 
   const taxInput = document.getElementById('inv-tax');
@@ -2138,16 +2208,15 @@ function recalculateInvoice() {
   const taxValueEl = document.getElementById('inv-tax-value');
   const taxLabelEl = document.getElementById('inv-tax-label');
   const grandEl = document.getElementById('inv-grand');
+  const taxRowDisplay = document.getElementById('inv-tax-row-display');
 
   if (taxLabelEl) taxLabelEl.textContent = `Nilai PPN (${taxRate}%)`;
   if (subtotalEl) subtotalEl.textContent = formatRupiah(subtotal);
   if (taxValueEl) taxValueEl.textContent = formatRupiah(tax);
   if (grandEl) grandEl.textContent = formatRupiah(subtotal + tax);
+  if (taxRowDisplay) taxRowDisplay.classList.toggle('no-print', taxRate === 0);
 
-  document.querySelectorAll('.invoice-field').forEach(field => {
-    const input = field.querySelector('input');
-    field.classList.toggle('is-empty', input ? !input.value.trim() : false);
-  });
+  syncPrintValues();
 }
 
 function addInvoiceRow(desc = '', qty = 1, price = 0) {
@@ -2159,9 +2228,18 @@ function addInvoiceRow(desc = '', qty = 1, price = 0) {
   const amount = Math.round((Number(qty) || 1) * (Number(price) || 0));
 
   row.innerHTML = `
-    <td><input class="inv-description" placeholder="Uraian layanan" value="${escapeHtml(desc)}" aria-label="Deskripsi"></td>
-    <td><input class="inv-quantity" type="number" min="0" step="1" value="${qty}" inputmode="numeric" aria-label="Jumlah"></td>
-    <td><input class="inv-price" type="text" value="${formattedPrice}" inputmode="numeric" aria-label="Harga satuan"></td>
+    <td>
+      <input class="inv-description" placeholder="Uraian layanan" value="${escapeHtml(desc)}" aria-label="Deskripsi">
+      <span class="inv-print-text inv-print-desc">${escapeHtml(desc)}</span>
+    </td>
+    <td>
+      <input class="inv-quantity" type="number" min="0" step="1" value="${qty}" inputmode="numeric" aria-label="Jumlah">
+      <span class="inv-print-text inv-print-qty">${qty}</span>
+    </td>
+    <td>
+      <input class="inv-price" type="text" value="${formattedPrice}" inputmode="numeric" aria-label="Harga satuan">
+      <span class="inv-print-text inv-print-price">${formattedPrice}</span>
+    </td>
     <td class="invoice-money inv-line-total">${formatRupiah(amount)}</td>
     <td class="no-print"><button class="invoice-btn-remove" type="button" aria-label="Hapus baris">Hapus</button></td>
   `;
@@ -2175,20 +2253,31 @@ function populateInvoiceOrderPicker(selectedOrderId = null) {
 
   picker.innerHTML = '<option value="">-- Pilih Pesanan (Status: Paid) --</option>';
 
-  // Find all orders that are paid or completed
-  const paidOrders = state.orders.filter(o => 
-    (o.payment_status || '').toLowerCase() === 'paid' || 
-    (o.status || '').toLowerCase() === 'completed'
-  );
+  const allOrders = [...(state.orders || []), ...(state.paymentOrders || [])];
+  const seen = new Set();
+  const paidOrders = [];
+
+  allOrders.forEach(o => {
+    const code = o.order_code || String(o.id || '');
+    if (!code || seen.has(code)) return;
+    const isPaid = (o.payment_status || '').toLowerCase() === 'paid' || 
+                   (o.status || '').toLowerCase() === 'completed';
+    if (isPaid) {
+      seen.add(code);
+      paidOrders.push(o);
+    }
+  });
+
+  paidOrders.sort((a, b) => new Date(b.created_at || 0) - new Date(a.created_at || 0));
 
   paidOrders.forEach(o => {
-    const code = o.order_code || o.order_id || ('#' + o.id);
+    const code = o.order_code || ('#' + o.id);
     const client = getCustomerName(o);
-    const total = formatRupiah(o.total_price || 0);
+    const total = formatRupiah(o.total_price || o.total || 0);
     const opt = document.createElement('option');
-    opt.value = o.id;
+    opt.value = o.order_code || o.id;
     opt.textContent = `${code} - ${client} (${total})`;
-    if (selectedOrderId && String(o.id) === String(selectedOrderId)) {
+    if (selectedOrderId && (String(o.id) === String(selectedOrderId) || String(o.order_code) === String(selectedOrderId))) {
       opt.selected = true;
     }
     picker.appendChild(opt);
@@ -2203,7 +2292,7 @@ function loadOrderIntoInvoice(order) {
   if (freelancerInput) {
     let adminName = '';
     if (order.assigned_to) {
-      const assigned = state.profiles.find(p => p.id === order.assigned_to);
+      const assigned = state.profiles?.find(p => p.id === order.assigned_to);
       if (assigned) {
         adminName = profileNickname(assigned);
       }
@@ -2223,7 +2312,7 @@ function loadOrderIntoInvoice(order) {
   // 3. Nomor Invoice
   const numberInput = document.getElementById('inv-number');
   if (numberInput) {
-    numberInput.value = order.order_code || `INV-${String(order.order_id || order.id).replace(/[^a-zA-Z0-9]/g, '')}`;
+    numberInput.value = order.order_code || `INV-${String(order.order_id || order.id || Date.now()).replace(/[^a-zA-Z0-9]/g, '')}`;
   }
 
   // 4. Tanggal Invoice (format YYYY-MM-DD)
@@ -2253,6 +2342,13 @@ function loadOrderIntoInvoice(order) {
           deadlineDate = parsed.toISOString().split('T')[0];
         }
       } catch(e) {}
+    } else if (order.deadline) {
+      try {
+        const parsed = new Date(order.deadline);
+        if (!isNaN(parsed.getTime())) {
+          deadlineDate = parsed.toISOString().split('T')[0];
+        }
+      } catch(e) {}
     }
     dueInput.value = deadlineDate;
   }
@@ -2261,18 +2357,25 @@ function loadOrderIntoInvoice(order) {
   const itemsContainer = document.getElementById('inv-items');
   if (itemsContainer) {
     itemsContainer.innerHTML = '';
-    const orderItems = Array.isArray(order.items) && order.items.length > 0 ? order.items : [];
+    let orderItems = order.items;
+    if (typeof orderItems === 'string') {
+      try { orderItems = JSON.parse(orderItems); } catch (_) { orderItems = []; }
+    }
+    orderItems = Array.isArray(orderItems) && orderItems.length > 0 ? orderItems : [];
     if (orderItems.length > 0) {
       orderItems.forEach(it => {
-        const desc = it.name || it.title || it.service_name || it.description || 'Layanan Tugas';
+        const desc = it.name || it.title || it.service_name || it.produk || it.description || 'Layanan JOKI.IN';
         const qty = Number(it.quantity || it.qty) || 1;
-        const price = Number(it.price || it.unit_price) || 0;
+        let price = Number(it.price ?? it.unit_price ?? it.harga ?? it.subtotal);
+        if (!price || isNaN(price)) {
+          price = orderItems.length === 1 ? (Number(order.total_price || order.total) || 0) : 0;
+        }
         addInvoiceRow(desc, qty, price);
       });
     } else {
-      const desc = order.service_title || order.task?.title || 'Layanan Tugas Mahasiswa';
+      const desc = order.service_title || order.judul_tugas || order.task?.title || order.task?.notes || order.notes || 'Layanan Tugas Mahasiswa';
       const qty = 1;
-      const price = Number(order.total_price) || 0;
+      const price = Number(order.total_price || order.total) || 0;
       addInvoiceRow(desc, qty, price);
     }
   }
@@ -2284,9 +2387,10 @@ function loadOrderIntoInvoice(order) {
   }
 
   // Sync picker dropdown
+  populateInvoiceOrderPicker(order.order_code || order.id);
   const picker = document.getElementById('invoice-order-picker');
   if (picker) {
-    picker.value = order.id;
+    picker.value = order.order_code || order.id || '';
   }
 
   recalculateInvoice();
@@ -2298,17 +2402,16 @@ function renderInvoice() {
   const itemsTable = document.getElementById('inv-items');
   const freelancerInput = document.getElementById('inv-freelancer');
 
-  // If the invoice is completely unpopulated, check if there is a paid order in state.orders
+  // If the invoice is completely unpopulated, check if there is a paid order in state.orders or state.paymentOrders
   if (itemsTable && itemsTable.rows.length === 0 && (!freelancerInput || !freelancerInput.value.trim())) {
-    const paidOrders = state.orders.filter(o => 
+    const allOrders = [...(state.orders || []), ...(state.paymentOrders || [])];
+    const paidOrders = allOrders.filter(o => 
       (o.payment_status || '').toLowerCase() === 'paid' || 
       (o.status || '').toLowerCase() === 'completed'
     );
     if (paidOrders.length > 0) {
-      // Automatically load the latest paid order
       loadOrderIntoInvoice(paidOrders[0]);
     } else {
-      // Default empty invoice row
       addInvoiceRow('Layanan JOKI.IN', 1, 0);
       if (document.getElementById('inv-date')) {
         document.getElementById('inv-date').value = new Date().toISOString().split('T')[0];
@@ -2318,6 +2421,8 @@ function renderInvoice() {
       }
       recalculateInvoice();
     }
+  } else {
+    recalculateInvoice();
   }
 }
 
@@ -3024,7 +3129,15 @@ function setupEventListeners() {
     addInvoiceRow('', 1, 0);
   });
 
+  window.addEventListener('beforeprint', () => {
+    syncPrintValues();
+    recalculateInvoice();
+  });
+
   document.getElementById('inv-print')?.addEventListener('click', () => {
+    syncPrintValues();
+    recalculateInvoice();
+
     const originalTitle = document.title;
     const invNumber = document.getElementById('inv-number')?.value.trim();
     const clientName = document.getElementById('inv-client')?.value.trim();
@@ -3034,14 +3147,15 @@ function setupEventListeners() {
     window.print();
     setTimeout(() => {
       document.title = originalTitle;
-    }, 1200);
+    }, 1500);
   });
 
   document.getElementById('btn-invoice-load-order')?.addEventListener('click', () => {
     const picker = document.getElementById('invoice-order-picker');
     const orderId = picker ? picker.value : null;
     if (orderId) {
-      const order = state.orders.find(o => String(o.id) === String(orderId));
+      const allOrders = [...(state.orders || []), ...(state.paymentOrders || [])];
+      const order = allOrders.find(o => String(o.id) === String(orderId) || String(o.order_code) === String(orderId));
       if (order) {
         loadOrderIntoInvoice(order);
       }
@@ -3051,7 +3165,8 @@ function setupEventListeners() {
   document.getElementById('invoice-order-picker')?.addEventListener('change', (e) => {
     const orderId = e.target.value;
     if (orderId) {
-      const order = state.orders.find(o => String(o.id) === String(orderId));
+      const allOrders = [...(state.orders || []), ...(state.paymentOrders || [])];
+      const order = allOrders.find(o => String(o.id) === String(orderId) || String(o.order_code) === String(orderId));
       if (order) {
         loadOrderIntoInvoice(order);
       }
@@ -3422,7 +3537,8 @@ function renderStatusBadge(status) {
 }
 
 function getCustomerName(ord) {
-  return ord.customer?.name || ord.customerName || 'Pelanggan';
+  if (!ord) return 'Pelanggan';
+  return ord.customer?.name || ord.customer?.nama || ord.nama || ord.customerName || 'Pelanggan';
 }
 
 function getWorkerLabel(ord) {

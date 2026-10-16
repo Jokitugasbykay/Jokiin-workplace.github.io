@@ -580,7 +580,10 @@
                 <div class="invoice-brand"><img src="./assets/logo-jokiin-invoice.png" width="56" height="56" alt="Logo Jokiin"> JOKI<span>.IN</span></div>
                 <p class="invoice-tagline">Teman tugas mahasiswa</p>
               </div>
-              <h1 class="invoice-title">INVOICE</h1>
+              <div style="text-align: right;">
+                <h1 class="invoice-title">INVOICE</h1>
+                <span id="inv-status-badge" class="status-badge completed" style="display:inline-block;margin-top:6px;font-size:12px;font-weight:800;padding:4px 12px;border-radius:999px;">LUNAS</span>
+              </div>
             </header>
 
             <section class="invoice-fields" aria-label="Informasi invoice">
@@ -637,7 +640,7 @@
                   <span class="invoice-tax-percent">%</span>
                 </div>
               </div>
-              <div class="invoice-total-row">
+              <div id="inv-tax-row-display" class="invoice-total-row">
                 <span id="inv-tax-label">Nilai PPN (0%)</span>
                 <strong id="inv-tax-value">Rp0</strong>
               </div>
