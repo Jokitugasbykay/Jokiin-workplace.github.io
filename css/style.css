@@ -1844,6 +1844,21 @@ input:checked + .toggle-slider:before {
   letter-spacing: 1px;
 }
 
+#inv-status-badge {
+  display: block;
+  margin-top: 4px;
+  font-size: 13px;
+  font-weight: 800;
+  color: #087C5B;
+  letter-spacing: 1.5px;
+  text-transform: uppercase;
+  background: transparent !important;
+  border: none !important;
+  border-radius: 0 !important;
+  padding: 0 !important;
+  box-shadow: none !important;
+}
+
 .invoice-tagline {
   margin: 4px 0;
   color: #5D6962;
@@ -2248,7 +2263,7 @@ p { text-wrap: pretty; }
 @media print {
   @page {
     size: A4 portrait;
-    margin: 12mm 14mm 12mm 14mm;
+    margin: 0;
   }
   :root {
     background: #FFFFFF !important;
@@ -2323,7 +2338,7 @@ p { text-wrap: pretty; }
     width: 100% !important;
     min-height: 0 !important;
     margin: 0 !important;
-    padding: 0 !important;
+    padding: 14mm 16mm 14mm !important;
     border: 0 !important;
     border-radius: 0 !important;
     box-shadow: none !important;
@@ -2418,6 +2433,20 @@ p { text-wrap: pretty; }
     padding-top: 12px !important;
     font-size: 11px !important;
     color: #5D6962 !important;
+  }
+  #inv-status-badge {
+    display: block !important;
+    margin-top: 4px !important;
+    font-size: 13px !important;
+    font-weight: 800 !important;
+    color: #087C5B !important;
+    letter-spacing: 1.5px !important;
+    text-transform: uppercase !important;
+    background: transparent !important;
+    border: none !important;
+    border-radius: 0 !important;
+    padding: 0 !important;
+    box-shadow: none !important;
   }
 }
 
