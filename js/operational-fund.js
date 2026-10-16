@@ -774,6 +774,103 @@
     }
   }
 
+  let realtimeChannel = null;
+  let realtimeDebounceTimer = null;
+
+  function updateRealtimeBadge(status) {
+    const badge = document.getElementById('op-realtime-badge');
+    const dot = document.getElementById('op-realtime-dot');
+    const text = document.getElementById('op-realtime-text');
+    if (!badge || !text) return;
+
+    if (status === 'SUBSCRIBED') {
+      badge.style.background = 'rgba(16, 185, 129, 0.12)';
+      badge.style.color = '#10B981';
+      if (dot) {
+        dot.style.background = '#10B981';
+        dot.className = 'op-pulse-dot';
+      }
+      text.textContent = 'Realtime Aktif';
+    } else if (status === 'CHANNEL_ERROR' || status === 'TIMED_OUT') {
+      badge.style.background = 'rgba(239, 68, 68, 0.12)';
+      badge.style.color = '#EF4444';
+      if (dot) {
+        dot.style.background = '#EF4444';
+        dot.className = '';
+      }
+      text.textContent = 'Menghubungkan Ulang...';
+    } else {
+      badge.style.background = 'rgba(245, 158, 11, 0.12)';
+      badge.style.color = '#D97706';
+      if (dot) {
+        dot.style.background = '#F59E0B';
+        dot.className = 'op-pulse-dot';
+      }
+      text.textContent = 'Menyambungkan...';
+    }
+  }
+
+  function flashRealtimeBadge() {
+    const badge = document.getElementById('op-realtime-badge');
+    if (!badge) return;
+    badge.classList.remove('op-realtime-flash');
+    void badge.offsetWidth;
+    badge.classList.add('op-realtime-flash');
+  }
+
+  async function setupRealtimeSubscription() {
+    if (realtimeChannel) return;
+
+    try {
+      const supabase = await getSupabase();
+      if (!supabase || typeof supabase.channel !== 'function') {
+        console.warn('[OperationalFund Realtime] Supabase channel tidak tersedia.');
+        return;
+      }
+
+      updateRealtimeBadge('CONNECTING');
+
+      realtimeChannel = supabase.channel('operational-fund-live-stream')
+        .on('postgres_changes', { event: '*', schema: 'public', table: 'operational_expenses' }, handleRealtimeChange)
+        .on('postgres_changes', { event: '*', schema: 'public', table: 'operational_team_bonuses' }, handleRealtimeChange)
+        .on('postgres_changes', { event: '*', schema: 'public', table: 'operational_promo_subsidies' }, handleRealtimeChange)
+        .on('postgres_changes', { event: '*', schema: 'public', table: 'operational_budgets' }, handleRealtimeChange)
+        .on('postgres_changes', { event: '*', schema: 'public', table: 'operational_settings' }, handleRealtimeChange)
+        .on('postgres_changes', { event: '*', schema: 'public', table: 'orders' }, handleRealtimeChange)
+        .subscribe((status, err) => {
+          updateRealtimeBadge(status);
+          if (status === 'SUBSCRIBED') {
+            console.log('[OperationalFund Realtime] Siaran data realtime Supabase terhubung.');
+          } else if (status === 'CHANNEL_ERROR') {
+            console.warn('[OperationalFund Realtime] Kesalahan channel Realtime:', err);
+          }
+        });
+    } catch (err) {
+      console.warn('[OperationalFund Realtime] Inisialisasi subscription gagal:', err);
+    }
+  }
+
+  function handleRealtimeChange(payload) {
+    console.log('[OperationalFund Realtime] Perubahan diterima dari tabel:', payload?.table, payload?.eventType);
+    flashRealtimeBadge();
+
+    if (realtimeDebounceTimer) clearTimeout(realtimeDebounceTimer);
+    realtimeDebounceTimer = setTimeout(async () => {
+      if (payload?.table === 'orders') {
+        const loadFn = window.loadData || (typeof loadData === 'function' ? loadData : null);
+        if (loadFn) {
+          try {
+            await loadFn();
+          } catch (e) {
+            console.warn('[OperationalFund] Gagal memperbarui loadData:', e);
+          }
+        }
+      }
+      await fetchOperationalData();
+      renderAll();
+    }, 150);
+  }
+
   function renderAll() {
     renderKPI();
     renderDonutChart();
@@ -789,10 +886,14 @@
       setupEventListeners();
       await fetchOperationalData();
       renderAll();
+      setupRealtimeSubscription();
     },
     render: async function () {
       await fetchOperationalData();
       renderAll();
+      if (!realtimeChannel) {
+        setupRealtimeSubscription();
+      }
     },
     getData: function () {
       return opData;

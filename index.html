@@ -434,9 +434,13 @@
             
             <div class="operational-header" style="display: flex; justify-content: space-between; align-items: flex-start; flex-wrap: wrap; gap: 16px; margin-bottom: 20px;">
               <div>
-                <div style="display: flex; align-items: center; gap: 10px;">
+                <div style="display: flex; align-items: center; gap: 10px; flex-wrap: wrap;">
                   <span class="status-badge" style="background: var(--accent-blue-bg); color: var(--accent-blue); font-weight: 800; font-size: 11px; padding: 4px 10px; border-radius: 999px;">KAS SISTEM</span>
                   <h3 class="section-title" style="margin: 0; font-size: 20px;">Dana Pengembangan & Operasional JOKI.IN</h3>
+                  <span id="op-realtime-badge" class="status-badge" style="background: rgba(16, 185, 129, 0.12); color: #10B981; font-weight: 700; font-size: 11px; padding: 4px 10px; border-radius: 999px; display: inline-flex; align-items: center; gap: 6px;">
+                    <span id="op-realtime-dot" class="op-pulse-dot"></span>
+                    <span id="op-realtime-text">Realtime Aktif</span>
+                  </span>
                 </div>
                 <p class="chart-caption" style="margin-top: 6px;">Kelola alokasi anggaran awal, subsidi promo pelanggan, bonus kinerja tim, dan pengeluaran operasional sistem.</p>
               </div>
@@ -1450,7 +1454,7 @@
   <!-- Application Main Script (Universal script for file://, localhost, & cloud hosting) -->
   <script src="./js/app.js?v=38"></script>
   <script src="./js/produk-promo.js?v=2"></script>
-  <script src="./js/operational-fund.js?v=1"></script>
+  <script src="./js/operational-fund.js?v=2"></script>
 
   <!-- Failsafe Watchdog & Service Worker -->
   <script>

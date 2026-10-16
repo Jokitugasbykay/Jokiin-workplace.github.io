@@ -2676,3 +2676,24 @@ body:has(#modal-order-detail.open) { overflow:hidden; }
     grid-template-columns: 1fr !important;
   }
 }
+
+@keyframes op-pulse {
+  0% { transform: scale(0.95); opacity: 0.8; }
+  50% { transform: scale(1.25); opacity: 1; box-shadow: 0 0 6px #10B981; }
+  100% { transform: scale(0.95); opacity: 0.8; }
+}
+.op-pulse-dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: #10B981;
+  display: inline-block;
+  animation: op-pulse 2s infinite ease-in-out;
+}
+.op-realtime-flash {
+  animation: op-flash-glow 0.8s ease-out;
+}
+@keyframes op-flash-glow {
+  0% { background-color: rgba(16, 185, 129, 0.4); transform: scale(1.03); }
+  100% { background-color: rgba(16, 185, 129, 0.12); transform: scale(1); }
+}
