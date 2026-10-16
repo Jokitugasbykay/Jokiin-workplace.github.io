@@ -476,17 +476,17 @@
                   <p class="ac-12__foot" id="op-foot-balance">Sisa saldo riil kas operasional sistem</p>
                 </article>
 
-                <!-- Card 2: Total Anggaran Dialokasikan -->
+                <!-- Card 2: Total Dana Operasional -->
                 <article class="ac-12__card">
                   <div class="ac-12__top">
-                    <p class="ac-12__key">Total anggaran dialokasikan</p>
-                    <span class="ac-12__pill ac-12__pill--flat">5 Kategori</span>
+                    <p class="ac-12__key">Total dana operasional</p>
+                    <span id="op-pill-fund" class="ac-12__pill ac-12__pill--flat">Awal + 10%</span>
                   </div>
                   <p class="ac-12__val">
                     <span class="ac-12__cur">Rp</span>
                     <span id="op-val-allocated" class="ac-12__num">35.196</span>
                   </p>
-                  <p class="ac-12__foot">Total alokasi 5 pos anggaran awal</p>
+                  <p class="ac-12__foot" id="op-foot-fund">Alokasi awal Rp35.196 + akumulasi 10%</p>
                 </article>
 
                 <!-- Card 3: Total Pengeluaran Aktual -->
@@ -505,26 +505,58 @@
                 <!-- Card 4: Sisa Anggaran -->
                 <article class="ac-12__card">
                   <div class="ac-12__top">
-                    <p class="ac-12__key">Sisa anggaran operasional</p>
+                    <p class="ac-12__key">Sisa kas tersedia</p>
                     <span id="op-pill-remaining" class="ac-12__pill ac-12__pill--up">100% Sisa</span>
                   </div>
                   <p class="ac-12__val">
                     <span class="ac-12__cur">Rp</span>
                     <span id="op-val-remaining" class="ac-12__num">35.196</span>
                   </p>
-                  <p class="ac-12__foot">Alokasi anggaran belum terpakai</p>
+                  <p class="ac-12__foot">Saldo kas operasional yang dapat digunakan</p>
                 </article>
+              </div>
+            </div>
+
+            <!-- Kartu Kewajiban Perpanjangan Domain (Nominal Tetap & Terpisah) -->
+            <div class="entry-card" id="op-domain-card" style="margin-bottom: 24px; border-left: 4px solid var(--accent-blue); background: #F8FAFD;">
+              <div style="display: flex; justify-content: space-between; align-items: flex-start; flex-wrap: wrap; gap: 14px;">
+                <div style="display: flex; align-items: flex-start; gap: 12px;">
+                  <div style="width: 42px; height: 42px; border-radius: 12px; background: rgba(49, 88, 168, 0.12); display: flex; align-items: center; justify-content: center; color: var(--accent-blue); flex-shrink: 0;">
+                    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                      <circle cx="12" cy="12" r="10"></circle>
+                      <line x1="2" y1="12" x2="22" y2="12"></line>
+                      <path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"></path>
+                    </svg>
+                  </div>
+                  <div>
+                    <div style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">
+                      <h4 style="margin: 0; font-size: 16px; font-weight: 750; color: var(--ink);">Kewajiban Perpanjangan Domain</h4>
+                      <span id="op-domain-status-badge" class="status-badge" style="background: #FFF2DC; color: #895000; font-weight: 700; font-size: 11px;">Belum dibayar</span>
+                    </div>
+                    <p style="font-size: 13px; color: var(--ink-secondary); margin: 4px 0 0;">Nominal tetap tahunan tanpa persentase alokasi. Dana diprioritaskan untuk keberlangsungan alamat jokiin.my.id.</p>
+                    <div style="display: flex; gap: 16px; align-items: center; margin-top: 8px; font-size: 12px; color: var(--ink-secondary); flex-wrap: wrap;">
+                      <span>Kewajiban: <strong style="color: var(--ink); font-size: 13px;">Rp22.000 / tahun</strong></span>
+                      <span>Jatuh Tempo: <strong id="op-domain-due-date" style="color: var(--accent-blue); font-size: 13px;">12 September 2027</strong></span>
+                      <span>Realisasi Saldo: <strong id="op-domain-payment-note" style="color: #10B981;">Saldo belum terpotong</strong></span>
+                    </div>
+                  </div>
+                </div>
+                <div style="display: flex; gap: 8px; align-items: center;">
+                  <button id="btn-pay-domain" class="btn-primary" style="height: 38px; padding: 0 14px; font-size: 12px; font-weight: 700;">
+                    Bayar Domain (Rp22.000)
+                  </button>
+                </div>
               </div>
             </div>
 
             <!-- Two Integrated Charts Grid -->
             <div class="op-charts-grid" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: 20px; margin-bottom: 24px;">
-              <!-- Chart 1: Donut Chart Alokasi Anggaran -->
+              <!-- Chart 1: Donut Chart Alokasi Sisa Dana (4 Kategori) -->
               <article class="performance-chart-card" style="margin-top: 0; display: flex; flex-direction: column;">
                 <div class="section-header" style="margin-bottom: 4px;">
-                  <h4 class="section-title" style="font-size: 16px;">Alokasi Anggaran Awal</h4>
+                  <h4 class="section-title" style="font-size: 16px;">Alokasi Sisa Dana Operasional</h4>
                 </div>
-                <p class="chart-caption" style="margin-bottom: 16px;">Distribusi alokasi dana operasional awal ke 5 pos strategis (Total Rp35.196).</p>
+                <p class="chart-caption" style="margin-bottom: 16px;">Pembagian persentase terhadap sisa dana operasional (Rp13.196) di luar kewajiban domain.</p>
                 
                 <div id="op-donut-container" style="display: flex; flex-direction: column; align-items: center; justify-content: center; position: relative; min-height: 240px;">
                   <div id="op-donut-svg-wrap" style="width: 100%; max-width: 260px; height: 260px; position: relative;"></div>
@@ -622,14 +654,17 @@
               </article>
             </div>
 
-            <!-- Transaction History Table Card -->
+            <!-- Transaction History Table Card (Pengeluaran & Pemasukan 10%) -->
             <article class="performance-chart-card" style="margin-top: 0;">
               <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 12px; margin-bottom: 14px;">
                 <div>
-                  <h4 class="section-title" style="font-size: 16px; margin: 0;">Riwayat Pengeluaran Operasional</h4>
-                  <p class="chart-caption" style="margin: 4px 0 0;">Catatan audit seluruh pengeluaran kas operasional JOKI.IN.</p>
+                  <div style="display: flex; gap: 8px; margin-bottom: 6px;">
+                    <button id="op-tab-btn-expenses" class="btn-outline active" style="height: 32px; padding: 0 14px; font-size: 12px; font-weight: 700; border-radius: 6px; cursor: pointer;">Riwayat Pengeluaran</button>
+                    <button id="op-tab-btn-inflows" class="btn-outline" style="height: 32px; padding: 0 14px; font-size: 12px; font-weight: 700; border-radius: 6px; cursor: pointer;">Pemasukan 10% Pesanan</button>
+                  </div>
+                  <p id="op-history-caption" class="chart-caption" style="margin: 0;">Catatan audit pengeluaran kas operasional JOKI.IN.</p>
                 </div>
-                <div style="display: flex; gap: 10px; align-items: center; flex-wrap: wrap;">
+                <div id="op-expenses-filter-controls" style="display: flex; gap: 10px; align-items: center; flex-wrap: wrap;">
                   <select id="op-filter-category" class="form-select" style="height: 36px; font-size: 13px; padding: 0 12px; border-radius: 8px; min-width: 150px;">
                     <option value="all">Semua Kategori</option>
                     <option value="domain">Perpanjangan domain</option>
@@ -642,7 +677,8 @@
                 </div>
               </div>
 
-              <div class="chart-table-wrap">
+              <!-- Table 1: Pengeluaran Operasional -->
+              <div id="op-table-expenses-wrap" class="chart-table-wrap">
                 <table class="op-table" style="width: 100%; border-collapse: collapse; font-size: 13px;">
                   <thead>
                     <tr style="border-bottom: 1px solid var(--border-light); color: var(--ink-secondary); font-size: 12px;">
@@ -658,6 +694,28 @@
                     <tr>
                       <td colspan="6" style="text-align: center; padding: 24px; color: var(--ink-secondary);">
                         Belum ada transaksi pengeluaran. Anggaran awal Rp35.196 masih utuh.
+                      </td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+
+              <!-- Table 2: Pemasukan 10% dari Pesanan Lunas -->
+              <div id="op-table-inflows-wrap" class="chart-table-wrap" style="display: none;">
+                <table class="op-table" style="width: 100%; border-collapse: collapse; font-size: 13px;">
+                  <thead>
+                    <tr style="border-bottom: 1px solid var(--border-light); color: var(--ink-secondary); font-size: 12px;">
+                      <th style="text-align: left; padding: 10px 8px;">ID Pesanan</th>
+                      <th style="text-align: left; padding: 10px 8px;">Tanggal Transaksi</th>
+                      <th style="text-align: right; padding: 10px 8px;">Nilai Dasar Pendapatan</th>
+                      <th style="text-align: right; padding: 10px 8px;">Alokasi 10%</th>
+                      <th style="text-align: center; padding: 10px 8px;">Status Transaksi</th>
+                    </tr>
+                  </thead>
+                  <tbody id="op-inflows-tbody">
+                    <tr>
+                      <td colspan="5" style="text-align: center; padding: 24px; color: var(--ink-secondary);">
+                        Belum ada pemasukan 10% dari pesanan baru. Alokasi awal Rp35.196 aktif.
                       </td>
                     </tr>
                   </tbody>
@@ -1454,7 +1512,7 @@
   <!-- Application Main Script (Universal script for file://, localhost, & cloud hosting) -->
   <script src="./js/app.js?v=38"></script>
   <script src="./js/produk-promo.js?v=2"></script>
-  <script src="./js/operational-fund.js?v=2"></script>
+  <script src="./js/operational-fund.js?v=3"></script>
 
   <!-- Failsafe Watchdog & Service Worker -->
   <script>

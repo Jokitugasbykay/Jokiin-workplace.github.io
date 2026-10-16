@@ -2697,3 +2697,9 @@ body:has(#modal-order-detail.open) { overflow:hidden; }
   0% { background-color: rgba(16, 185, 129, 0.4); transform: scale(1.03); }
   100% { background-color: rgba(16, 185, 129, 0.12); transform: scale(1); }
 }
+
+.btn-outline.active {
+  background: var(--accent-blue);
+  color: #fff !important;
+  border-color: var(--accent-blue);
+}
