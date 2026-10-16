@@ -690,6 +690,9 @@ function renderActiveTab() {
       break;
     case 'performance':
       renderPerformance();
+      if (typeof window !== 'undefined' && window.OperationalFund && typeof window.OperationalFund.render === 'function') {
+        window.OperationalFund.render();
+      }
       break;
     case 'products':
       renderProducts();
@@ -1561,6 +1564,11 @@ function renderPerformance() {
 
   // Admin Team Stats
   renderAdminTeamStats(periodOrders);
+
+  // Operational Fund Subsystem
+  if (typeof window !== 'undefined' && window.OperationalFund && typeof window.OperationalFund.render === 'function') {
+    window.OperationalFund.render();
+  }
 }
 
 // ========================================================

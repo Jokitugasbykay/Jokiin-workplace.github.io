@@ -2639,3 +2639,40 @@ body:has(#modal-order-detail.open) { overflow:hidden; }
  .detail-footer button { min-width:88px; font-size:14px; padding-inline:12px; }
  .detail-footer #btn-order-create-invoice { flex:1; }
 }
+
+/* ======================================================== */
+/* Dana Pengembangan & Operasional JOKI.IN Styles           */
+/* ======================================================== */
+.op-donut-svg {
+  display: block;
+  width: 100%;
+  height: auto;
+  max-width: 260px;
+}
+.op-donut-slice {
+  cursor: pointer;
+  transition: transform 0.2s ease, opacity 0.2s ease;
+}
+.op-donut-slice:hover, .op-donut-slice:focus-visible {
+  outline: none;
+  opacity: 0.85;
+}
+.op-chart-tooltip {
+  position: absolute;
+  background: rgba(27, 36, 48, 0.92);
+  color: #fff;
+  padding: 6px 10px;
+  border-radius: 6px;
+  font-size: 11px;
+  pointer-events: none;
+  z-index: 10;
+  white-space: nowrap;
+}
+.op-table th, .op-table td {
+  padding: 10px 8px;
+}
+@media (max-width: 768px) {
+  .op-charts-grid {
+    grid-template-columns: 1fr !important;
+  }
+}
