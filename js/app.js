@@ -3014,9 +3014,15 @@ function setupEventListeners() {
       showConfirm('Ubah Status Pesanan', `Ubah status pesanan #${orderId} menjadi ${statusLabel(next)}?`, async () => {
         try {
           const supabase = await getSupabase();
+          const targetOrder = state.orders.find(o => o.id === orderId);
+          const updatePayload = { status: next };
+          if (!targetOrder?.assigned_to && (next === 'processing' || next === 'revision' || next === 'completed')) {
+            updatePayload.assigned_to = state.admin.id;
+            updatePayload.assigned_at = new Date().toISOString();
+          }
           const { error } = await supabase
             .from('orders')
-            .update({ status: next })
+            .update(updatePayload)
             .eq('id', orderId)
             .eq('status', prev);
 
