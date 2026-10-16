@@ -34,4 +34,9 @@ if (!appJs.includes('state.paymentOrders')) {
   throw new Error('Missing state.paymentOrders inclusion in app.js');
 }
 
+// 4. Check index.html has official jokiin.my.id link
+if (!indexHtml.includes('https://jokiin.my.id')) {
+  throw new Error('Missing https://jokiin.my.id in index.html');
+}
+
 console.log('PASS: invoice modal transition, customer name fallback, print spans and CSS print layout are verified.');
