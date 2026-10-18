@@ -303,6 +303,9 @@
             </div>
           </header>
 
+          <!-- Filter Admin Selector -->
+          <div class="skyline-admin-filter-bar" id="skyline-admin-filter-bar" style="display: none;"></div>
+
           <div class="skyline-stage-outer">
             <div class="skyline-stage" id="skyline-stage">
               <canvas class="skyline-canvas" id="skyline-canvas" tabindex="0"></canvas>
@@ -348,6 +351,7 @@
       this.statsRow = this.mountEl.querySelector('#skyline-stats-row');
       this.hint = this.mountEl.querySelector('#skyline-hint');
       this.swatchesContainer = this.mountEl.querySelector('#skyline-swatches');
+      this.adminFilterBar = this.mountEl.querySelector('#skyline-admin-filter-bar');
 
       this.btn2D.addEventListener('click', () => this.setView('2d'));
       this.btn3D.addEventListener('click', () => this.setView('3d'));
@@ -380,8 +384,38 @@
       this.btn3D.style.color = is3D ? '#ffffff' : 'var(--ink-secondary)';
     }
 
-    setData(data) {
+    setAdminFilters(admins, activeId, onSelect) {
+      if (!this.adminFilterBar) return;
+      if (!admins || !admins.length) {
+        this.adminFilterBar.style.display = 'none';
+        this.adminFilterBar.innerHTML = '';
+        return;
+      }
+      this.adminFilterBar.style.display = 'flex';
+      this.adminFilterBar.innerHTML = admins.map(adm => {
+        const isActive = adm.id === activeId;
+        return `
+          <button type="button" class="skyline-admin-chip ${isActive ? 'active' : ''}" data-admin-id="${adm.id}" title="Lihat kontribusi ${adm.label}">
+            <span>${adm.label}</span>
+            <span class="skyline-admin-chip-badge">${adm.count}</span>
+          </button>
+        `;
+      }).join('');
+
+      this.adminFilterBar.querySelectorAll('.skyline-admin-chip').forEach(btn => {
+        btn.addEventListener('click', () => {
+          const id = btn.getAttribute('data-admin-id');
+          if (id && onSelect) onSelect(id);
+        });
+      });
+    }
+
+    setData(data, options = {}) {
       this.options.data = data;
+      if (options.title !== undefined) this.options.title = options.title;
+      if (options.subheading !== undefined) this.options.subheading = options.subheading;
+      if (options.unit !== undefined) this.options.unit = options.unit;
+      if (options.unitPlural !== undefined) this.options.unitPlural = options.unitPlural;
       this.rebuildModel();
       this.load();
       this.retheme();
@@ -391,7 +425,7 @@
 
     rebuildModel() {
       const end = dayMs(new Date());
-      const days = this.options.data && this.options.data.length ? this.options.data : generateContributions(end, 7);
+      const days = Array.isArray(this.options.data) ? this.options.data : generateContributions(end, 7);
       const grid = buildGrid(days, end, this.options.weekStart);
       this.model = Object.assign({}, grid, {
         stats: computeStats(grid.cells),
@@ -402,8 +436,21 @@
       const dfy = new Intl.DateTimeFormat(this.options.locale, { month: 'short', day: 'numeric', year: 'numeric', timeZone: 'UTC' });
       const stats = this.model.stats;
 
-      this.headerTitle.innerHTML = `<span style="font-weight: 800; font-variant-numeric: tabular-nums;">${nf.format(stats.total)}</span> order & aktivitas dalam 1 tahun terakhir`;
-      this.subheading.textContent = `Visualisasi isometric 3D skyline aktivitas transaksi sistem dan pengerjaan tim.`;
+      if (this.options.title) {
+        if (typeof this.options.title === 'function') {
+          this.headerTitle.innerHTML = this.options.title(stats, nf);
+        } else {
+          this.headerTitle.innerHTML = this.options.title.replace('{total}', nf.format(stats.total));
+        }
+      } else {
+        this.headerTitle.innerHTML = `<span style="font-weight: 800; font-variant-numeric: tabular-nums;">${nf.format(stats.total)}</span> order dikerjakan dalam 1 tahun terakhir`;
+      }
+
+      if (this.options.subheading) {
+        this.subheading.textContent = this.options.subheading;
+      } else {
+        this.subheading.textContent = `Visualisasi isometric 3D skyline performa kontribusi pengerjaan order admin.`;
+      }
 
       this.renderStatCards(stats, nf, dfy);
     }
@@ -414,10 +461,11 @@
         return `${dfy.format(dayMs(a))} - ${dfy.format(dayMs(b))}`;
       };
 
+      const unit = this.options.unit || 'order';
       const blocks = [
-        { label: 'Total 1 Tahun', value: nf.format(stats.total), unit: 'order', sub: formatRange(stats.first, stats.last) },
-        { label: 'Hari Tersibuk', value: nf.format(stats.busiest.count), unit: 'order', sub: stats.busiest.date ? dfy.format(dayMs(stats.busiest.date)) : '-' },
-        { label: 'Rentetan Terpanjang', value: nf.format(stats.longest.days), unit: 'hari', sub: formatRange(stats.longest.start, stats.longest.end) },
+        { label: 'Total 1 Tahun', value: nf.format(stats.total), unit: unit, sub: formatRange(stats.first, stats.last) },
+        { label: 'Hari Terproduktif', value: nf.format(stats.busiest.count), unit: unit, sub: stats.busiest.date ? dfy.format(dayMs(stats.busiest.date)) : '-' },
+        { label: 'Rentetan Pengerjaan', value: nf.format(stats.longest.days), unit: 'hari', sub: formatRange(stats.longest.start, stats.longest.end) },
         { label: 'Rentetan Saat Ini', value: nf.format(stats.current.days), unit: 'hari', sub: formatRange(stats.current.start, stats.current.end) },
       ];
 

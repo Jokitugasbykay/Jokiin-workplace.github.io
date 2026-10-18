@@ -3054,6 +3054,72 @@ body:has(#modal-order-detail.open) { overflow:hidden; }
   color: var(--ink-secondary);
 }
 
+/* Skyline Admin Filter Pills */
+.skyline-admin-filter-bar {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  overflow-x: auto;
+  padding: 4px 2px 14px 2px;
+  margin-bottom: 4px;
+  scrollbar-width: none;
+  -webkit-overflow-scrolling: touch;
+}
+
+.skyline-admin-filter-bar::-webkit-scrollbar {
+  display: none;
+}
+
+.skyline-admin-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 14px;
+  border-radius: 999px;
+  background: #F8FAFC;
+  border: 1px solid var(--border-light, #E2E8F0);
+  color: var(--ink-secondary, #475569);
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+  min-height: 32px;
+  font-family: inherit;
+  outline: none;
+}
+
+.skyline-admin-chip:hover {
+  background: #F1F5F9;
+  border-color: #CBD5E1;
+  color: var(--ink-primary, #1E293B);
+}
+
+.skyline-admin-chip.active {
+  background: #059669;
+  border-color: #059669;
+  color: #FFFFFF;
+  box-shadow: 0 2px 8px rgba(5, 150, 105, 0.25);
+}
+
+.skyline-admin-chip-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 1px 7px;
+  border-radius: 999px;
+  font-size: 11px;
+  font-weight: 700;
+  background: rgba(0, 0, 0, 0.06);
+  color: inherit;
+  min-width: 18px;
+}
+
+.skyline-admin-chip.active .skyline-admin-chip-badge {
+  background: rgba(255, 255, 255, 0.28);
+  color: #FFFFFF;
+}
+
 .skyline-toggle-group {
   position: relative;
   display: inline-flex;
