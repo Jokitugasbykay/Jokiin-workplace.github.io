@@ -2702,3 +2702,308 @@ body:has(#modal-order-detail.open) { overflow:hidden; }
   color: #fff !important;
   border-color: var(--accent-blue);
 }
+
+/* ========================================================
+   MODERN FINTECH UI/UX STYLES - TAB KEUANGAN
+   ======================================================== */
+.keuangan-wrap {
+  display: flex;
+  flex-direction: column;
+  gap: 22px;
+  margin-top: 0;
+}
+
+/* Hero Header */
+.keuangan-hero-header {
+  background: #FFFFFF;
+  border: 1px solid var(--border-light);
+  border-radius: 18px;
+  padding: 22px 26px;
+  box-shadow: 0 4px 18px -4px rgba(27, 36, 48, 0.05);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 18px;
+  position: relative;
+  overflow: hidden;
+}
+
+.keuangan-hero-header::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 5px;
+  height: 100%;
+  background: linear-gradient(180deg, var(--accent-blue) 0%, #0EA5E9 100%);
+}
+
+.keuangan-header-info {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  max-width: 620px;
+}
+
+.keuangan-badge-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.keuangan-title {
+  margin: 0;
+  font-size: 21px;
+  font-weight: 800;
+  color: var(--ink);
+  letter-spacing: -0.02em;
+}
+
+.keuangan-desc {
+  margin: 0;
+  font-size: 13px;
+  color: var(--ink-secondary);
+  line-height: 1.5;
+}
+
+/* Action Buttons */
+.keuangan-action-group {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+  align-items: center;
+}
+
+.keuangan-action-group .btn-primary {
+  height: 42px;
+  padding: 0 18px;
+  font-size: 13px;
+  font-weight: 750;
+  border-radius: 12px;
+  box-shadow: 0 4px 14px rgba(49, 88, 168, 0.22);
+  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.keuangan-action-group .btn-primary:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 6px 18px rgba(49, 88, 168, 0.3);
+}
+
+.keuangan-action-group .btn-outline {
+  height: 42px;
+  padding: 0 15px;
+  font-size: 13px;
+  font-weight: 700;
+  border-radius: 12px;
+  background: #FFFFFF;
+  border: 1px solid var(--border);
+  color: var(--ink);
+  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.keuangan-action-group .btn-outline:hover {
+  background: #F8FAFD;
+  border-color: var(--accent-blue);
+  color: var(--accent-blue);
+  transform: translateY(-1px);
+}
+
+/* Domain Obligation Banner */
+.domain-obligation-banner {
+  background: linear-gradient(135deg, #FFFFFF 0%, #F6F9FE 100%);
+  border: 1px solid #D8E3F7;
+  border-radius: 16px;
+  padding: 20px 24px;
+  box-shadow: 0 3px 12px -2px rgba(49, 88, 168, 0.05);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 18px;
+  position: relative;
+  overflow: hidden;
+}
+
+.domain-obligation-banner::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 4px;
+  height: 100%;
+  background: var(--accent-blue);
+}
+
+.domain-content-left {
+  display: flex;
+  align-items: flex-start;
+  gap: 16px;
+  max-width: 720px;
+}
+
+.domain-icon-box {
+  width: 48px;
+  height: 48px;
+  border-radius: 14px;
+  background: rgba(49, 88, 168, 0.1);
+  color: var(--accent-blue);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.domain-title-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.domain-pills-row {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+  margin-top: 10px;
+  flex-wrap: wrap;
+  font-size: 12px;
+}
+
+.domain-pill-item {
+  background: #FFFFFF;
+  border: 1px solid #E2E8F0;
+  border-radius: 8px;
+  padding: 5px 12px;
+  color: var(--ink-secondary);
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+}
+
+.domain-pill-item strong {
+  color: var(--ink);
+}
+
+/* General Card Polish */
+.keuangan-card {
+  background: #FFFFFF;
+  border: 1px solid var(--border-light);
+  border-radius: 18px;
+  padding: 22px 24px;
+  box-shadow: 0 3px 14px -3px rgba(27, 36, 48, 0.04);
+  transition: box-shadow 0.2s ease;
+}
+
+.keuangan-card:hover {
+  box-shadow: 0 8px 24px -4px rgba(27, 36, 48, 0.07);
+}
+
+/* KPI Cards */
+.keuangan-kpi-wrap .ac-12__card {
+  border-radius: 16px;
+  border: 1px solid var(--border-light);
+  box-shadow: 0 2px 8px -2px rgba(27, 36, 48, 0.03);
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.keuangan-kpi-wrap .ac-12__card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 18px -3px rgba(27, 36, 48, 0.08);
+}
+
+/* Segmented Toggle Bar */
+.segmented-toggle-bar {
+  display: inline-flex;
+  background: #EEF2F6;
+  padding: 4px;
+  border-radius: 10px;
+  gap: 4px;
+}
+
+.segmented-toggle-bar .btn-outline {
+  height: 32px;
+  padding: 0 14px;
+  font-size: 12px;
+  font-weight: 700;
+  border-radius: 8px;
+  border: none;
+  background: transparent;
+  color: var(--ink-secondary);
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.segmented-toggle-bar .btn-outline.active {
+  background: #FFFFFF !important;
+  color: var(--ink) !important;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.08);
+  border: none !important;
+}
+
+/* Metric Boxes inside Reseller & Promo */
+.keuangan-metric-box {
+  background: #F8FAFD;
+  border: 1px solid var(--border-light);
+  border-radius: 14px;
+  padding: 16px;
+  transition: all 0.2s ease;
+}
+
+.keuangan-metric-box:hover {
+  background: #FFFFFF;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.04);
+  border-color: #D5DCE4;
+}
+
+/* Modern Table Card */
+.keuangan-table-card {
+  border: 1px solid var(--border-light);
+  border-radius: 14px;
+  overflow: hidden;
+  background: #FFFFFF;
+}
+
+.keuangan-table-card table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 13px;
+}
+
+.keuangan-table-card th {
+  background: #F8FAFD;
+  color: var(--ink-secondary);
+  font-weight: 700;
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  padding: 12px 14px;
+  border-bottom: 1px solid var(--border-light);
+}
+
+.keuangan-table-card td {
+  padding: 12px 14px;
+  border-bottom: 1px solid var(--border-light);
+}
+
+.keuangan-table-card tr:last-child td {
+  border-bottom: none;
+}
+
+.keuangan-table-card tbody tr:hover {
+  background-color: #F8FAFD;
+}
+
+/* Custom Scrollbars */
+.keuangan-custom-scroll::-webkit-scrollbar {
+  width: 5px;
+  height: 5px;
+}
+.keuangan-custom-scroll::-webkit-scrollbar-thumb {
+  background: #D5DCE4;
+  border-radius: 999px;
+}
+.keuangan-custom-scroll::-webkit-scrollbar-track {
+  background: transparent;
+}

@@ -18,7 +18,7 @@
   <meta name="theme-color" content="#000000">
 
   <!-- Stylesheet -->
-  <link rel="stylesheet" href="./css/style.css?v=38">
+  <link rel="stylesheet" href="./css/style.css?v=39">
 
   <!-- Supabase JS Library -->
   <script defer src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
@@ -429,33 +429,35 @@
 
         <!-- View: Keuangan (Finance) -->
         <section id="view-keuangan" class="tab-view" style="display: none;">
-          <div class="operational-fund-section" id="operational-fund-section" style="margin-top: 0;">
-            <div class="operational-header" style="display: flex; justify-content: space-between; align-items: flex-start; flex-wrap: wrap; gap: 16px; margin-bottom: 20px;">
-              <div>
-                <div style="display: flex; align-items: center; gap: 10px; flex-wrap: wrap;">
-                  <span class="status-badge" style="background: var(--accent-blue-bg); color: var(--accent-blue); font-weight: 800; font-size: 11px; padding: 4px 10px; border-radius: 999px;">KAS SISTEM</span>
-                  <h3 class="section-title" style="margin: 0; font-size: 20px;">Dana Pengembangan & Operasional JOKI.IN</h3>
+          <div class="operational-fund-section keuangan-wrap" id="operational-fund-section">
+            
+            <!-- Hero Header Toolbar -->
+            <div class="operational-header keuangan-hero-header">
+              <div class="keuangan-header-info">
+                <div class="keuangan-badge-row">
+                  <span class="status-badge" style="background: var(--accent-blue-bg); color: var(--accent-blue); font-weight: 800; font-size: 11px; padding: 4px 10px; border-radius: 999px;">KAS SISTEM & OPERASIONAL</span>
+                  <h3 class="keuangan-title">Dana Pengembangan & Operasional JOKI.IN</h3>
                   <span id="op-realtime-badge" class="status-badge" style="background: rgba(16, 185, 129, 0.12); color: #10B981; font-weight: 700; font-size: 11px; padding: 4px 10px; border-radius: 999px; display: inline-flex; align-items: center; gap: 6px;">
                     <span id="op-realtime-dot" class="op-pulse-dot"></span>
                     <span id="op-realtime-text">Realtime Aktif</span>
                   </span>
                 </div>
-                <p class="chart-caption" style="margin-top: 6px;">Kelola alokasi anggaran awal, subsidi promo pelanggan, bonus kinerja tim, dan pengeluaran operasional sistem.</p>
+                <p class="keuangan-desc">Pusat tata kelola arus kas sistem: alokasi 10% pesanan, kewajiban tahunan domain, subsidi promo pelanggan, bonus kinerja tim, perputaran modal reseller, dan audit mutasi transaksi.</p>
               </div>
-              <div class="operational-actions" style="display: flex; gap: 10px; flex-wrap: wrap;">
-                <button id="btn-add-expense" class="btn-primary" style="height: 40px; padding: 0 16px; font-size: 13px; font-weight: 700; display: inline-flex; align-items: center; gap: 8px;">
+              <div class="operational-actions keuangan-action-group">
+                <button id="btn-add-expense" class="btn-primary" style="display: inline-flex; align-items: center; gap: 8px;">
                   <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M12 5v14M5 12h14"/></svg>
                   Tambah Pengeluaran
                 </button>
-                <button id="btn-add-promo-subsidy" class="btn-outline" style="height: 40px; padding: 0 14px; font-size: 13px; font-weight: 700; display: inline-flex; align-items: center; gap: 6px;">
+                <button id="btn-add-promo-subsidy" class="btn-outline" style="display: inline-flex; align-items: center; gap: 6px;">
                   <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20.59 13.41l-7.17 7.17a2 2 0 0 1-2.83 0L2 12V2h10l8.59 8.59a2 2 0 0 1 0 2.82z"/><line x1="7" y1="7" x2="7.01" y2="7"/></svg>
                   Subsidi Promo
                 </button>
-                <button id="btn-add-team-bonus" class="btn-outline" style="height: 40px; padding: 0 14px; font-size: 13px; font-weight: 700; display: inline-flex; align-items: center; gap: 6px;">
+                <button id="btn-add-team-bonus" class="btn-outline" style="display: inline-flex; align-items: center; gap: 6px;">
                   <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="8" r="7"/><polyline points="8.21 13.89 7 23 12 20 17 23 15.79 13.88"/></svg>
                   Bonus Tim
                 </button>
-                <button id="btn-add-reseller-quick" class="btn-outline" style="height: 40px; padding: 0 14px; font-size: 13px; font-weight: 700; display: inline-flex; align-items: center; gap: 6px;">
+                <button id="btn-add-reseller-quick" class="btn-outline" style="display: inline-flex; align-items: center; gap: 6px;">
                   <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 2L3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z"/><line x1="3" y1="6" x2="21" y2="6"/><path d="M16 10a4 4 0 0 1-8 0"/></svg>
                   Modal Reseller
                 </button>
@@ -463,7 +465,7 @@
             </div>
 
             <!-- KPI Cards for Operational Fund -->
-            <div class="ac-12" aria-label="Metrik Dana Operasional" style="margin-bottom: 24px;">
+            <div class="ac-12 keuangan-kpi-wrap" aria-label="Metrik Dana Operasional">
               <div class="ac-12__grid" style="grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));">
                 <!-- Card 1: Saldo Kas Operasional -->
                 <article class="ac-12__card" style="border-left: 4px solid var(--accent-blue);">
@@ -479,7 +481,7 @@
                 </article>
 
                 <!-- Card 2: Total Dana Operasional -->
-                <article class="ac-12__card">
+                <article class="ac-12__card" style="border-left: 4px solid #10B981;">
                   <div class="ac-12__top">
                     <p class="ac-12__key">Total dana operasional</p>
                     <span id="op-pill-fund" class="ac-12__pill ac-12__pill--flat">Awal + 10%</span>
@@ -492,7 +494,7 @@
                 </article>
 
                 <!-- Card 3: Total Pengeluaran Aktual -->
-                <article class="ac-12__card">
+                <article class="ac-12__card" style="border-left: 4px solid #EF4444;">
                   <div class="ac-12__top">
                     <p class="ac-12__key">Total pengeluaran aktual</p>
                     <span id="op-pill-spent" class="ac-12__pill ac-12__pill--flat">Realisasi</span>
@@ -504,8 +506,8 @@
                   <p class="ac-12__foot" id="op-foot-spent">Berdasarkan transaksi nyata tercatat</p>
                 </article>
 
-                <!-- Card 4: Sisa Anggaran -->
-                <article class="ac-12__card">
+                <!-- Card 4: Sisa Kas Tersedia -->
+                <article class="ac-12__card" style="border-left: 4px solid #F59E0B;">
                   <div class="ac-12__top">
                     <p class="ac-12__key">Sisa kas tersedia</p>
                     <span id="op-pill-remaining" class="ac-12__pill ac-12__pill--up">100% Sisa</span>
@@ -520,43 +522,41 @@
             </div>
 
             <!-- Kartu Kewajiban Perpanjangan Domain (Nominal Tetap & Terpisah) -->
-            <div class="entry-card" id="op-domain-card" style="margin-bottom: 24px; border-left: 4px solid var(--accent-blue); background: #F8FAFD;">
-              <div style="display: flex; justify-content: space-between; align-items: flex-start; flex-wrap: wrap; gap: 14px;">
-                <div style="display: flex; align-items: flex-start; gap: 12px;">
-                  <div style="width: 42px; height: 42px; border-radius: 12px; background: rgba(49, 88, 168, 0.12); display: flex; align-items: center; justify-content: center; color: var(--accent-blue); flex-shrink: 0;">
-                    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                      <circle cx="12" cy="12" r="10"></circle>
-                      <line x1="2" y1="12" x2="22" y2="12"></line>
-                      <path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"></path>
-                    </svg>
+            <div class="entry-card domain-obligation-banner" id="op-domain-card">
+              <div class="domain-content-left">
+                <div class="domain-icon-box">
+                  <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <circle cx="12" cy="12" r="10"></circle>
+                    <line x1="2" y1="12" x2="22" y2="12"></line>
+                    <path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1 4-10z"></path>
+                  </svg>
+                </div>
+                <div>
+                  <div class="domain-title-row">
+                    <h4 style="margin: 0; font-size: 16px; font-weight: 800; color: var(--ink);">Kewajiban Perpanjangan Domain</h4>
+                    <span id="op-domain-status-badge" class="status-badge" style="background: #FFF2DC; color: #895000; font-weight: 700; font-size: 11px;">Belum dibayar</span>
                   </div>
-                  <div>
-                    <div style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">
-                      <h4 style="margin: 0; font-size: 16px; font-weight: 750; color: var(--ink);">Kewajiban Perpanjangan Domain</h4>
-                      <span id="op-domain-status-badge" class="status-badge" style="background: #FFF2DC; color: #895000; font-weight: 700; font-size: 11px;">Belum dibayar</span>
-                    </div>
-                    <p style="font-size: 13px; color: var(--ink-secondary); margin: 4px 0 0;">Nominal tetap tahunan tanpa persentase alokasi. Dana diprioritaskan untuk keberlangsungan alamat jokiin.my.id.</p>
-                    <div style="display: flex; gap: 16px; align-items: center; margin-top: 8px; font-size: 12px; color: var(--ink-secondary); flex-wrap: wrap;">
-                      <span>Kewajiban: <strong style="color: var(--ink); font-size: 13px;">Rp22.000 / tahun</strong></span>
-                      <span>Jatuh Tempo: <strong id="op-domain-due-date" style="color: var(--accent-blue); font-size: 13px;">12 September 2027</strong></span>
-                      <span>Realisasi Saldo: <strong id="op-domain-payment-note" style="color: #10B981;">Saldo belum terpotong</strong></span>
-                    </div>
+                  <p style="font-size: 13px; color: var(--ink-secondary); margin: 4px 0 0;">Nominal tetap tahunan tanpa persentase alokasi. Dana diprioritaskan untuk menjamin stabilitas alamat website jokiin.my.id.</p>
+                  <div class="domain-pills-row">
+                    <span class="domain-pill-item">Kewajiban: <strong>Rp22.000 / tahun</strong></span>
+                    <span class="domain-pill-item">Jatuh Tempo: <strong id="op-domain-due-date" style="color: var(--accent-blue);">12 September 2027</strong></span>
+                    <span class="domain-pill-item">Realisasi: <strong id="op-domain-payment-note" style="color: #10B981;">Saldo belum terpotong</strong></span>
                   </div>
                 </div>
-                <div style="display: flex; gap: 8px; align-items: center;">
-                  <button id="btn-pay-domain" class="btn-primary" style="height: 38px; padding: 0 14px; font-size: 12px; font-weight: 700;">
-                    Bayar Domain (Rp22.000)
-                  </button>
-                </div>
+              </div>
+              <div style="display: flex; gap: 8px; align-items: center;">
+                <button id="btn-pay-domain" class="btn-primary" style="height: 40px; padding: 0 18px; font-size: 13px; font-weight: 750; border-radius: 10px;">
+                  Bayar Domain (Rp22.000)
+                </button>
               </div>
             </div>
 
             <!-- Two Integrated Charts Grid -->
-            <div class="op-charts-grid" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: 20px; margin-bottom: 24px;">
+            <div class="op-charts-grid" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: 20px;">
               <!-- Chart 1: Donut Chart Alokasi Sisa Dana (4 Kategori) -->
-              <article class="performance-chart-card" style="margin-top: 0; display: flex; flex-direction: column;">
+              <article class="keuangan-card" style="display: flex; flex-direction: column;">
                 <div class="section-header" style="margin-bottom: 4px;">
-                  <h4 class="section-title" style="font-size: 16px;">Alokasi Sisa Dana Operasional</h4>
+                  <h4 class="section-title" style="font-size: 16px; font-weight: 800;">Alokasi Sisa Dana Operasional</h4>
                 </div>
                 <p class="chart-caption" style="margin-bottom: 16px;">Pembagian target alokasi rata 20% terhadap sisa dana operasional (Rp13.196) untuk 5 pos pengeluaran di luar kewajiban domain.</p>
                 
@@ -568,9 +568,9 @@
               </article>
 
               <!-- Chart 2: Bar Chart Anggaran vs Pengeluaran Aktual -->
-              <article class="performance-chart-card" style="margin-top: 0; display: flex; flex-direction: column;">
+              <article class="keuangan-card" style="display: flex; flex-direction: column;">
                 <div class="section-header" style="margin-bottom: 4px;">
-                  <h4 class="section-title" style="font-size: 16px;">Anggaran vs Realisasi Pengeluaran</h4>
+                  <h4 class="section-title" style="font-size: 16px; font-weight: 800;">Anggaran vs Realisasi Pengeluaran</h4>
                 </div>
                 <p class="chart-caption" style="margin-bottom: 16px;">Perbandingan anggaran awal, pengeluaran riil, dan sisa dana setiap kategori.</p>
                 
@@ -584,83 +584,83 @@
             </div>
 
             <!-- Subsystems: Promo & Bonus Tim Side by Side -->
-            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: 20px; margin-bottom: 24px;">
+            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: 20px;">
               <!-- Promo Pelanggan Panel -->
-              <article class="performance-chart-card" style="margin-top: 0;">
-                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
+              <article class="keuangan-card">
+                <div class="keuangan-card-header">
                   <div style="display: flex; align-items: center; gap: 8px;">
-                    <span style="display: flex; align-items: center; justify-content: center; width: 28px; height: 28px; border-radius: 8px; background: #E6F8F0; color: #10B981;">
-                      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20.59 13.41l-7.17 7.17a2 2 0 0 1-2.83 0L2 12V2h10l8.59 8.59a2 2 0 0 1 0 2.82z"/><line x1="7" y1="7" x2="7.01" y2="7"/></svg>
+                    <span style="display: flex; align-items: center; justify-content: center; width: 32px; height: 32px; border-radius: 10px; background: #E6F8F0; color: #10B981;">
+                      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20.59 13.41l-7.17 7.17a2 2 0 0 1-2.83 0L2 12V2h10l8.59 8.59a2 2 0 0 1 0 2.82z"/><line x1="7" y1="7" x2="7.01" y2="7"/></svg>
                     </span>
-                    <h4 class="section-title" style="font-size: 15px; margin: 0;">Subsidi Promo Pelanggan</h4>
+                    <h4 class="section-title" style="font-size: 15px; font-weight: 800; margin: 0;">Subsidi Promo Pelanggan</h4>
                   </div>
                   <span id="op-promo-budget-badge" class="status-badge" style="background: #E6F8F0; color: #10B981; font-weight: 700;">Anggaran: Rp5.000</span>
                 </div>
                 <p class="chart-caption">Nominal subsidi potongan harga & promo yang benar-benar ditanggung JOKI.IN dari kas pengembangan.</p>
                 
-                <div style="background: var(--bg-body); border: 1px solid var(--border-light); border-radius: 12px; padding: 12px; margin: 12px 0; display: flex; justify-content: space-around; text-align: center;">
-                  <div>
+                <div class="stat-strip-3">
+                  <div class="stat-strip-item">
                     <span style="font-size: 11px; color: var(--ink-secondary); display: block;">Anggaran</span>
                     <strong style="font-size: 14px;">Rp5.000</strong>
                   </div>
-                  <div style="width: 1px; background: var(--border-light);"></div>
-                  <div>
+                  <div class="stat-strip-divider"></div>
+                  <div class="stat-strip-item">
                     <span style="font-size: 11px; color: var(--ink-secondary); display: block;">Terpakai</span>
                     <strong id="op-promo-spent" style="font-size: 14px; color: var(--balance-red);">Rp0</strong>
                   </div>
-                  <div style="width: 1px; background: var(--border-light);"></div>
-                  <div>
+                  <div class="stat-strip-divider"></div>
+                  <div class="stat-strip-item">
                     <span style="font-size: 11px; color: var(--ink-secondary); display: block;">Sisa</span>
                     <strong id="op-promo-remaining" style="font-size: 14px; color: #10B981;">Rp5.000</strong>
                   </div>
                 </div>
 
-                <div id="op-promo-history" style="max-height: 180px; overflow-y: auto;">
+                <div id="op-promo-history" class="keuangan-custom-scroll" style="max-height: 180px; overflow-y: auto;">
                   <p class="chart-caption" style="text-align: center; padding: 16px 0;">Belum ada subsidi promo yang dicatat.</p>
                 </div>
               </article>
 
               <!-- Bonus Tim Panel -->
-              <article class="performance-chart-card" style="margin-top: 0;">
-                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
+              <article class="keuangan-card">
+                <div class="keuangan-card-header">
                   <div style="display: flex; align-items: center; gap: 8px;">
-                    <span style="display: flex; align-items: center; justify-content: center; width: 28px; height: 28px; border-radius: 8px; background: #FEF3C7; color: #D97706;">
-                      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="8" r="7"/><polyline points="8.21 13.89 7 23 12 20 17 23 15.79 13.88"/></svg>
+                    <span style="display: flex; align-items: center; justify-content: center; width: 32px; height: 32px; border-radius: 10px; background: #FEF3C7; color: #D97706;">
+                      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="8" r="7"/><polyline points="8.21 13.89 7 23 12 20 17 23 15.79 13.88"/></svg>
                     </span>
-                    <h4 class="section-title" style="font-size: 15px; margin: 0;">Bonus Tim Paling Aktif</h4>
+                    <h4 class="section-title" style="font-size: 15px; font-weight: 800; margin: 0;">Bonus Tim Paling Aktif</h4>
                   </div>
                   <span id="op-bonus-budget-badge" class="status-badge" style="background: #FEF3C7; color: #D97706; font-weight: 700;">Anggaran: Rp3.000</span>
                 </div>
                 <p class="chart-caption">Penghargaan kinerja berdasarkan data riil pesanan selesai. Memerlukan konfirmasi admin untuk pencairan.</p>
                 
-                <div style="background: var(--bg-body); border: 1px solid var(--border-light); border-radius: 12px; padding: 12px; margin: 12px 0; display: flex; justify-content: space-around; text-align: center;">
-                  <div>
+                <div class="stat-strip-3">
+                  <div class="stat-strip-item">
                     <span style="font-size: 11px; color: var(--ink-secondary); display: block;">Anggaran</span>
                     <strong style="font-size: 14px;">Rp3.000</strong>
                   </div>
-                  <div style="width: 1px; background: var(--border-light);"></div>
-                  <div>
+                  <div class="stat-strip-divider"></div>
+                  <div class="stat-strip-item">
                     <span style="font-size: 11px; color: var(--ink-secondary); display: block;">Dicairkan</span>
                     <strong id="op-bonus-spent" style="font-size: 14px; color: var(--balance-red);">Rp0</strong>
                   </div>
-                  <div style="width: 1px; background: var(--border-light);"></div>
-                  <div>
+                  <div class="stat-strip-divider"></div>
+                  <div class="stat-strip-item">
                     <span style="font-size: 11px; color: var(--ink-secondary); display: block;">Sisa</span>
                     <strong id="op-bonus-remaining" style="font-size: 14px; color: #D97706;">Rp3.000</strong>
                   </div>
                 </div>
 
-                <div id="op-bonus-history" style="max-height: 180px; overflow-y: auto;">
+                <div id="op-bonus-history" class="keuangan-custom-scroll" style="max-height: 180px; overflow-y: auto;">
                   <p class="chart-caption" style="text-align: center; padding: 16px 0;">Belum ada bonus yang diajukan.</p>
                 </div>
               </article>
             </div>
 
             <!-- Modul Reseller Produk Digital (Subsystem Modal Reseller) -->
-            <article class="performance-chart-card" id="op-reseller-panel" style="margin-top: 0; margin-bottom: 24px; border-top: 4px solid #0EA5E9;">
-              <div style="display: flex; justify-content: space-between; align-items: flex-start; flex-wrap: wrap; gap: 14px; margin-bottom: 16px;">
+            <article class="keuangan-card" id="op-reseller-panel" style="border-top: 4px solid #0EA5E9;">
+              <div style="display: flex; justify-content: space-between; align-items: flex-start; flex-wrap: wrap; gap: 14px; margin-bottom: 18px;">
                 <div style="display: flex; align-items: flex-start; gap: 12px;">
-                  <div style="width: 42px; height: 42px; border-radius: 12px; background: rgba(14, 165, 233, 0.12); display: flex; align-items: center; justify-content: center; color: #0EA5E9; flex-shrink: 0;">
+                  <div style="width: 44px; height: 44px; border-radius: 12px; background: rgba(14, 165, 233, 0.12); display: flex; align-items: center; justify-content: center; color: #0EA5E9; flex-shrink: 0;">
                     <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                       <path d="M6 2L3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z"></path>
                       <line x1="3" y1="6" x2="21" y2="6"></line>
@@ -669,18 +669,18 @@
                   </div>
                   <div>
                     <div style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">
-                      <h4 class="section-title" style="margin: 0; font-size: 17px;">Modal Reseller Produk Digital</h4>
+                      <h4 class="section-title" style="margin: 0; font-size: 17px; font-weight: 800;">Modal Reseller Produk Digital</h4>
                       <span id="op-reseller-budget-badge" class="status-badge" style="background: rgba(14, 165, 233, 0.12); color: #0EA5E9; font-weight: 700; font-size: 11px;">Anggaran: Rp2.640 (20%)</span>
                     </div>
                     <p class="chart-caption" style="margin-top: 4px;">Pusat pengelolaan perputaran modal reseller: pengadaan stok akun/layanan digital, penjualan, dan pemisahan tegas antara omzet dengan laba bersih.</p>
                   </div>
                 </div>
                 <div style="display: flex; gap: 10px; flex-wrap: wrap;">
-                  <button id="btn-reseller-add-stock" class="btn-primary" style="height: 38px; padding: 0 14px; font-size: 12px; font-weight: 700; background: #0EA5E9; border-color: #0EA5E9; display: inline-flex; align-items: center; gap: 6px;">
+                  <button id="btn-reseller-add-stock" class="btn-primary" style="height: 38px; padding: 0 16px; font-size: 12px; font-weight: 700; background: #0EA5E9; border-color: #0EA5E9; display: inline-flex; align-items: center; gap: 6px; border-radius: 10px;">
                     <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M12 5v14M5 12h14"/></svg>
                     Catat Beli Stok (Modal)
                   </button>
-                  <button id="btn-reseller-add-sale" class="btn-outline" style="height: 38px; padding: 0 14px; font-size: 12px; font-weight: 700; display: inline-flex; align-items: center; gap: 6px;">
+                  <button id="btn-reseller-add-sale" class="btn-outline" style="height: 38px; padding: 0 16px; font-size: 12px; font-weight: 700; display: inline-flex; align-items: center; gap: 6px; border-radius: 10px;">
                     <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
                     Catat Penjualan
                   </button>
@@ -688,77 +688,77 @@
               </div>
 
               <!-- Metric 4-Card Grid for Reseller -->
-              <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 12px; margin-bottom: 20px;">
+              <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 14px; margin-bottom: 22px;">
                 <!-- 1. Sisa Modal Kas -->
-                <div style="background: var(--bg-body); border: 1px solid var(--border-light); border-radius: 12px; padding: 14px;">
+                <div class="keuangan-metric-box">
                   <span style="font-size: 11px; color: var(--ink-secondary); font-weight: 600; display: block;">Sisa Modal Kas Reseller</span>
-                  <div style="display: flex; align-items: baseline; gap: 4px; margin-top: 4px;">
+                  <div style="display: flex; align-items: baseline; gap: 4px; margin-top: 6px;">
                     <span style="font-size: 13px; font-weight: 700; color: #0EA5E9;">Rp</span>
                     <strong id="op-reseller-cash-remaining" style="font-size: 20px; font-weight: 800; color: var(--ink); font-variant-numeric: tabular-nums;">2.640</strong>
                   </div>
-                  <span id="op-reseller-spent-note" style="font-size: 11px; color: var(--ink-secondary); display: block; margin-top: 4px;">Belanja stok: Rp0</span>
+                  <span id="op-reseller-spent-note" style="font-size: 11px; color: var(--ink-secondary); display: block; margin-top: 6px;">Belanja stok: Rp0</span>
                 </div>
 
                 <!-- 2. Valuasi Stok Aktif -->
-                <div style="background: var(--bg-body); border: 1px solid var(--border-light); border-radius: 12px; padding: 14px;">
+                <div class="keuangan-metric-box">
                   <span style="font-size: 11px; color: var(--ink-secondary); font-weight: 600; display: block;">Nilai Aset Stok (HPP)</span>
-                  <div style="display: flex; align-items: baseline; gap: 4px; margin-top: 4px;">
+                  <div style="display: flex; align-items: baseline; gap: 4px; margin-top: 6px;">
                     <span style="font-size: 13px; font-weight: 700; color: var(--accent-blue);">Rp</span>
                     <strong id="op-reseller-stock-valuation" style="font-size: 20px; font-weight: 800; color: var(--ink); font-variant-numeric: tabular-nums;">0</strong>
                   </div>
-                  <span id="op-reseller-stock-count-note" style="font-size: 11px; color: var(--ink-secondary); display: block; margin-top: 4px;">0 unit produk tersedia</span>
+                  <span id="op-reseller-stock-count-note" style="font-size: 11px; color: var(--ink-secondary); display: block; margin-top: 6px;">0 unit produk tersedia</span>
                 </div>
 
                 <!-- 3. Omzet Penjualan -->
-                <div style="background: var(--bg-body); border: 1px solid var(--border-light); border-radius: 12px; padding: 14px;">
+                <div class="keuangan-metric-box">
                   <span style="font-size: 11px; color: var(--ink-secondary); font-weight: 600; display: block;">Omzet Penjualan Kotor</span>
-                  <div style="display: flex; align-items: baseline; gap: 4px; margin-top: 4px;">
+                  <div style="display: flex; align-items: baseline; gap: 4px; margin-top: 6px;">
                     <span style="font-size: 13px; font-weight: 700; color: var(--revenue-green);">Rp</span>
                     <strong id="op-reseller-total-revenue" style="font-size: 20px; font-weight: 800; color: var(--ink); font-variant-numeric: tabular-nums;">0</strong>
                   </div>
-                  <span style="font-size: 11px; color: var(--ink-secondary); display: block; margin-top: 4px;">Penerimaan total pelanggan</span>
+                  <span style="font-size: 11px; color: var(--ink-secondary); display: block; margin-top: 6px;">Penerimaan total pelanggan</span>
                 </div>
 
                 <!-- 4. Laba Bersih & Margin -->
-                <div style="background: var(--bg-body); border: 1px solid var(--border-light); border-radius: 12px; padding: 14px; position: relative;">
+                <div class="keuangan-metric-box">
                   <div style="display: flex; justify-content: space-between; align-items: center;">
                     <span style="font-size: 11px; color: var(--ink-secondary); font-weight: 600;">Laba Bersih Riil</span>
                     <span id="op-reseller-margin-badge" class="status-badge" style="background: #E6F8F0; color: #10B981; font-size: 10px; font-weight: 700; padding: 2px 6px;">Margin 0%</span>
                   </div>
-                  <div style="display: flex; align-items: baseline; gap: 4px; margin-top: 4px;">
+                  <div style="display: flex; align-items: baseline; gap: 4px; margin-top: 6px;">
                     <span style="font-size: 13px; font-weight: 700; color: #10B981;">Rp</span>
                     <strong id="op-reseller-net-profit" style="font-size: 20px; font-weight: 800; color: #10B981; font-variant-numeric: tabular-nums;">0</strong>
                   </div>
-                  <span id="op-reseller-profit-note" style="font-size: 11px; color: var(--ink-secondary); display: block; margin-top: 4px;">Omzet - Modal Pokok - Biaya</span>
+                  <span id="op-reseller-profit-note" style="font-size: 11px; color: var(--ink-secondary); display: block; margin-top: 6px;">Omzet - Modal Pokok - Biaya</span>
                 </div>
               </div>
 
               <!-- Dual Tab for Reseller: Stok vs Riwayat Transaksi -->
-              <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px; border-bottom: 1px solid var(--border-light); padding-bottom: 10px; margin-bottom: 14px;">
-                <div style="display: flex; gap: 8px;">
-                  <button id="op-reseller-tab-inventory" class="btn-outline active" style="height: 30px; padding: 0 12px; font-size: 12px; font-weight: 700; border-radius: 6px; cursor: pointer;">Stok Produk Digital</button>
-                  <button id="op-reseller-tab-history" class="btn-outline" style="height: 30px; padding: 0 12px; font-size: 12px; font-weight: 700; border-radius: 6px; cursor: pointer;">Riwayat Transaksi Reseller</button>
+              <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 12px; margin-bottom: 14px;">
+                <div class="segmented-toggle-bar">
+                  <button id="op-reseller-tab-inventory" class="btn-outline active">Stok Produk Digital</button>
+                  <button id="op-reseller-tab-history" class="btn-outline">Riwayat Transaksi Reseller</button>
                 </div>
                 <span id="op-reseller-table-caption" style="font-size: 12px; color: var(--ink-secondary);">Katalog stok produk digital yang dimiliki sistem</span>
               </div>
 
               <!-- View 1: Reseller Inventory Table -->
-              <div id="op-reseller-inventory-wrap" class="chart-table-wrap">
-                <table class="op-table" style="width: 100%; border-collapse: collapse; font-size: 13px;">
+              <div id="op-reseller-inventory-wrap" class="keuangan-table-card">
+                <table class="op-table">
                   <thead>
-                    <tr style="border-bottom: 1px solid var(--border-light); color: var(--ink-secondary); font-size: 12px;">
-                      <th style="text-align: left; padding: 8px;">Nama Produk</th>
-                      <th style="text-align: left; padding: 8px;">Kategori</th>
-                      <th style="text-align: center; padding: 8px;">Sisa Stok</th>
-                      <th style="text-align: right; padding: 8px;">Harga Modal / Unit</th>
-                      <th style="text-align: right; padding: 8px;">Harga Jual Acuan</th>
-                      <th style="text-align: right; padding: 8px;">Total Valuasi Stok</th>
-                      <th style="text-align: center; padding: 8px;">Aksi</th>
+                    <tr>
+                      <th style="text-align: left;">Nama Produk</th>
+                      <th style="text-align: left;">Kategori</th>
+                      <th style="text-align: center;">Sisa Stok</th>
+                      <th style="text-align: right;">Harga Modal / Unit</th>
+                      <th style="text-align: right;">Harga Jual Acuan</th>
+                      <th style="text-align: right;">Total Valuasi Stok</th>
+                      <th style="text-align: center;">Aksi</th>
                     </tr>
                   </thead>
                   <tbody id="op-reseller-inventory-tbody">
                     <tr>
-                      <td colspan="7" style="text-align: center; padding: 24px; color: var(--ink-secondary);">
+                      <td colspan="7" style="text-align: center; padding: 28px; color: var(--ink-secondary);">
                         Belum ada stok produk digital. Klik tombol "Catat Beli Stok (Modal)" di atas untuk memulai pengadaan stok menggunakan modal reseller.
                       </td>
                     </tr>
@@ -767,23 +767,23 @@
               </div>
 
               <!-- View 2: Reseller Transactions Table -->
-              <div id="op-reseller-transactions-wrap" class="chart-table-wrap" style="display: none;">
-                <table class="op-table" style="width: 100%; border-collapse: collapse; font-size: 13px;">
+              <div id="op-reseller-transactions-wrap" class="keuangan-table-card" style="display: none;">
+                <table class="op-table">
                   <thead>
-                    <tr style="border-bottom: 1px solid var(--border-light); color: var(--ink-secondary); font-size: 12px;">
-                      <th style="text-align: left; padding: 8px;">Kode</th>
-                      <th style="text-align: left; padding: 8px;">Tanggal</th>
-                      <th style="text-align: left; padding: 8px;">Jenis</th>
-                      <th style="text-align: left; padding: 8px;">Produk & Pembeli</th>
-                      <th style="text-align: center; padding: 8px;">Qty</th>
-                      <th style="text-align: right; padding: 8px;">Modal (HPP)</th>
-                      <th style="text-align: right; padding: 8px;">Omzet Kotor</th>
-                      <th style="text-align: right; padding: 8px;">Laba Bersih</th>
+                    <tr>
+                      <th style="text-align: left;">Kode</th>
+                      <th style="text-align: left;">Tanggal</th>
+                      <th style="text-align: left;">Jenis</th>
+                      <th style="text-align: left;">Produk & Pembeli</th>
+                      <th style="text-align: center;">Qty</th>
+                      <th style="text-align: right;">Modal (HPP)</th>
+                      <th style="text-align: right;">Omzet Kotor</th>
+                      <th style="text-align: right;">Laba Bersih</th>
                     </tr>
                   </thead>
                   <tbody id="op-reseller-transactions-tbody">
                     <tr>
-                      <td colspan="8" style="text-align: center; padding: 24px; color: var(--ink-secondary);">
+                      <td colspan="8" style="text-align: center; padding: 28px; color: var(--ink-secondary);">
                         Belum ada riwayat transaksi reseller.
                       </td>
                     </tr>
@@ -793,17 +793,17 @@
             </article>
 
             <!-- Transaction History Table Card (Pengeluaran & Pemasukan 10%) -->
-            <article class="performance-chart-card" style="margin-top: 0;">
-              <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 12px; margin-bottom: 14px;">
+            <article class="keuangan-card">
+              <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 14px; margin-bottom: 16px;">
                 <div>
-                  <div style="display: flex; gap: 8px; margin-bottom: 6px;">
-                    <button id="op-tab-btn-expenses" class="btn-outline active" style="height: 32px; padding: 0 14px; font-size: 12px; font-weight: 700; border-radius: 6px; cursor: pointer;">Riwayat Pengeluaran</button>
-                    <button id="op-tab-btn-inflows" class="btn-outline" style="height: 32px; padding: 0 14px; font-size: 12px; font-weight: 700; border-radius: 6px; cursor: pointer;">Pemasukan 10% Pesanan</button>
+                  <div class="segmented-toggle-bar" style="margin-bottom: 6px;">
+                    <button id="op-tab-btn-expenses" class="btn-outline active">Riwayat Pengeluaran</button>
+                    <button id="op-tab-btn-inflows" class="btn-outline">Pemasukan 10% Pesanan</button>
                   </div>
                   <p id="op-history-caption" class="chart-caption" style="margin: 0;">Catatan audit pengeluaran kas operasional JOKI.IN.</p>
                 </div>
                 <div id="op-expenses-filter-controls" style="display: flex; gap: 10px; align-items: center; flex-wrap: wrap;">
-                  <select id="op-filter-category" class="form-select" style="height: 36px; font-size: 13px; padding: 0 12px; border-radius: 8px; min-width: 150px;">
+                  <select id="op-filter-category" class="form-select" style="height: 38px; font-size: 13px; padding: 0 14px; border-radius: 10px; min-width: 160px; border-color: var(--border);">
                     <option value="all">Semua Kategori</option>
                     <option value="domain">Perpanjangan domain</option>
                     <option value="promo">Promo & diskon</option>
@@ -812,26 +812,26 @@
                     <option value="emergency">Dana darurat</option>
                     <option value="reseller">Modal reseller</option>
                   </select>
-                  <input type="text" id="op-filter-search" class="form-input" placeholder="Cari keterangan/penerima..." style="height: 36px; font-size: 13px; padding: 0 12px; border-radius: 8px; width: 200px;">
+                  <input type="text" id="op-filter-search" class="form-input" placeholder="Cari keterangan/penerima..." style="height: 38px; font-size: 13px; padding: 0 14px; border-radius: 10px; width: 220px; border-color: var(--border);">
                 </div>
               </div>
 
               <!-- Table 1: Pengeluaran Operasional -->
-              <div id="op-table-expenses-wrap" class="chart-table-wrap">
-                <table class="op-table" style="width: 100%; border-collapse: collapse; font-size: 13px;">
+              <div id="op-table-expenses-wrap" class="keuangan-table-card">
+                <table class="op-table">
                   <thead>
-                    <tr style="border-bottom: 1px solid var(--border-light); color: var(--ink-secondary); font-size: 12px;">
-                      <th style="text-align: left; padding: 10px 8px;">Kode</th>
-                      <th style="text-align: left; padding: 10px 8px;">Tanggal</th>
-                      <th style="text-align: left; padding: 10px 8px;">Kategori</th>
-                      <th style="text-align: left; padding: 10px 8px;">Deskripsi & Penerima</th>
-                      <th style="text-align: right; padding: 10px 8px;">Nominal</th>
-                      <th style="text-align: left; padding: 10px 8px;">Admin</th>
+                    <tr>
+                      <th style="text-align: left;">Kode</th>
+                      <th style="text-align: left;">Tanggal</th>
+                      <th style="text-align: left;">Kategori</th>
+                      <th style="text-align: left;">Deskripsi & Penerima</th>
+                      <th style="text-align: right;">Nominal</th>
+                      <th style="text-align: left;">Admin</th>
                     </tr>
                   </thead>
                   <tbody id="op-expenses-tbody">
                     <tr>
-                      <td colspan="6" style="text-align: center; padding: 24px; color: var(--ink-secondary);">
+                      <td colspan="6" style="text-align: center; padding: 28px; color: var(--ink-secondary);">
                         Belum ada transaksi pengeluaran. Anggaran awal Rp35.196 masih utuh.
                       </td>
                     </tr>
@@ -840,20 +840,20 @@
               </div>
 
               <!-- Table 2: Pemasukan 10% dari Pesanan Lunas -->
-              <div id="op-table-inflows-wrap" class="chart-table-wrap" style="display: none;">
-                <table class="op-table" style="width: 100%; border-collapse: collapse; font-size: 13px;">
+              <div id="op-table-inflows-wrap" class="keuangan-table-card" style="display: none;">
+                <table class="op-table">
                   <thead>
-                    <tr style="border-bottom: 1px solid var(--border-light); color: var(--ink-secondary); font-size: 12px;">
-                      <th style="text-align: left; padding: 10px 8px;">ID Pesanan</th>
-                      <th style="text-align: left; padding: 10px 8px;">Tanggal Transaksi</th>
-                      <th style="text-align: right; padding: 10px 8px;">Nilai Dasar Pendapatan</th>
-                      <th style="text-align: right; padding: 10px 8px;">Alokasi 10%</th>
-                      <th style="text-align: center; padding: 10px 8px;">Status Transaksi</th>
+                    <tr>
+                      <th style="text-align: left;">ID Pesanan</th>
+                      <th style="text-align: left;">Tanggal Transaksi</th>
+                      <th style="text-align: right;">Nilai Dasar Pendapatan</th>
+                      <th style="text-align: right;">Alokasi 10%</th>
+                      <th style="text-align: center;">Status Transaksi</th>
                     </tr>
                   </thead>
                   <tbody id="op-inflows-tbody">
                     <tr>
-                      <td colspan="5" style="text-align: center; padding: 24px; color: var(--ink-secondary);">
+                      <td colspan="5" style="text-align: center; padding: 28px; color: var(--ink-secondary);">
                         Belum ada pemasukan 10% dari pesanan baru. Alokasi awal Rp35.196 aktif.
                       </td>
                     </tr>
