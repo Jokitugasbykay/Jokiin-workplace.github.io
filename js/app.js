@@ -276,17 +276,21 @@ function showAppShell() {
       avatar.replaceChildren(image);
     } catch { /* Keep initials when no profile photo is available. */ }
   }
-  // Supervisor tabs visibility
   const isSupervisor = isOrderSupervisor(state.admin);
+  const isFounderUser = isFounder(state.admin);
   document.getElementById('drawer-tab-performance').style.display = isSupervisor ? 'flex' : 'none';
+  const tabKeuangan = document.getElementById('drawer-tab-keuangan');
+  if (tabKeuangan) tabKeuangan.style.display = (isSupervisor || isFounderUser) ? 'flex' : 'none';
   document.getElementById('drawer-tab-users').style.display = isSupervisor ? 'flex' : 'none';
 
   document.getElementById('drawer-tab-violations').style.display = isFounder(state.admin) ? 'flex' : 'none';
   document.getElementById('drawer-tab-withdrawals').style.display = isOrderSupervisor(state.admin) ? 'flex' : 'none';
 
   // Initialize active tab and bottom nav pill
-  const notificationTab = new URLSearchParams(window.location.search).get('tab');
-  switchTab(['orders', 'payments'].includes(notificationTab) ? notificationTab : (state.activeTab || 'home'));
+  const urlTab = new URLSearchParams(window.location.search).get('tab');
+  const validTabs = ['home', 'orders', 'services', 'payments', 'reviews', 'products', 'integration', 'task-files', 'performance', 'keuangan', 'operational', 'users', 'invoice', 'violations', 'withdrawals'];
+  const initialTab = (urlTab && validTabs.includes(urlTab)) ? urlTab : (state.activeTab || 'home');
+  switchTab(initialTab);
   syncPushSubscription().catch(error => setPushStatus(error.message || 'Gagal menyinkronkan notifikasi. Coba lagi.'));
 }
 window.showAppShell = showAppShell;
@@ -515,8 +519,10 @@ function restoreActivity(event) {
   restoringActivity = true;
   try {
     document.querySelectorAll('.modal-overlay.open').forEach(modal => modal.classList.remove('open'));
-    closeDrawer();
-    const tab = ['performance', 'users'].includes(activity.tab) && !isOrderSupervisor(state.admin) ? 'home' : activity.tab;
+    let targetTab = activity.tab;
+    if (targetTab === 'operational') targetTab = 'keuangan';
+    const isSupervisorOrFounder = isOrderSupervisor(state.admin) || isFounder(state.admin);
+    const tab = ['performance', 'keuangan', 'users'].includes(targetTab) && !isSupervisorOrFounder ? 'home' : targetTab;
     switchTab(tab, 'left');
     if (activity.view) Object.assign(state, activity.view);
     document.getElementById('global-search-input').value = state.searchQuery;
@@ -529,8 +535,10 @@ window.addEventListener('popstate', restoreActivity);
 
 let activePageTransition = null;
 function switchTab(tabName, forcedDirection = null) {
+  if (tabName === 'operational') tabName = 'keuangan';
   if (tabName === 'violations' && !isFounder(state.admin)) return;
-  if (tabName === 'withdrawals' && !isOrderSupervisor(state.admin)) return;
+  const isSupervisorOrFounder = isOrderSupervisor(state.admin) || isFounder(state.admin);
+  if (['withdrawals', 'performance', 'keuangan'].includes(tabName) && !isSupervisorOrFounder) return;
   activePageTransition?.();
   const reduced = window.matchMedia?.('(prefers-reduced-motion: reduce)').matches;
   const previous = document.getElementById('view-' + state.activeTab);
@@ -565,8 +573,10 @@ function switchTab(tabName, forcedDirection = null) {
 }
 
 function performSwitchTab(tabName, forcedDirection = null) {
+  if (tabName === 'operational') tabName = 'keuangan';
   if (tabName === 'violations' && !isFounder(state.admin)) return;
-  if (tabName === 'withdrawals' && !isOrderSupervisor(state.admin)) return;
+  const isSupervisorOrFounder = isOrderSupervisor(state.admin) || isFounder(state.admin);
+  if (['withdrawals', 'performance', 'keuangan'].includes(tabName) && !isSupervisorOrFounder) return;
   rememberActivity();
   const prevTab = state.activeTab;
   let direction = forcedDirection;
@@ -581,7 +591,7 @@ function performSwitchTab(tabName, forcedDirection = null) {
 
   state.activeTab = tabName;
   if (!activityHistoryReady || prevTab !== tabName) saveActivity();
-  const pageNames = { home: 'Beranda', orders: 'Pesanan', services: 'Layanan', payments: 'Pembayaran', reviews: 'Ulasan', performance: 'Performa tim', products: 'Produk & promo', integration: 'Integrasi', 'task-files': 'Folder lampiran', users: 'Daftar pengguna', invoice: 'Invoice', violations: 'Pelanggaran', withdrawals: 'Pengajuan pencairan dana' };
+  const pageNames = { home: 'Beranda', orders: 'Pesanan', services: 'Layanan', payments: 'Pembayaran', reviews: 'Ulasan', performance: 'Performa tim', keuangan: 'Keuangan', operational: 'Keuangan', products: 'Produk & promo', integration: 'Integrasi', 'task-files': 'Folder lampiran', users: 'Daftar pengguna', invoice: 'Invoice', violations: 'Pelanggaran', withdrawals: 'Pengajuan pencairan dana' };
   document.getElementById('header-page-title').textContent = pageNames[tabName] || 'Workplace';
   document.querySelector('.welcome-card').style.display = tabName === 'home' ? 'block' : 'none';
   state.searchQuery = '';
@@ -608,8 +618,8 @@ function performSwitchTab(tabName, forcedDirection = null) {
     }
   }
 
-  // Hide Bottom Navigation on secondary tabs: ulasan, produk & promo, folder lampiran, peforma tim, daftar pengguna, invoice
-  const HIDE_NAVBAR_TABS = ['reviews', 'products', 'integration', 'task-files', 'performance', 'users', 'invoice', 'violations', 'withdrawals'];
+  // Hide Bottom Navigation on secondary tabs: ulasan, produk & promo, folder lampiran, peforma tim, keuangan, daftar pengguna, invoice
+  const HIDE_NAVBAR_TABS = ['reviews', 'products', 'integration', 'task-files', 'performance', 'keuangan', 'operational', 'users', 'invoice', 'violations', 'withdrawals'];
   const shouldHideNav = HIDE_NAVBAR_TABS.includes(tabName);
 
   const bottomNavContainer = document.querySelector('.bottom-nav-container');
@@ -657,7 +667,7 @@ function performSwitchTab(tabName, forcedDirection = null) {
 
   // Toggle Search Section visibility
   const searchSec = document.getElementById('search-section');
-  if (tabName === 'home' || tabName === 'performance' || tabName === 'products' || tabName === 'integration' || tabName === 'task-files' || tabName === 'invoice' || tabName === 'violations' || tabName === 'withdrawals') {
+  if (tabName === 'home' || tabName === 'performance' || tabName === 'keuangan' || tabName === 'operational' || tabName === 'products' || tabName === 'integration' || tabName === 'task-files' || tabName === 'invoice' || tabName === 'violations' || tabName === 'withdrawals') {
     searchSec.style.display = 'none';
   } else {
     searchSec.style.display = 'block';
@@ -690,6 +700,9 @@ function renderActiveTab() {
       break;
     case 'performance':
       renderPerformance();
+      break;
+    case 'keuangan':
+    case 'operational':
       if (typeof window !== 'undefined' && window.OperationalFund && typeof window.OperationalFund.render === 'function') {
         window.OperationalFund.render();
       }
