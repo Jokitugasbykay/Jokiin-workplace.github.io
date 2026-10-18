@@ -986,6 +986,50 @@ function renderHome() {
     siteSec.style.display = 'block';
     siteList.innerHTML = '<p class="page-description">Belum ada checkout aktif. Pesanan PAID diprioritaskan; checkout belum dibayar dibatalkan setelah 24 jam.</p>';
   }
+
+  // Render 3D Contribution Skyline under recent orders
+  renderHomeSkyline();
+}
+
+function renderHomeSkyline() {
+  const mount = document.getElementById('home-skyline-mount');
+  if (!mount || typeof window.ContributionSkyline === 'undefined') return;
+
+  const allOrders = [...(state.orders || []), ...(state.paymentOrders || [])];
+  let contributionData = null;
+
+  if (allOrders.length > 0) {
+    const countsMap = new Map();
+    allOrders.forEach(o => {
+      if (o && o.created_at) {
+        try {
+          const d = new Date(o.created_at).toISOString().slice(0, 10);
+          countsMap.set(d, (countsMap.get(d) || 0) + 1);
+        } catch (_) {}
+      }
+    });
+    if (countsMap.size > 0) {
+      contributionData = Array.from(countsMap.entries()).map(([date, count]) => ({ date, count }));
+    }
+  }
+
+  if (!window._skylineInstance) {
+    window._skylineInstance = window.ContributionSkyline.init(mount, {
+      view: '3d',
+      palette: 'emerald',
+      title: 'Aktivitas Layanan & Order Tahunan',
+      unit: 'order',
+      unitPlural: 'order',
+      data: contributionData,
+    });
+  } else {
+    if (contributionData && contributionData.length > 0) {
+      window._skylineInstance.setData(contributionData);
+    } else {
+      window._skylineInstance.relayout();
+      window._skylineInstance.kick();
+    }
+  }
 }
 
 // ========================================================
