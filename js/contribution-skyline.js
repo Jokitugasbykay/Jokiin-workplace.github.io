@@ -386,7 +386,7 @@
 
     setAdminFilters(admins, activeId, onSelect) {
       if (!this.adminFilterBar) return;
-      if (!admins || !admins.length) {
+      if (!admins || !admins.length || admins.length <= 1) {
         this.adminFilterBar.style.display = 'none';
         this.adminFilterBar.innerHTML = '';
         return;

@@ -107,6 +107,7 @@ function profileNickname(profile) {
   const lower = identity.toLowerCase();
   if (lower === 'kaylafisika24@gmail.com') return 'Kayla';
   if (lower === 'gamingyoga14@gmail.com') return 'Yoga';
+  if (lower.includes('salsabilanasiva22') || lower.includes('salsabila')) return 'Salsa';
 
   const base = identity.split('@')[0].split(' ')[0];
   if (!base) return 'Admin';
@@ -366,6 +367,12 @@ async function handleLogout() {
   state.knownCheckoutIds.clear();
   state.ordersBaselineLoaded = false;
   state.checkoutBaselineLoaded = false;
+  state.selectedSkylineAdminId = null;
+  if (window._skylineInstance) {
+    window._skylineInstance = null;
+  }
+  const mount = document.getElementById('home-skyline-mount');
+  if (mount) mount.innerHTML = '';
   closeDrawer();
   showLoginView();
 }
@@ -995,6 +1002,8 @@ function renderHomeSkyline() {
   const mount = document.getElementById('home-skyline-mount');
   if (!mount || typeof window.ContributionSkyline === 'undefined') return;
 
+  const isSupervisor = isOrderSupervisor(state.admin);
+
   // 1. Kumpulkan seluruh profil admin
   const allProfiles = state.profiles || [];
   const adminProfiles = allProfiles.filter(p => p.role === 'admin');
@@ -1004,46 +1013,49 @@ function renderHomeSkyline() {
 
   const allOrders = state.orders || [];
 
-  // 2. Tentukan admin aktif yang sedang dipilih (default: akun admin yang sedang login)
-  if (!state.selectedSkylineAdminId) {
-    state.selectedSkylineAdminId = state.admin?.id || (adminProfiles[0]?.id) || 'all';
+  // 2. Tentukan target admin yang sedang dipilih
+  // ATURAN HAK AKSES:
+  // Admin biasa (non-supervisor, contoh: Salsa) HANYA BISA melihat kontribusinya sendiri.
+  // Supervisor/Founder (Kayla & Riski) dapat beralih memilih admin tim untuk evaluasi individual.
+  // Opsi agregat "Semua Tim" ditiadakan sepenuhnya karena ini metrik kontribusi per admin.
+  if (!isSupervisor) {
+    state.selectedSkylineAdminId = state.admin ? state.admin.id : (adminProfiles[0]?.id || null);
+  } else {
+    if (!state.selectedSkylineAdminId || state.selectedSkylineAdminId === 'all' || !adminProfiles.some(a => a.id === state.selectedSkylineAdminId)) {
+      state.selectedSkylineAdminId = state.admin?.id || (adminProfiles[0]?.id) || null;
+    }
   }
 
-  // 3. Susun daftar filter admin beserta jumlah order yang telah dikerjakan
-  const adminFilterList = adminProfiles.map(a => {
-    const isMe = state.admin && a.id === state.admin.id;
-    const nickname = profileNickname(a);
-    const count = allOrders.filter(o => o.assigned_to === a.id && o.status !== 'cancelled').length;
-    return {
-      id: a.id,
-      name: nickname,
-      label: isMe ? `👤 Saya (${nickname})` : `Admin ${nickname}`,
-      count: count
-    };
-  });
-
-  const totalTeamCount = allOrders.filter(o => o.assigned_to && o.status !== 'cancelled').length;
-  adminFilterList.push({
-    id: 'all',
-    name: 'Semua Tim',
-    label: '👥 Semua Tim',
-    count: totalTeamCount
-  });
+  // 3. Susun daftar filter admin (HANYA untuk supervisor jika ada lebih dari 1 admin)
+  let adminFilterList = [];
+  if (isSupervisor && adminProfiles.length > 1) {
+    adminFilterList = adminProfiles.map(a => {
+      const isMe = state.admin && a.id === state.admin.id;
+      const nickname = profileNickname(a);
+      const count = allOrders.filter(o => o.assigned_to === a.id && o.status !== 'cancelled').length;
+      return {
+        id: a.id,
+        name: nickname,
+        label: isMe ? `👤 Saya (${nickname})` : `Admin ${nickname}`,
+        count: count
+      };
+    });
+  }
 
   // 4. Hitung kontribusi per hari untuk admin yang dipilih
-  const isAll = state.selectedSkylineAdminId === 'all';
-  const targetAdmin = isAll ? null : (adminProfiles.find(a => a.id === state.selectedSkylineAdminId) || state.admin);
-  const adminName = isAll ? 'Semua Tim' : profileNickname(targetAdmin);
+  const targetAdmin = adminProfiles.find(a => a.id === state.selectedSkylineAdminId) || state.admin;
+  const adminName = profileNickname(targetAdmin);
 
-  const relevantOrders = isAll
-    ? allOrders.filter(o => o.assigned_to && o.status !== 'cancelled')
-    : allOrders.filter(o => o.assigned_to === targetAdmin?.id && o.status !== 'cancelled');
+  // Filter HANYA order yang dikerjakan oleh admin target
+  const relevantOrders = targetAdmin
+    ? allOrders.filter(o => o.assigned_to === targetAdmin.id && o.status !== 'cancelled')
+    : [];
 
   const countsMap = new Map();
   relevantOrders.forEach(o => {
     if (!o) return;
     try {
-      const rawDate = o.assigned_at || o.completed_at || o.updated_at || o.created_at || '';
+      const rawDate = o.completed_at || o.assigned_at || o.updated_at || o.created_at || '';
       const d = rawDate ? new Date(rawDate).toISOString().slice(0, 10) : '';
       if (d && d.length === 10) {
         countsMap.set(d, (countsMap.get(d) || 0) + 1);
@@ -1053,13 +1065,8 @@ function renderHomeSkyline() {
 
   const contributionData = Array.from(countsMap.entries()).map(([date, count]) => ({ date, count }));
 
-  const title = isAll
-    ? `<span style="font-weight: 800; font-variant-numeric: tabular-nums;">{total}</span> total order tim dikerjakan dalam 1 tahun terakhir`
-    : `<span style="font-weight: 800; font-variant-numeric: tabular-nums;">{total}</span> order dikerjakan oleh Admin ${adminName} dalam 1 tahun terakhir`;
-
-  const subheading = isAll
-    ? `Visualisasi isometric 3D skyline performa dan akumulasi kontribusi seluruh tim admin.`
-    : `Visualisasi isometric 3D skyline kontribusi dan performa pengerjaan order oleh Admin ${adminName}.`;
+  const title = `<span style="font-weight: 800; font-variant-numeric: tabular-nums;">{total}</span> order dikerjakan oleh Admin ${adminName} dalam 1 tahun terakhir`;
+  const subheading = `Visualisasi isometric 3D skyline kontribusi dan performa pengerjaan order oleh Admin ${adminName}.`;
 
   const options = {
     view: '3d',
@@ -1077,7 +1084,7 @@ function renderHomeSkyline() {
     window._skylineInstance.setData(contributionData, options);
   }
 
-  // 5. Render atau perbarui tombol pilihan filter admin
+  // 5. Render atau sembunyikan tombol pilihan filter admin
   if (window._skylineInstance && typeof window._skylineInstance.setAdminFilters === 'function') {
     window._skylineInstance.setAdminFilters(adminFilterList, state.selectedSkylineAdminId, (newAdminId) => {
       state.selectedSkylineAdminId = newAdminId;
