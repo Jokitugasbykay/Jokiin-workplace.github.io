@@ -276,24 +276,29 @@
   function getMonthlyCashFlowEntries() {
     const entries = [];
 
-    // 1. Suntikan Modal Bisnis dari Kakak (Rp400.000 dari total Rp500.000)
+    // 1. Suntikan Modal Bisnis dari Pemilik/Pihak Lain (Kakak)
     const capitalRecord = opData.bookkeepingRecords.find(r => r.category === 'capital_injection');
     const capitalNet = capitalRecord ? Number(capitalRecord.net_amount) : 400000;
+    const capitalGross = capitalRecord ? Number(capitalRecord.gross_amount) : 500000;
     entries.push({
       id: 'entry-capital-injection',
       date: '2026-10-25',
       month: '2026-10',
       type: 'inflow',
       category: 'capital',
-      categoryLabel: 'Suntikan Modal',
-      description: 'Suntikan modal bisnis dari kakak (dana awal Rp500.000, Rp100.000 dialokasikan untuk pribadi)',
+      categoryLabel: 'Suntikan Modal Bisnis',
+      accountLabel: 'Kas Bisnis / Rekening Bank',
+      description: 'Suntikan modal usaha dari kakak (total pemberian Rp500.000, alokasi pribadi Kayla Rp100.000 dipisahkan)',
       reference: 'INJ-KAKAK-400K',
+      grossAmount: capitalGross,
+      feeAmount: capitalGross - capitalNet,
+      netAmount: capitalNet,
       amount: capitalNet,
-      status: 'verified',
+      status: capitalRecord ? (capitalRecord.status || 'verified') : 'verified',
       statusLabel: 'Terverifikasi'
     });
 
-    // 2. Omzet Penjualan (12 Pesanan Selesai)
+    // 2. Omzet Penjualan Bersih (12 Pesanan Selesai)
     const profitRecord = opData.bookkeepingRecords.find(r => r.category === 'order_profit_allocation');
     const salesNet = profitRecord ? Number(profitRecord.gross_amount) : 255600;
     entries.push({
@@ -302,86 +307,171 @@
       month: '2026-10',
       type: 'inflow',
       category: 'sales',
-      categoryLabel: 'Omzet Penjualan',
-      description: 'Penerimaan bersih 12 pesanan selesai (12 x Rp21.300 bersih setelah payment gateway, omzet bruto Rp264.000)',
+      categoryLabel: 'Omzet Penjualan Bersih',
+      accountLabel: 'Payment Gateway (Mayar)',
+      description: 'Penerimaan bersih 12 pesanan selesai (12 x Rp21.300 setelah potongan gateway, omzet bruto Rp264.000)',
       reference: 'ORD-12-PAID',
+      grossAmount: 264000,
+      feeAmount: 8400,
+      netAmount: salesNet,
       amount: salesNet,
       status: 'completed',
       statusLabel: 'Selesai'
     });
 
-    // 3. Alokasi 10% Pesanan Masuk (operational_inflows)
+    // 3. Alokasi 10% Pesanan Masuk (Pencadangan Kas Internal Sistem)
     if (Array.isArray(opData.inflows) && opData.inflows.length > 0) {
       opData.inflows.forEach(inf => {
         if (!inf.is_refunded) {
           const rawDate = inf.created_at || inf.order_created_at || '2026-10-21';
           const dt = String(rawDate).slice(0, 10);
           const mo = dt.slice(0, 7);
+          const allocAmt = Number(inf.allocation_amount) || 2200;
           entries.push({
             id: 'inflow-' + inf.id,
             date: dt,
             month: mo,
-            type: 'inflow',
-            category: 'other_inflow',
-            categoryLabel: 'Kas Masuk 10%',
-            description: 'Alokasi 10% pesanan ' + (inf.order_code || ('#' + inf.order_id)) + ' (Dasar: ' + formatRupiah(inf.gross_amount) + ')',
+            type: 'internal_allocation',
+            category: 'internal_reserve',
+            categoryLabel: 'Alokasi Pos Kas 10%',
+            accountLabel: 'Pencadangan Kas Internal',
+            description: 'Pencadangan pos 10% pesanan ' + (inf.order_code || ('#' + inf.order_id)) + ' (Dasar: ' + formatRupiah(inf.gross_amount) + ', dicadangkan dari omzet)',
             reference: inf.order_code || ('ORD-' + inf.order_id),
-            amount: Number(inf.allocation_amount) || 2200,
+            grossAmount: Number(inf.gross_amount),
+            feeAmount: 0,
+            netAmount: allocAmt,
+            amount: allocAmt,
             status: 'completed',
-            statusLabel: 'Selesai'
+            statusLabel: 'Dialokasikan'
           });
         }
       });
+    } else {
+      const summaryInflow = opData.summary?.total_inflow || 11000;
+      if (summaryInflow > 0) {
+        entries.push({
+          id: 'inflow-baseline-10pct',
+          date: '2026-10-25',
+          month: '2026-10',
+          type: 'internal_allocation',
+          category: 'internal_reserve',
+          categoryLabel: 'Alokasi Pos Kas 10%',
+          accountLabel: 'Pencadangan Kas Internal',
+          description: 'Pencadangan pos 10% kas operasional dari pesanan selesai (dicadangkan dari omzet pesanan)',
+          reference: 'RESERVE-OP-10PCT',
+          grossAmount: summaryInflow * 10,
+          feeAmount: 0,
+          netAmount: summaryInflow,
+          amount: summaryInflow,
+          status: 'completed',
+          statusLabel: 'Dialokasikan'
+        });
+      }
     }
 
-    // 4. Pengembalian Modal Pribadi Admin (12 Pesanan)
+    // 4. Pengembalian Talangan Modal Pribadi Admin (12 Pesanan)
     const cogsRecord = opData.bookkeepingRecords.find(r => r.category === 'order_cogs_liability');
     const cogsNet = cogsRecord ? Number(cogsRecord.net_amount) : 192000;
     entries.push({
       id: 'entry-cogs-admin-12',
       date: '2026-10-25',
       month: '2026-10',
-      type: 'outflow',
+      type: 'liability',
       category: 'personal_cogs',
-      categoryLabel: 'Modal Pribadi Admin',
-      description: 'Pengembalian talangan uang pribadi admin untuk 12 pesanan (12 x Rp16.000), bukan laba bisnis',
+      categoryLabel: 'Pengembalian Modal Pribadi',
+      accountLabel: 'Kewajiban Admin / Modal Pribadi',
+      description: 'Pengembalian talangan modal pribadi admin untuk 12 pesanan (@Rp16.000). Pelunasan kewajiban, bukan beban operasional',
       reference: 'COGS-12-ADMIN',
+      grossAmount: cogsNet,
+      feeAmount: 0,
+      netAmount: cogsNet,
       amount: cogsNet,
       status: 'verified',
       statusLabel: 'Terverifikasi'
     });
 
-    // 5. Biaya Penarikan Mayar Bulanan
+    // 5. Transfer Antar Akun & Biaya Penarikan Mayar
     if (Array.isArray(opData.mayarWithdrawals) && opData.mayarWithdrawals.length > 0) {
       opData.mayarWithdrawals.forEach(w => {
         const rawDate = w.scheduled_date || '2026-10-25';
         const dt = String(rawDate).slice(0, 10);
         const mo = dt.slice(0, 7);
+        const wFee = Number(w.fee_amount) || 2775;
+        const wGross = Number(w.gross_amount) || 252990;
+        const wNet = Number(w.net_amount) || 250215;
+        const isSuccess = w.status === 'success';
+
+        // Biaya Flat Payment Gateway (Beban Riil Bisnis)
         entries.push({
-          id: 'mayar-wd-' + w.id,
+          id: 'mayar-fee-' + w.id,
           date: dt,
           month: mo,
           type: 'outflow',
           category: 'mayar_fee',
-          categoryLabel: 'Biaya Withdraw Mayar',
-          description: 'Biaya flat penarikan payment gateway Mayar (Bruto ' + formatRupiah(w.gross_amount) + ', Bersih ' + formatRupiah(w.net_amount) + ')',
+          categoryLabel: 'Biaya Payment Gateway',
+          accountLabel: 'Payment Gateway (Mayar)',
+          description: 'Biaya flat transfer penarikan payment gateway Mayar (Bruto ' + formatRupiah(wGross) + ', Bersih ' + formatRupiah(wNet) + ')',
           reference: w.transaction_reference || 'WD-MAYAR-20261025',
-          amount: Number(w.fee_amount) || 2775,
-          status: w.status === 'success' ? 'verified' : (w.status || 'pending'),
-          statusLabel: w.status === 'success' ? 'Terkonfirmasi' : (w.status === 'processing' ? 'Diproses' : 'Pending')
+          grossAmount: wFee,
+          feeAmount: 0,
+          netAmount: wFee,
+          amount: wFee,
+          status: isSuccess ? 'verified' : (w.status || 'pending'),
+          statusLabel: isSuccess ? 'Terkonfirmasi' : (w.status === 'processing' ? 'Diproses' : 'Pending')
+        });
+
+        // Transfer Antar Akun (Gateway Mayar -> Rekening Bank blu)
+        entries.push({
+          id: 'mayar-transfer-' + w.id,
+          date: dt,
+          month: mo,
+          type: 'transfer',
+          category: 'account_transfer',
+          categoryLabel: 'Transfer Antar Akun',
+          accountLabel: 'Gateway Mayar -> Rekening Bank blu',
+          description: 'Transfer penarikan dana dari payment gateway Mayar ke rekening bank blu. Pemindahan likuiditas antar akun, bukan pendapatan baru',
+          reference: w.transaction_reference || 'WD-MAYAR-20261025',
+          grossAmount: wGross,
+          feeAmount: wFee,
+          netAmount: wNet,
+          amount: wNet,
+          status: isSuccess ? 'verified' : (w.status || 'pending'),
+          statusLabel: isSuccess ? 'Terkonfirmasi' : (w.status === 'processing' ? 'Diproses' : 'Pending')
         });
       });
     } else {
+      // Baseline jika belum ada mutasi penarikan tercatat
       entries.push({
-        id: 'mayar-wd-baseline',
+        id: 'mayar-fee-baseline',
         date: '2026-10-25',
         month: '2026-10',
         type: 'outflow',
         category: 'mayar_fee',
-        categoryLabel: 'Biaya Withdraw Mayar',
-        description: 'Biaya flat penarikan payment gateway Mayar (Bruto Rp252.990, Bersih Rp250.215)',
+        categoryLabel: 'Biaya Payment Gateway',
+        accountLabel: 'Payment Gateway (Mayar)',
+        description: 'Biaya flat transfer penarikan payment gateway Mayar (Bruto Rp252.990, Bersih Rp250.215)',
         reference: 'WD-MAYAR-25OKT',
+        grossAmount: 2775,
+        feeAmount: 0,
+        netAmount: 2775,
         amount: 2775,
+        status: 'verified',
+        statusLabel: 'Terkonfirmasi'
+      });
+      entries.push({
+        id: 'mayar-transfer-baseline',
+        date: '2026-10-25',
+        month: '2026-10',
+        type: 'transfer',
+        category: 'account_transfer',
+        categoryLabel: 'Transfer Antar Akun',
+        accountLabel: 'Gateway Mayar -> Rekening Bank blu',
+        description: 'Transfer penarikan dana dari payment gateway Mayar ke rekening bank blu (Bruto Rp252.990, Biaya Rp2.775, Bersih Rp250.215)',
+        reference: 'WD-MAYAR-25OKT',
+        grossAmount: 252990,
+        feeAmount: 2775,
+        netAmount: 250215,
+        amount: 250215,
         status: 'verified',
         statusLabel: 'Terkonfirmasi'
       });
@@ -393,28 +483,74 @@
         const rawDate = exp.expense_date || (exp.created_at ? exp.created_at.slice(0, 10) : '2026-10-25');
         const dt = String(rawDate).slice(0, 10);
         const mo = dt.slice(0, 7);
+        const expAmt = Number(exp.amount) || 0;
         entries.push({
           id: 'expense-' + exp.id,
           date: dt,
           month: mo,
           type: 'outflow',
           category: 'operational',
-          categoryLabel: 'Kas Operasional',
+          categoryLabel: 'Pengeluaran Operasional',
+          accountLabel: 'Kas Operasional',
           description: (exp.description || 'Pengeluaran kas operasional') + (exp.recipient ? (' (Penerima: ' + exp.recipient + ')') : ''),
           reference: exp.expense_code || ('EXP-' + exp.id),
-          amount: Number(exp.amount) || 0,
+          grossAmount: expAmt,
+          feeAmount: 0,
+          netAmount: expAmt,
+          amount: expAmt,
           status: 'completed',
           statusLabel: 'Terealisasi'
         });
       });
     }
 
+    // 7. Selisih Rekonsiliasi Saldo Penjualan (Perlu Rekonsiliasi Manual)
+    const varianceRecord = opData.bookkeepingRecords.find(r => r.category === 'reconciliation_variance');
+    const varianceAmt = varianceRecord ? Number(varianceRecord.net_amount) : 22100;
+    entries.push({
+      id: 'entry-reconciliation-variance',
+      date: '2026-10-25',
+      month: '2026-10',
+      type: 'unreconciled',
+      category: 'reconciliation_variance',
+      categoryLabel: 'Selisih Rekonsiliasi',
+      accountLabel: 'Payment Gateway (Mayar)',
+      description: 'Selisih antara saldo penjualan dilaporkan di dashboard Mayar (Rp277.700) dan penerimaan 12 pesanan (Rp255.600)',
+      reference: 'VAR-SALES-22100',
+      grossAmount: varianceAmt,
+      feeAmount: 0,
+      netAmount: varianceAmt,
+      amount: varianceAmt,
+      status: 'unreconciled',
+      statusLabel: 'Perlu Rekonsiliasi Manual'
+    });
+
+    // 8. Alokasi Keperluan Pribadi Kayla (Non-Bisnis)
+    const personalRecord = opData.bookkeepingRecords.find(r => r.category === 'personal_allocation');
+    const personalAmt = personalRecord ? Number(personalRecord.net_amount) : 100000;
+    entries.push({
+      id: 'entry-personal-allocation',
+      date: '2026-10-25',
+      month: '2026-10',
+      type: 'non_business',
+      category: 'personal_allocation',
+      categoryLabel: 'Dana Pribadi (Non-Bisnis)',
+      accountLabel: 'Rekening Pribadi Kayla',
+      description: 'Alokasi keperluan pribadi Kayla dari dana pemberian kakak (Rp100.000 dari total Rp500.000, dipisahkan dari kas bisnis JOKI.IN)',
+      reference: 'NON-BIZ-KAYLA-100K',
+      grossAmount: personalAmt,
+      feeAmount: 0,
+      netAmount: personalAmt,
+      amount: personalAmt,
+      status: 'excluded',
+      statusLabel: 'Dipisahkan (Non-Bisnis)'
+    });
+
     return entries;
   }
 
   function renderMonthlyCashFlowSummary() {
     const allEntries = getMonthlyCashFlowEntries();
-    const isCurrentMonth = cashFlowFilterMonth === '2026-10';
 
     // Period entries
     const periodEntries = cashFlowFilterMonth === 'all'
@@ -424,26 +560,40 @@
     // Sum calculations for the active period
     let sumSales = 0;
     let sumCapital = 0;
-    let sumOtherInflow = 0;
+    let sumInternalReserve = 0;
     let sumOpExpense = 0;
     let sumMayarFee = 0;
     let sumPersonalCogs = 0;
+    let sumTransfers = 0;
+    let sumVariance = 0;
 
     periodEntries.forEach(e => {
       if (e.type === 'inflow') {
         if (e.category === 'sales') sumSales += e.amount;
         else if (e.category === 'capital') sumCapital += e.amount;
-        else sumOtherInflow += e.amount;
       } else if (e.type === 'outflow') {
         if (e.category === 'operational') sumOpExpense += e.amount;
         else if (e.category === 'mayar_fee') sumMayarFee += e.amount;
-        else if (e.category === 'personal_cogs') sumPersonalCogs += e.amount;
+      } else if (e.type === 'liability') {
+        if (e.category === 'personal_cogs') sumPersonalCogs += e.amount;
+      } else if (e.type === 'transfer') {
+        sumTransfers += e.amount;
+      } else if (e.type === 'internal_allocation') {
+        sumInternalReserve += e.amount;
+      } else if (e.type === 'unreconciled') {
+        sumVariance += e.amount;
       }
     });
 
-    const totalInflow = sumSales + sumCapital + sumOtherInflow;
-    const totalOutflow = sumOpExpense + sumMayarFee + sumPersonalCogs;
-    const bookBalance = totalInflow - totalOutflow;
+    // Pemasukan Eksternal Bersih: Rp255.600 + Rp400.000 = Rp655.600
+    // Alokasi kas 10% (Rp11.000) adalah pemisahan internal, bukan kas masuk baru.
+    const totalInflow = sumSales + sumCapital;
+    // Beban Usaha Riil: Rp0 + Rp2.775 = Rp2.775
+    const totalOutflow = sumOpExpense + sumMayarFee;
+    // Pelunasan Kewajiban: Rp192.000
+    const totalLiability = sumPersonalCogs;
+    // Saldo Buku Besar Bisnis: Rp655.600 - Rp2.775 - Rp192.000 = Rp460.825
+    const bookBalance = totalInflow - totalOutflow - totalLiability;
 
     // Update DOM Metrics
     const periodBadge = document.getElementById('cashflow-period-badge');
@@ -461,7 +611,7 @@
     if (elTotalInflow) elTotalInflow.textContent = totalInflow.toLocaleString('id-ID');
     if (elInflowSales) elInflowSales.textContent = formatRupiah(sumSales);
     if (elInflowCapital) elInflowCapital.textContent = formatRupiah(sumCapital);
-    if (elInflowOther) elInflowOther.textContent = formatRupiah(sumOtherInflow);
+    if (elInflowOther) elInflowOther.textContent = formatRupiah(sumInternalReserve);
 
     const elTotalOutflow = document.getElementById('cashflow-total-outflow');
     const elOutflowOp = document.getElementById('cashflow-outflow-op');
@@ -489,6 +639,16 @@
       tableEntries = tableEntries.filter(e => e.type === 'inflow');
     } else if (cashFlowFilterCategory === 'outflow') {
       tableEntries = tableEntries.filter(e => e.type === 'outflow');
+    } else if (cashFlowFilterCategory === 'liability') {
+      tableEntries = tableEntries.filter(e => e.type === 'liability');
+    } else if (cashFlowFilterCategory === 'transfer') {
+      tableEntries = tableEntries.filter(e => e.type === 'transfer');
+    } else if (cashFlowFilterCategory === 'internal') {
+      tableEntries = tableEntries.filter(e => e.type === 'internal_allocation');
+    } else if (cashFlowFilterCategory === 'unreconciled') {
+      tableEntries = tableEntries.filter(e => e.type === 'unreconciled');
+    } else if (cashFlowFilterCategory === 'non_business') {
+      tableEntries = tableEntries.filter(e => e.type === 'non_business');
     } else if (cashFlowFilterCategory === 'sales') {
       tableEntries = tableEntries.filter(e => e.category === 'sales');
     } else if (cashFlowFilterCategory === 'capital') {
@@ -513,22 +673,62 @@
         tbody.innerHTML = '<tr><td colspan="6" style="text-align: center; padding: 28px; color: var(--ink-secondary);">Tidak ada transaksi arus kas untuk filter yang dipilih.</td></tr>';
       } else {
         tbody.innerHTML = tableEntries.map(e => {
-          const isPlus = e.type === 'inflow';
-          const typeBadge = isPlus
-            ? '<span class="status-badge" style="background: #E6F8F0; color: #10B981; font-weight: 700; font-size: 10.5px;">Pemasukan</span>'
-            : '<span class="status-badge" style="background: #FEE2E2; color: #EF4444; font-weight: 700; font-size: 10.5px;">Pengeluaran</span>';
-          const statusBadge = e.status === 'verified'
-            ? '<span class="status-badge" style="background: #E8EDF8; color: #3158A8; font-weight: 700; font-size: 10.5px;">Terverifikasi</span>'
-            : (e.status === 'completed'
-              ? '<span class="status-badge" style="background: #E6F8F0; color: #10B981; font-weight: 700; font-size: 10.5px;">Selesai</span>'
-              : '<span class="status-badge" style="background: #FEF3C7; color: #B45309; font-weight: 700; font-size: 10.5px;">' + escapeHtml(e.statusLabel) + '</span>');
-          const amountFormatted = (isPlus ? '+' : '-') + formatRupiah(e.amount);
-          const amountColor = isPlus ? '#10B981' : '#EF4444';
+          let typeBadge = '';
+          let sign = '';
+          let amountColor = 'var(--ink)';
+
+          if (e.type === 'inflow') {
+            typeBadge = '<span class="status-badge" style="background: #E6F8F0; color: #10B981; font-weight: 700; font-size: 10.5px;">Pemasukan</span>';
+            sign = '+';
+            amountColor = '#10B981';
+          } else if (e.type === 'outflow') {
+            typeBadge = '<span class="status-badge" style="background: #FEE2E2; color: #EF4444; font-weight: 700; font-size: 10.5px;">Beban Usaha</span>';
+            sign = '-';
+            amountColor = '#EF4444';
+          } else if (e.type === 'liability') {
+            typeBadge = '<span class="status-badge" style="background: #FEF3C7; color: #B45309; font-weight: 700; font-size: 10.5px;">Pelunasan Modal</span>';
+            sign = '-';
+            amountColor = '#B45309';
+          } else if (e.type === 'transfer') {
+            typeBadge = '<span class="status-badge" style="background: #EDE9FE; color: #6D28D9; font-weight: 700; font-size: 10.5px;">Transfer Akun</span>';
+            sign = '';
+            amountColor = '#6D28D9';
+          } else if (e.type === 'internal_allocation') {
+            typeBadge = '<span class="status-badge" style="background: #E0F2FE; color: #0284C7; font-weight: 700; font-size: 10.5px;">Alokasi Pos</span>';
+            sign = '';
+            amountColor = '#0284C7';
+          } else if (e.type === 'unreconciled') {
+            typeBadge = '<span class="status-badge" style="background: #FFFBEB; color: #D97706; font-weight: 700; font-size: 10.5px;">Perlu Rekonsiliasi</span>';
+            sign = '';
+            amountColor = '#D97706';
+          } else if (e.type === 'non_business') {
+            typeBadge = '<span class="status-badge" style="background: #F3F4F6; color: #6B7280; font-weight: 700; font-size: 10.5px;">Non-Bisnis</span>';
+            sign = '';
+            amountColor = '#6B7280';
+          }
+
+          let statusBadge = '';
+          if (e.status === 'verified') {
+            statusBadge = '<span class="status-badge" style="background: #E8EDF8; color: #3158A8; font-weight: 700; font-size: 10.5px;">Terverifikasi</span>';
+          } else if (e.status === 'completed') {
+            statusBadge = '<span class="status-badge" style="background: #E6F8F0; color: #10B981; font-weight: 700; font-size: 10.5px;">Selesai</span>';
+          } else if (e.status === 'unreconciled') {
+            statusBadge = '<span class="status-badge" style="background: #FEF3C7; color: #B45309; font-weight: 700; font-size: 10.5px;">Belum Cocok</span>';
+          } else if (e.status === 'excluded') {
+            statusBadge = '<span class="status-badge" style="background: #F3F4F6; color: #6B7280; font-weight: 700; font-size: 10.5px;">Dipisahkan</span>';
+          } else {
+            statusBadge = '<span class="status-badge" style="background: #FEF3C7; color: #B45309; font-weight: 700; font-size: 10.5px;">' + escapeHtml(e.statusLabel) + '</span>';
+          }
+
+          const amountFormatted = sign + formatRupiah(e.amount);
 
           return '<tr>' +
             '<td style="white-space: nowrap; font-weight: 600; font-size: 12.5px;">' + escapeHtml(formatShortDate(e.date)) + '</td>' +
             '<td style="text-align: center;">' + typeBadge + '</td>' +
-            '<td style="font-weight: 600; color: var(--ink); font-size: 12.5px;">' + escapeHtml(e.categoryLabel) + '</td>' +
+            '<td style="font-weight: 600; color: var(--ink); font-size: 12.5px;">' +
+              '<div>' + escapeHtml(e.categoryLabel) + '</div>' +
+              (e.accountLabel ? ('<div style="font-size: 10.5px; color: var(--ink-secondary); font-weight: 500; margin-top: 2px;">' + escapeHtml(e.accountLabel) + '</div>') : '') +
+            '</td>' +
             '<td style="font-size: 12px; color: var(--ink); line-height: 1.4;">' +
               '<div>' + escapeHtml(e.description) + '</div>' +
               '<div style="font-size: 11px; color: var(--ink-secondary); margin-top: 2px;">Ref: <code>' + escapeHtml(e.reference) + '</code></div>' +
@@ -545,6 +745,28 @@
     if (openingBalance) openingBalance.textContent = opData.summaryLoaded ? formatRupiah(opData.summary.initial_fund) : '-';
     const status = document.getElementById('op-allocation-status');
     if (status) status.textContent = opData.allocationError || ('Basis alokasi ' + formatRupiah(opData.summary.allocation_basis) + '; kewajiban domain dipisahkan.');
+
+    // Backward-compatible node updates if present
+    const elValBalance = document.getElementById('op-val-balance');
+    if (elValBalance) {
+      elValBalance.textContent = opData.allocationError
+        ? '-'
+        : Number(opData.summary.current_balance).toLocaleString('id-ID');
+    }
+    const elValRemaining = document.getElementById('op-val-remaining');
+    if (elValRemaining) {
+      elValRemaining.textContent = opData.allocationError
+        ? '-'
+        : Number(opData.summary.allocation_basis).toLocaleString('id-ID');
+    }
+    const elFootBalance = document.getElementById('op-foot-balance');
+    if (elFootBalance) {
+      elFootBalance.textContent = !opData.summaryLoaded || (opData.allocationError && opData.allocationError.includes('gagal dimuat'))
+        ? 'Data ringkasan saldo kas gagal dimuat dari database.'
+        : (opData.summary.initial_fund > 0
+          ? ('Saldo awal ' + formatRupiah(opData.summary.initial_fund) + ' sudah termasuk dalam saldo berjalan.')
+          : ('Saldo buku ' + formatRupiah(opData.summary.current_balance) + ' belum diverifikasi mutasi bank.'));
+    }
   }
 
   function setupCashFlowFilterListeners() {

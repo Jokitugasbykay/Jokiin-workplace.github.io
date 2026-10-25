@@ -665,13 +665,13 @@
                   </select>
                   <select id="cashflow-category-filter" class="form-select form-select-sm" style="width: auto; min-width: 180px;" aria-label="Filter Kategori Arus Kas">
                     <option value="all" selected>Semua Jenis &amp; Kategori</option>
-                    <option value="inflow">Semua Pemasukan</option>
-                    <option value="outflow">Semua Pengeluaran</option>
-                    <option value="sales">Omzet Penjualan</option>
-                    <option value="capital">Suntikan Modal Bisnis</option>
-                    <option value="personal_cogs">Pengembalian Modal Pribadi</option>
-                    <option value="mayar_fee">Biaya Withdraw Mayar</option>
-                    <option value="operational">Pengeluaran Operasional</option>
+                    <option value="inflow">Pemasukan Eksternal (Omzet &amp; Modal)</option>
+                    <option value="outflow">Beban Usaha Riil (Biaya Gateway &amp; Kas)</option>
+                    <option value="liability">Pelunasan Kewajiban (Talangan Admin)</option>
+                    <option value="transfer">Transfer Antar Akun (Mayar ke Bank)</option>
+                    <option value="internal">Pencadangan Kas Internal (10% Operasional)</option>
+                    <option value="unreconciled">Perlu Rekonsiliasi Manual (Selisih)</option>
+                    <option value="non_business">Transaksi Pribadi (Non-Bisnis)</option>
                   </select>
                 </div>
               </div>
@@ -686,12 +686,12 @@
                   </div>
                   <div style="display: flex; align-items: baseline; gap: 4px; margin-top: 8px;">
                     <span style="font-size: 14px; font-weight: 700; color: #10B981;">Rp</span>
-                    <strong id="cashflow-total-inflow" style="font-size: 22px; font-weight: 800; color: #10B981; font-variant-numeric: tabular-nums;">666.600</strong>
+                    <strong id="cashflow-total-inflow" style="font-size: 22px; font-weight: 800; color: #10B981; font-variant-numeric: tabular-nums;">655.600</strong>
                   </div>
                   <div style="margin-top: 10px; padding-top: 8px; border-top: 1px dashed var(--border-light); font-size: 11.5px; line-height: 1.6; color: var(--ink-secondary);">
-                    <div>• Omzet Penjualan: <strong id="cashflow-inflow-sales" style="color: var(--ink);">Rp255.600</strong> (12 pesanan paid)</div>
-                    <div>• Suntikan Modal: <strong id="cashflow-inflow-capital" style="color: var(--ink);">Rp400.000</strong> (Dana bisnis dari kakak)</div>
-                    <div>• Alokasi Kas Masuk 10%: <strong id="cashflow-inflow-other" style="color: var(--ink);">Rp11.000</strong> (Dari pesanan realtime)</div>
+                    <div>• Omzet Penjualan: <strong id="cashflow-inflow-sales" style="color: var(--ink);">Rp255.600</strong> (12 pesanan selesai, bruto Rp264.000, fee Rp8.400)</div>
+                    <div>• Suntikan Modal Bisnis: <strong id="cashflow-inflow-capital" style="color: var(--ink);">Rp400.000</strong> (Dana bisnis dari kakak, pribadi Rp100.000 dipisahkan)</div>
+                    <div>• Alokasi Pos Kas 10%: <strong id="cashflow-inflow-other" style="color: var(--ink);">Rp11.000</strong> (Pencadangan internal dari omzet, bukan pemasukan baru)</div>
                   </div>
                   <span style="font-size: 10.5px; color: var(--ink-muted); display: block; margin-top: 6px;">Suntikan modal dicatat terpisah dan bukan omzet penjualan.</span>
                 </div>
@@ -699,17 +699,17 @@
                 <!-- 2. Total Pengeluaran Bulan Ini -->
                 <div class="keuangan-metric-box" style="border-left: 4px solid #EF4444;">
                   <div style="display: flex; justify-content: space-between; align-items: center;">
-                    <span style="font-size: 12px; color: var(--ink-secondary); font-weight: 700;">Total Pengeluaran Bulan Ini</span>
-                    <span class="status-badge" style="background: #FEE2E2; color: #EF4444; font-size: 10px; font-weight: 700; padding: 2px 6px;">Realisasi Aktual</span>
+                    <span style="font-size: 12px; color: var(--ink-secondary); font-weight: 700;">Total Beban Usaha Bulan Ini</span>
+                    <span class="status-badge" style="background: #FEE2E2; color: #EF4444; font-size: 10px; font-weight: 700; padding: 2px 6px;">Beban Riil</span>
                   </div>
                   <div style="display: flex; align-items: baseline; gap: 4px; margin-top: 8px;">
                     <span style="font-size: 14px; font-weight: 700; color: #EF4444;">Rp</span>
-                    <strong id="cashflow-total-outflow" style="font-size: 22px; font-weight: 800; color: #EF4444; font-variant-numeric: tabular-nums;">194.775</strong>
+                    <strong id="cashflow-total-outflow" style="font-size: 22px; font-weight: 800; color: #EF4444; font-variant-numeric: tabular-nums;">2.775</strong>
                   </div>
                   <div style="margin-top: 10px; padding-top: 8px; border-top: 1px dashed var(--border-light); font-size: 11.5px; line-height: 1.6; color: var(--ink-secondary);">
-                    <div>• Pengeluaran Operasional: <strong id="cashflow-outflow-op" style="color: var(--ink);">Rp0</strong> (Belum ada pengeluaran kas)</div>
-                    <div>• Biaya Withdraw Mayar: <strong id="cashflow-outflow-mayar" style="color: var(--ink);">Rp2.775</strong> (Penarikan 25 Okt 2026)</div>
-                    <div>• Pengembalian Modal Pribadi: <strong id="cashflow-outflow-cogs" style="color: var(--ink);">Rp192.000</strong> (Talangan 12 pesanan)</div>
+                    <div>• Biaya Payment Gateway: <strong id="cashflow-outflow-mayar" style="color: var(--ink);">Rp2.775</strong> (Beban flat penarikan 25 Okt 2026)</div>
+                    <div>• Pengeluaran Operasional: <strong id="cashflow-outflow-op" style="color: var(--ink);">Rp0</strong> (Belum ada pengeluaran kas tercatat)</div>
+                    <div>• Pelunasan Modal Admin: <strong id="cashflow-outflow-cogs" style="color: var(--ink);">Rp192.000</strong> (Talangan 12 pesanan, pelunasan kewajiban)</div>
                   </div>
                   <span style="font-size: 10.5px; color: var(--ink-muted); display: block; margin-top: 6px;">Pengembalian modal pribadi adalah pelunasan kewajiban, bukan laba bisnis.</span>
                 </div>
@@ -717,18 +717,27 @@
                 <!-- 3. Rekonsiliasi Saldo -->
                 <div class="keuangan-metric-box" style="border-left: 4px solid #F59E0B;">
                   <div style="display: flex; justify-content: space-between; align-items: center;">
-                    <span style="font-size: 12px; color: var(--ink-secondary); font-weight: 700;">Rekonsiliasi Saldo</span>
+                    <span style="font-size: 12px; color: var(--ink-secondary); font-weight: 700;">Rekonsiliasi Saldo 3-Akun</span>
                     <span id="cashflow-reconcile-badge" class="status-badge" style="background: #FEF3C7; color: #B45309; font-size: 10px; font-weight: 700; padding: 2px 6px;">Belum Direkonsiliasi</span>
                   </div>
                   <div style="margin-top: 8px; font-size: 11.5px; line-height: 1.6; color: var(--ink-secondary);">
-                    <div>• Saldo Pembukuan (Buku): <strong id="cashflow-balance-book" style="color: var(--accent-blue); font-size: 13.5px;">Rp471.825</strong></div>
-                    <div>• Saldo Penjualan Gateway: <strong id="cashflow-balance-reported" style="color: var(--ink);">Rp277.700</strong> (Selisih Rp22.100)</div>
-                    <div>• Saldo Rekening Bank Aktual: <strong id="cashflow-balance-actual" style="color: #B45309; font-size: 13.5px;">Belum diverifikasi</strong></div>
+                    <div>• Saldo Pembukuan (Buku): <strong id="cashflow-balance-book" style="color: var(--accent-blue); font-size: 13.5px;">Rp460.825</strong></div>
+                    <div>• Saldo Gateway (Mayar): <strong id="cashflow-balance-reported" style="color: var(--ink);">Rp277.700</strong> (Sisa saldo: Rp24.710)</div>
+                    <div>• Saldo Rekening Bank (blu): <strong id="cashflow-balance-actual" style="color: #B45309; font-size: 13.5px;">Belum diverifikasi</strong> (Net transfer: Rp250.215)</div>
+                    <div>• Selisih Rekonsiliasi: <strong style="color: #D97706;">Rp22.100</strong> (Perlu Rekonsiliasi Manual)</div>
                   </div>
-                  <span style="font-size: 10.5px; color: #B45309; font-weight: 600; display: block; margin-top: 10px; background: rgba(245, 158, 11, 0.08); padding: 6px 10px; border-radius: 6px;">
+                  <span style="font-size: 10.5px; color: #B45309; font-weight: 600; display: block; margin-top: 8px; background: rgba(245, 158, 11, 0.08); padding: 6px 10px; border-radius: 6px;">
                     Saldo rekening aktual belum diverifikasi mutasi bank fisik. Nominal kosong tidak ditampilkan sebagai nol.
                   </span>
                 </div>
+              </div>
+
+              <!-- Banner Transfer Antar Akun -->
+              <div style="background: rgba(139, 92, 246, 0.06); border: 1px solid rgba(139, 92, 246, 0.2); border-radius: 12px; padding: 10px 16px; margin-bottom: 18px; font-size: 11.5px; color: var(--ink-secondary); line-height: 1.6; display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 8px;">
+                <div>
+                  <strong style="color: #6D28D9;">Transfer Antar Akun Terverifikasi:</strong> Penarikan gateway Mayar ke rekening bank blu sebesar <strong>Rp250.215</strong> bersih (Bruto Rp252.990, Biaya Rp2.775 flat).
+                </div>
+                <span class="status-badge" style="background: #EDE9FE; color: #6D28D9; font-weight: 700; font-size: 10.5px;">Pemindahan Likuiditas (Bukan Pendapatan Baru)</span>
               </div>
 
               <!-- Riwayat Arus Kas (Cash Flow Ledger Table) -->
