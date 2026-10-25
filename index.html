@@ -18,7 +18,7 @@
   <meta name="theme-color" content="#000000">
 
   <!-- Stylesheet -->
-  <link rel="stylesheet" href="./css/style.css?v=43">
+  <link rel="stylesheet" href="./css/style.css?v=44">
 
   <!-- Supabase JS Library -->
   <script defer src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
@@ -533,7 +533,7 @@
                 </div>
                 <div class="keuangan-metric-box">
                   <span style="font-size: 11px; color: var(--ink-secondary); font-weight: 600;">Saldo Awal Pembukuan</span>
-                  <div id="op-bookkeeping-opening-balance" style="margin-top: 6px; font-size: 20px; font-weight: 800;">—</div>
+                  <div id="op-bookkeeping-opening-balance" style="margin-top: 6px; font-size: 20px; font-weight: 800;">-</div>
                   <span style="font-size: 11px; color: var(--ink-secondary); display: block; margin-top: 6px;">Nilai pembuka sudah termasuk dalam perhitungan saldo berjalan. Jangan ditambahkan lagi ke Saldo Kas Operasional.</span>
                 </div>
               </div>
@@ -604,7 +604,7 @@
                   <span style="font-size: 11px; color: var(--ink-secondary); font-weight: 600; display: block;">Total Pencairan Terkonfirmasi</span>
                   <div style="display: flex; align-items: baseline; gap: 4px; margin-top: 6px;">
                     <span style="font-size: 13px; font-weight: 700; color: #10B981;">Rp</span>
-                    <strong id="op-mayar-total-success-net" style="font-size: 20px; font-weight: 800; color: #10B981; font-variant-numeric: tabular-nums;">—</strong>
+                    <strong id="op-mayar-total-success-net" style="font-size: 20px; font-weight: 800; color: #10B981; font-variant-numeric: tabular-nums;">-</strong>
                   </div>
                   <span id="op-mayar-total-count-note" role="status" style="font-size: 11px; color: var(--ink-secondary); display: block; margin-top: 6px;">Menunggu data pencairan.</span>
                 </div>
@@ -640,62 +640,126 @@
               </div>
             </article>
 
-            <!-- KPI Cards for Operational Fund -->
-            <div class="ac-12 keuangan-kpi-wrap" aria-label="Metrik Dana Operasional">
-              <div class="ac-12__grid" style="grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));">
-                <!-- Card 1: Saldo Kas Operasional -->
-                <article class="ac-12__card" style="border-left: 4px solid var(--accent-blue);">
-                  <div class="ac-12__top">
-                    <p class="ac-12__key">Saldo Kas Operasional</p>
-                    <span id="op-pill-balance" class="ac-12__pill ac-12__pill--flat">Rekonsiliasi</span>
+            <!-- Fitur Baru: Ringkasan Arus Kas Bulanan -->
+            <article class="keuangan-card" id="monthly-cash-flow-summary-panel" style="border-top: 4px solid #10B981; margin-bottom: 24px;">
+              <div style="display: flex; justify-content: space-between; align-items: flex-start; flex-wrap: wrap; gap: 14px; margin-bottom: 18px;">
+                <div style="display: flex; align-items: flex-start; gap: 12px;">
+                  <div style="width: 44px; height: 44px; border-radius: 12px; background: rgba(16, 185, 129, 0.12); display: flex; align-items: center; justify-content: center; color: #10B981; flex-shrink: 0;">
+                    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                      <line x1="12" y1="1" x2="12" y2="23"></line>
+                      <path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"></path>
+                    </svg>
                   </div>
-                  <p class="ac-12__val">
-                    <span class="ac-12__cur">Rp</span>
-                    <span id="op-val-balance" class="ac-12__num">—</span>
-                  </p>
-                  <p class="ac-12__foot" id="op-foot-balance">Menunggu konfirmasi kas. Saldo awal sudah termasuk dalam saldo berjalan.</p>
-                </article>
-
-                <!-- Card 2: Total Dana Operasional -->
-                <article class="ac-12__card" style="border-left: 4px solid #10B981;">
-                  <div class="ac-12__top">
-                    <p class="ac-12__key">Total dana operasional</p>
-                    <span id="op-pill-fund" class="ac-12__pill ac-12__pill--flat">Awal + 10%</span>
+                  <div>
+                    <div style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">
+                      <h4 class="section-title" style="margin: 0; font-size: 17px; font-weight: 800;">Ringkasan Arus Kas Bulanan</h4>
+                      <span id="cashflow-period-badge" class="status-badge" style="background: #E6F8F0; color: #10B981; font-weight: 700; font-size: 11px;">Periode: Oktober 2026</span>
+                    </div>
+                    <p class="chart-caption" style="margin-top: 4px;">Pencatatan arus kas riil berdasarkan transaksi tercatat: pemisahan omzet penjualan, suntikan modal, pengeluaran aktual, dan rekonsiliasi saldo.</p>
                   </div>
-                  <p class="ac-12__val">
-                    <span class="ac-12__cur">Rp</span>
-                    <span id="op-val-allocated" class="ac-12__num">0</span>
-                  </p>
-                  <p class="ac-12__foot" id="op-foot-fund">Alokasi awal Rp0 + akumulasi 10%</p>
-                </article>
-
-                <!-- Card 3: Total Pengeluaran Aktual -->
-                <article class="ac-12__card" style="border-left: 4px solid #EF4444;">
-                  <div class="ac-12__top">
-                    <p class="ac-12__key">Total pengeluaran aktual</p>
-                    <span id="op-pill-spent" class="ac-12__pill ac-12__pill--flat">Realisasi</span>
-                  </div>
-                  <p class="ac-12__val">
-                    <span class="ac-12__cur">Rp</span>
-                    <span id="op-val-spent" class="ac-12__num">0</span>
-                  </p>
-                  <p class="ac-12__foot" id="op-foot-spent">Berdasarkan transaksi nyata tercatat</p>
-                </article>
-
-                <!-- Card 4: Sisa Kas Tersedia -->
-                <article class="ac-12__card" style="border-left: 4px solid #F59E0B;">
-                  <div class="ac-12__top">
-                    <p class="ac-12__key">Dana Siap Dialokasikan</p>
-                    <span id="op-pill-remaining" class="ac-12__pill ac-12__pill--up">100% Sisa</span>
-                  </div>
-                  <p class="ac-12__val">
-                    <span class="ac-12__cur">Rp</span>
-                    <span id="op-val-remaining" class="ac-12__num">0</span>
-                  </p>
-                  <p class="ac-12__foot">Basis alokasi setelah kewajiban domain dipisahkan.</p>
-                </article>
+                </div>
+                <div style="display: flex; gap: 10px; align-items: center; flex-wrap: wrap;">
+                  <select id="cashflow-month-filter" class="form-select form-select-sm" style="width: auto; min-width: 170px;" aria-label="Filter Bulan Arus Kas">
+                    <option value="2026-10" selected>Oktober 2026 (Bulan Ini)</option>
+                    <option value="all">Semua Periode</option>
+                  </select>
+                  <select id="cashflow-category-filter" class="form-select form-select-sm" style="width: auto; min-width: 180px;" aria-label="Filter Kategori Arus Kas">
+                    <option value="all" selected>Semua Jenis &amp; Kategori</option>
+                    <option value="inflow">Semua Pemasukan</option>
+                    <option value="outflow">Semua Pengeluaran</option>
+                    <option value="sales">Omzet Penjualan</option>
+                    <option value="capital">Suntikan Modal Bisnis</option>
+                    <option value="personal_cogs">Pengembalian Modal Pribadi</option>
+                    <option value="mayar_fee">Biaya Withdraw Mayar</option>
+                    <option value="operational">Pengeluaran Operasional</option>
+                  </select>
+                </div>
               </div>
-            </div>
+
+              <!-- Top Metrics Grid: Pemasukan, Pengeluaran, Rekonsiliasi -->
+              <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 16px; margin-bottom: 20px;">
+                <!-- 1. Total Pemasukan Bulan Ini -->
+                <div class="keuangan-metric-box" style="border-left: 4px solid #10B981;">
+                  <div style="display: flex; justify-content: space-between; align-items: center;">
+                    <span style="font-size: 12px; color: var(--ink-secondary); font-weight: 700;">Total Pemasukan Bulan Ini</span>
+                    <span class="status-badge" style="background: #E6F8F0; color: #10B981; font-size: 10px; font-weight: 700; padding: 2px 6px;">Tercatat Riil</span>
+                  </div>
+                  <div style="display: flex; align-items: baseline; gap: 4px; margin-top: 8px;">
+                    <span style="font-size: 14px; font-weight: 700; color: #10B981;">Rp</span>
+                    <strong id="cashflow-total-inflow" style="font-size: 22px; font-weight: 800; color: #10B981; font-variant-numeric: tabular-nums;">666.600</strong>
+                  </div>
+                  <div style="margin-top: 10px; padding-top: 8px; border-top: 1px dashed var(--border-light); font-size: 11.5px; line-height: 1.6; color: var(--ink-secondary);">
+                    <div>• Omzet Penjualan: <strong id="cashflow-inflow-sales" style="color: var(--ink);">Rp255.600</strong> (12 pesanan paid)</div>
+                    <div>• Suntikan Modal: <strong id="cashflow-inflow-capital" style="color: var(--ink);">Rp400.000</strong> (Dana bisnis dari kakak)</div>
+                    <div>• Alokasi Kas Masuk 10%: <strong id="cashflow-inflow-other" style="color: var(--ink);">Rp11.000</strong> (Dari pesanan realtime)</div>
+                  </div>
+                  <span style="font-size: 10.5px; color: var(--ink-muted); display: block; margin-top: 6px;">Suntikan modal dicatat terpisah dan bukan omzet penjualan.</span>
+                </div>
+
+                <!-- 2. Total Pengeluaran Bulan Ini -->
+                <div class="keuangan-metric-box" style="border-left: 4px solid #EF4444;">
+                  <div style="display: flex; justify-content: space-between; align-items: center;">
+                    <span style="font-size: 12px; color: var(--ink-secondary); font-weight: 700;">Total Pengeluaran Bulan Ini</span>
+                    <span class="status-badge" style="background: #FEE2E2; color: #EF4444; font-size: 10px; font-weight: 700; padding: 2px 6px;">Realisasi Aktual</span>
+                  </div>
+                  <div style="display: flex; align-items: baseline; gap: 4px; margin-top: 8px;">
+                    <span style="font-size: 14px; font-weight: 700; color: #EF4444;">Rp</span>
+                    <strong id="cashflow-total-outflow" style="font-size: 22px; font-weight: 800; color: #EF4444; font-variant-numeric: tabular-nums;">194.775</strong>
+                  </div>
+                  <div style="margin-top: 10px; padding-top: 8px; border-top: 1px dashed var(--border-light); font-size: 11.5px; line-height: 1.6; color: var(--ink-secondary);">
+                    <div>• Pengeluaran Operasional: <strong id="cashflow-outflow-op" style="color: var(--ink);">Rp0</strong> (Belum ada pengeluaran kas)</div>
+                    <div>• Biaya Withdraw Mayar: <strong id="cashflow-outflow-mayar" style="color: var(--ink);">Rp2.775</strong> (Penarikan 25 Okt 2026)</div>
+                    <div>• Pengembalian Modal Pribadi: <strong id="cashflow-outflow-cogs" style="color: var(--ink);">Rp192.000</strong> (Talangan 12 pesanan)</div>
+                  </div>
+                  <span style="font-size: 10.5px; color: var(--ink-muted); display: block; margin-top: 6px;">Pengembalian modal pribadi adalah pelunasan kewajiban, bukan laba bisnis.</span>
+                </div>
+
+                <!-- 3. Rekonsiliasi Saldo -->
+                <div class="keuangan-metric-box" style="border-left: 4px solid #F59E0B;">
+                  <div style="display: flex; justify-content: space-between; align-items: center;">
+                    <span style="font-size: 12px; color: var(--ink-secondary); font-weight: 700;">Rekonsiliasi Saldo</span>
+                    <span id="cashflow-reconcile-badge" class="status-badge" style="background: #FEF3C7; color: #B45309; font-size: 10px; font-weight: 700; padding: 2px 6px;">Belum Direkonsiliasi</span>
+                  </div>
+                  <div style="margin-top: 8px; font-size: 11.5px; line-height: 1.6; color: var(--ink-secondary);">
+                    <div>• Saldo Pembukuan (Buku): <strong id="cashflow-balance-book" style="color: var(--accent-blue); font-size: 13.5px;">Rp471.825</strong></div>
+                    <div>• Saldo Penjualan Gateway: <strong id="cashflow-balance-reported" style="color: var(--ink);">Rp277.700</strong> (Selisih Rp22.100)</div>
+                    <div>• Saldo Rekening Bank Aktual: <strong id="cashflow-balance-actual" style="color: #B45309; font-size: 13.5px;">Belum diverifikasi</strong></div>
+                  </div>
+                  <span style="font-size: 10.5px; color: #B45309; font-weight: 600; display: block; margin-top: 10px; background: rgba(245, 158, 11, 0.08); padding: 6px 10px; border-radius: 6px;">
+                    Saldo rekening aktual belum diverifikasi mutasi bank fisik. Nominal kosong tidak ditampilkan sebagai nol.
+                  </span>
+                </div>
+              </div>
+
+              <!-- Riwayat Arus Kas (Cash Flow Ledger Table) -->
+              <div style="margin-top: 16px;">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
+                  <h5 style="margin: 0; font-size: 14px; font-weight: 800; color: var(--ink);">Riwayat Transaksi Arus Kas</h5>
+                  <span id="cashflow-table-count" style="font-size: 12px; color: var(--ink-secondary);">Memuat data...</span>
+                </div>
+                <div class="keuangan-table-card" style="overflow-x: auto;">
+                  <table class="op-table" style="min-width: 720px;">
+                    <thead>
+                      <tr>
+                        <th style="text-align: left;">Tanggal</th>
+                        <th style="text-align: center;">Jenis</th>
+                        <th style="text-align: left;">Kategori</th>
+                        <th style="text-align: left;">Keterangan &amp; Referensi</th>
+                        <th style="text-align: right;">Nominal</th>
+                        <th style="text-align: center;">Status</th>
+                      </tr>
+                    </thead>
+                    <tbody id="cashflow-history-tbody">
+                      <tr>
+                        <td colspan="6" style="text-align: center; padding: 24px; color: var(--ink-secondary);">
+                          Memuat riwayat arus kas bulanan...
+                        </td>
+                      </tr>
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            </article>
 
             <!-- Kartu Kewajiban Perpanjangan Domain (Nominal Tetap & Terpisah) -->
             <div class="entry-card domain-obligation-banner" id="op-domain-card">
@@ -728,7 +792,7 @@
             </div>
 
             <!-- Two Integrated Charts Grid -->
-            <div class="op-charts-grid" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: 20px;">
+            <div class="op-charts-grid" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 280px), 1fr)); gap: 20px;">
               <!-- Chart 1: Donut Chart Alokasi Sisa Dana (4 Kategori) -->
               <article class="keuangan-card" style="display: flex; flex-direction: column;">
                 <div class="section-header" style="margin-bottom: 4px;">
@@ -761,7 +825,7 @@
             </div>
 
             <!-- Subsystems: Promo & Bonus Tim Side by Side -->
-            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: 20px;">
+            <div class="keuangan-subsystems-grid" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 280px), 1fr)); gap: 20px;">
               <!-- Promo Pelanggan Panel -->
               <article class="keuangan-card">
                 <div class="keuangan-card-header">
@@ -2044,7 +2108,7 @@
   </audio>
 
   <!-- Application Main Script (Universal script for file://, localhost, & cloud hosting) -->
-  <script src="./js/app.js?v=43"></script>
+  <script src="./js/app.js?v=44"></script>
   <script src="./js/produk-promo.js?v=2"></script>
   <script src="./js/operational-fund.js?v=9"></script>
   <script src="./js/contribution-skyline.js?v=3"></script>

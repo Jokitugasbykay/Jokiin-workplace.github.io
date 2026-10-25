@@ -3521,3 +3521,16 @@ body:has(#modal-order-detail.open) { overflow:hidden; }
     width: 100% !important;
   }
 }
+
+
+@media (max-width: 640px) {
+  .op-charts-grid,
+  .keuangan-subsystems-grid {
+    grid-template-columns: 1fr !important;
+  }
+
+  .keuangan-card {
+    padding: 16px 14px !important;
+    border-radius: 14px !important;
+  }
+}
