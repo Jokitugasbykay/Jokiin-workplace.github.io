@@ -1,0 +1,165 @@
+{
+  "operational_fund_summary": {
+    "total_fund": 11000,
+    "total_spent": 0,
+    "initial_fund": 0,
+    "total_inflow": 11000,
+    "domain_status": "unpaid",
+    "current_balance": 11000,
+    "domain_due_date": "2027-09-12",
+    "domain_reserved": 22000,
+    "total_allocated": 0,
+    "allocation_basis": 0,
+    "allocation_ready": false,
+    "domain_obligation": 22000,
+    "reconciliation_status": "pending"
+  },
+  "operational_budgets_status": [
+    {
+      "id": "domain",
+      "icon": "globe",
+      "name": "Perpanjangan domain",
+      "color": "#3158A8",
+      "paid_at": null,
+      "due_date": "2027-09-12",
+      "percentage": null,
+      "paid_amount": 0,
+      "spent_amount": 0,
+      "percent_spent": 0,
+      "payment_status": "unpaid",
+      "allocated_amount": 22000,
+      "remaining_amount": 22000,
+      "is_fixed_obligation": true
+    },
+    {
+      "id": "ai_tools",
+      "icon": "cpu",
+      "name": "AI dan tools produktivitas",
+      "color": "#8B5CF6",
+      "paid_at": null,
+      "due_date": "2027-09-12",
+      "percentage": 20,
+      "paid_amount": 0,
+      "spent_amount": 0,
+      "percent_spent": 0,
+      "payment_status": "unpaid",
+      "allocated_amount": 0,
+      "remaining_amount": 0,
+      "is_fixed_obligation": false
+    },
+    {
+      "id": "bonus",
+      "icon": "award",
+      "name": "Bonus tim paling aktif",
+      "color": "#F59E0B",
+      "paid_at": null,
+      "due_date": "2027-09-12",
+      "percentage": 20,
+      "paid_amount": 0,
+      "spent_amount": 0,
+      "percent_spent": 0,
+      "payment_status": "unpaid",
+      "allocated_amount": 0,
+      "remaining_amount": 0,
+      "is_fixed_obligation": false
+    },
+    {
+      "id": "emergency",
+      "icon": "shield-alert",
+      "name": "Dana darurat",
+      "color": "#EC4899",
+      "paid_at": null,
+      "due_date": "2027-09-12",
+      "percentage": 20,
+      "paid_amount": 0,
+      "spent_amount": 0,
+      "percent_spent": 0,
+      "payment_status": "unpaid",
+      "allocated_amount": 0,
+      "remaining_amount": 0,
+      "is_fixed_obligation": false
+    },
+    {
+      "id": "promo",
+      "icon": "tag",
+      "name": "Promo dan diskon pelanggan",
+      "color": "#10B981",
+      "paid_at": null,
+      "due_date": "2027-09-12",
+      "percentage": 20,
+      "paid_amount": 0,
+      "spent_amount": 0,
+      "percent_spent": 0,
+      "payment_status": "unpaid",
+      "allocated_amount": 0,
+      "remaining_amount": 0,
+      "is_fixed_obligation": false
+    },
+    {
+      "id": "reseller",
+      "icon": "shopping-bag",
+      "name": "Modal reseller produk digital",
+      "color": "#0EA5E9",
+      "paid_at": null,
+      "due_date": "2027-09-12",
+      "percentage": 20,
+      "paid_amount": 0,
+      "spent_amount": 0,
+      "percent_spent": 0,
+      "payment_status": "unpaid",
+      "allocated_amount": 0,
+      "remaining_amount": 0,
+      "is_fixed_obligation": false
+    }
+  ],
+  "business_bookkeeping_records": [
+    {
+      "category": "personal_allocation",
+      "gross_amount": 100000,
+      "net_amount": 100000,
+      "reference_count": 1,
+      "is_business_fund": false,
+      "status": "verified"
+    },
+    {
+      "category": "order_cogs_liability",
+      "gross_amount": 192000,
+      "net_amount": 192000,
+      "reference_count": 12,
+      "is_business_fund": false,
+      "status": "verified"
+    },
+    {
+      "category": "order_profit_allocation",
+      "gross_amount": 255600,
+      "net_amount": 63600,
+      "reference_count": 12,
+      "is_business_fund": true,
+      "status": "verified"
+    },
+    {
+      "category": "reported_sales_reconciliation",
+      "gross_amount": 277700,
+      "net_amount": 277700,
+      "reference_count": 12,
+      "is_business_fund": true,
+      "status": "verified"
+    },
+    {
+      "category": "reconciliation_variance",
+      "gross_amount": 22100,
+      "net_amount": 22100,
+      "reference_count": 12,
+      "is_business_fund": true,
+      "status": "verified"
+    },
+    {
+      "category": "capital_injection",
+      "gross_amount": 500000,
+      "net_amount": 400000,
+      "reference_count": 1,
+      "is_business_fund": true,
+      "status": "verified"
+    }
+  ]
+}

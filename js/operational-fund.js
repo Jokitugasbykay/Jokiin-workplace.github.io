@@ -14,9 +14,9 @@
     resellerInventory: [],
     resellerTransactions: [],
     resellerSummary: {
-      budget_allocated: 2640,
+      budget_allocated: 0,
       capital_spent: 0,
-      capital_remaining: 2640,
+      capital_remaining: 0,
       stock_valuation: 0,
       total_units: 0,
       total_revenue: 0,
@@ -28,6 +28,7 @@
     mayarWithdrawals: [],
     mayarWithdrawalsError: 'Menunggu data pencairan.',
     bookkeepingRecords: [],
+    allocationError: 'Diperlukan rekonsiliasi dasar dana operasional.',
     summary: {
       initial_fund: 0,
       total_inflow: 0,
@@ -47,11 +48,11 @@
 
   const DEFAULT_BUDGETS = [
     { id: 'domain', name: 'Perpanjangan domain', allocated_amount: 22000, percentage: null, is_fixed_obligation: true, due_date: '2027-09-12', payment_status: 'unpaid', color: '#3158A8', icon: 'globe' },
-    { id: 'promo', name: 'Promo dan diskon pelanggan', allocated_amount: 2639, percentage: 20.00, is_fixed_obligation: false, color: '#10B981', icon: 'tag' },
-    { id: 'bonus', name: 'Bonus tim paling aktif', allocated_amount: 2639, percentage: 20.00, is_fixed_obligation: false, color: '#F59E0B', icon: 'award' },
-    { id: 'ai_tools', name: 'AI dan tools produktivitas', allocated_amount: 2639, percentage: 20.00, is_fixed_obligation: false, color: '#8B5CF6', icon: 'cpu' },
-    { id: 'emergency', name: 'Dana darurat', allocated_amount: 2639, percentage: 20.00, is_fixed_obligation: false, color: '#EC4899', icon: 'shield-alert' },
-    { id: 'reseller', name: 'Modal reseller produk digital', allocated_amount: 2640, percentage: 20.00, is_fixed_obligation: false, color: '#0EA5E9', icon: 'shopping-bag' }
+    { id: 'promo', name: 'Promo dan diskon pelanggan', allocated_amount: 0, percentage: 20.00, is_fixed_obligation: false, color: '#10B981', icon: 'tag' },
+    { id: 'bonus', name: 'Bonus tim paling aktif', allocated_amount: 0, percentage: 20.00, is_fixed_obligation: false, color: '#F59E0B', icon: 'award' },
+    { id: 'ai_tools', name: 'AI dan tools produktivitas', allocated_amount: 0, percentage: 20.00, is_fixed_obligation: false, color: '#8B5CF6', icon: 'cpu' },
+    { id: 'emergency', name: 'Dana darurat', allocated_amount: 0, percentage: 20.00, is_fixed_obligation: false, color: '#EC4899', icon: 'shield-alert' },
+    { id: 'reseller', name: 'Modal reseller produk digital', allocated_amount: 0, percentage: 20.00, is_fixed_obligation: false, color: '#0EA5E9', icon: 'shopping-bag' }
   ];
 
   async function fetchOperationalData() {
@@ -68,9 +69,9 @@
         { data: resellerInvData, error: errResellerInv },
         { data: resellerTxData, error: errResellerTx },
         { data: settingsData },
-        { data: summaryData },
+        { data: summaryData, error: errSummary },
         { data: mayarWdData, error: errMayarWd },
-        { data: bkData }
+        { data: bkData, error: errBookkeeping }
       ] = await Promise.all([
         supabase.from('operational_budgets_status').select('*'),
         supabase.from('operational_expenses').select('*').order('created_at', { ascending: false }),
@@ -114,6 +115,19 @@
         ? 'Data pencairan Mayar belum dapat diverifikasi. Segarkan data atau periksa akses database.' : '';
       opData.mayarWithdrawals = opData.mayarWithdrawalsError ? [] : mayarWdData;
       opData.bookkeepingRecords = bkData || [];
+      opData.allocationError = errSummary || !summaryData || errBudgets || errExpenses || errInflows || errBookkeeping
+        ? 'Diperlukan rekonsiliasi: sumber data keuangan belum dapat diverifikasi.'
+        : summaryData.allocation_ready !== true
+          ? 'Diperlukan rekonsiliasi: saldo buku belum dikonfirmasi sebagai dana operasional tersedia.' : '';
+      const projectedRemaining = opData.budgets.filter(b => !b.is_fixed_obligation).reduce((sum, b) => sum + b.remaining_amount, 0);
+      if (!opData.allocationError && projectedRemaining !== Number(summaryData.allocation_basis)) {
+        opData.allocationError = 'Data berubah saat dimuat. Segarkan Keuangan untuk mencocokkan seluruh alokasi.';
+      }
+      if (opData.allocationError) {
+        opData.budgets.forEach(b => {
+          if (!b.is_fixed_obligation) { b.allocated_amount = b.spent_amount; b.remaining_amount = 0; }
+        });
+      }
 
       // Process Reseller Subsystem Data
       opData.resellerInventory = (resellerInvData || []).map(item => ({
@@ -135,9 +149,9 @@
       }));
 
       const resellerBudget = opData.budgets.find(b => b.id === 'reseller') || {
-        allocated_amount: 2640,
+        allocated_amount: 0,
         spent_amount: 0,
-        remaining_amount: 2640
+        remaining_amount: 0
       };
 
       const stockValuation = opData.resellerInventory.reduce((sum, item) => sum + (item.stock_qty * item.unit_cost), 0);
@@ -160,47 +174,24 @@
         profit_margin: profitMargin
       };
 
-      // Calculate Summary
-      let initialFund = 0;
-      if (settingsData && settingsData.length > 0) {
-        const found = settingsData.find(s => s.key === 'initial_fund');
-        if (found) initialFund = parseFloat(found.value) || 0;
-      }
-
-      const activeInflow = opData.inflows
-        .filter(inf => inf.status === 'completed' && !inf.is_refunded)
-        .reduce((sum, inf) => sum + (parseFloat(inf.allocation_amount) || 0), 0);
-
-      const totalFund = initialFund + activeInflow;
-      const totalSpent = opData.expenses.reduce((sum, e) => sum + (parseFloat(e.amount) || 0), 0);
-      const currentBalance = Math.max(0, totalFund - totalSpent);
-
-      const domainBudget = opData.budgets.find(b => b.id === 'domain') || {
-        allocated_amount: 22000,
-        payment_status: 'unpaid',
-        due_date: '2027-09-12'
-      };
-
-      let domainStatus = domainBudget.payment_status || 'unpaid';
-      const dueDate = new Date(domainBudget.due_date || '2027-09-12');
-      if (domainStatus !== 'paid' && new Date() > dueDate) {
-        domainStatus = 'overdue';
-      }
-
+      // All money projections come from the database summary used by category allocations.
       opData.summary = {
-        initial_fund: initialFund,
-        total_inflow: activeInflow,
-        total_fund: totalFund,
-        total_allocated: opData.budgets.reduce((sum, b) => sum + b.allocated_amount, 0),
-        total_spent: totalSpent,
-        current_balance: currentBalance,
-        domain_obligation: domainBudget.allocated_amount || 22000,
-        domain_status: domainStatus,
-        domain_due_date: domainBudget.due_date || '2027-09-12'
+        initial_fund: Number(summaryData?.initial_fund) || 0,
+        total_inflow: Number(summaryData?.total_inflow) || 0,
+        total_fund: Number(summaryData?.total_fund) || 0,
+        total_allocated: Number(summaryData?.total_allocated) || 0,
+        total_spent: Number(summaryData?.total_spent) || 0,
+        current_balance: Number(summaryData?.current_balance) || 0,
+        allocation_basis: opData.allocationError ? 0 : Number(summaryData?.allocation_basis) || 0,
+        allocation_ready: !opData.allocationError,
+        domain_reserved: Number(summaryData?.domain_reserved) || 0,
+        domain_obligation: Number(summaryData?.domain_obligation) || 22000,
+        domain_status: summaryData?.domain_status || 'unpaid',
+        domain_due_date: summaryData?.domain_due_date || '2027-09-12'
       };
-
     } catch (err) {
       console.warn('Gagal memuat data dana operasional:', err);
+      opData.allocationError = 'Diperlukan rekonsiliasi: data keuangan gagal dimuat.';
       opData.mayarWithdrawalsError = 'Data pencairan Mayar belum dapat diverifikasi. Segarkan data atau periksa akses database.';
       opData.budgets = DEFAULT_BUDGETS.map(b => ({
         ...b,
@@ -288,7 +279,13 @@
     if (valBalance) valBalance.textContent = s.current_balance.toLocaleString('id-ID');
     if (valAllocated) valAllocated.textContent = s.total_fund.toLocaleString('id-ID');
     if (valSpent) valSpent.textContent = s.total_spent.toLocaleString('id-ID');
-    if (valRemaining) valRemaining.textContent = s.current_balance.toLocaleString('id-ID');
+    if (valRemaining) valRemaining.textContent = opData.allocationError ? '—' : s.allocation_basis.toLocaleString('id-ID');
+    const status = document.getElementById('op-allocation-status');
+    if (status) status.textContent = opData.allocationError || `Basis alokasi ${formatRupiah(s.allocation_basis)}; kewajiban domain belum dibayar ${formatRupiah(s.domain_reserved)} dipisahkan, bukan pengeluaran.`;
+    const balanceNote = document.getElementById('op-foot-balance');
+    if (balanceNote) balanceNote.textContent = 'Saldo buku; belum menjadi bukti saldo bank. ' + (opData.allocationError || 'Dasar dana operasional terkonfirmasi.');
+    const balancePill = document.getElementById('op-pill-balance');
+    if (balancePill) balancePill.textContent = opData.allocationError ? 'Rekonsiliasi' : 'Terverifikasi';
 
     if (pillFund) {
       pillFund.textContent = s.total_inflow > 0 ? `+${formatRupiah(s.total_inflow)} Realtime` : 'Awal Rp0';
@@ -296,9 +293,7 @@
     }
 
     if (footFund) {
-      footFund.textContent = s.total_inflow > 0 
-        ? `Rp0 awal + ${formatRupiah(s.total_inflow)} dari 10% pesanan` 
-        : 'Total alokasi dana operasional JOKI.IN';
+      footFund.textContent = `${formatRupiah(s.initial_fund)} awal + ${formatRupiah(s.total_inflow)} pemasukan tercatat; pendanaan dan saldo penjualan tidak dijumlahkan lagi.`;
     }
 
     if (pillSpent) {
@@ -308,7 +303,7 @@
 
     if (pillRemaining) {
       const pct = s.total_fund > 0 ? Math.round((s.current_balance / s.total_fund) * 100) : 100;
-      pillRemaining.textContent = `${pct}% Sisa`;
+      pillRemaining.textContent = opData.allocationError ? 'Belum ditetapkan' : `${formatRupiah(s.allocation_basis)} dapat dialokasikan`;
       pillRemaining.className = `ac-12__pill ${pct < 20 ? 'ac-12__pill--down' : 'ac-12__pill--up'}`;
     }
   }
@@ -324,7 +319,21 @@
     // STRICT REQUIREMENT: Domain is NOT included in percentage donut chart.
     // Donut chart visualizes the 5 remaining categories: Promo, Bonus, AI, Emergency, Reseller (each 20%).
     const variableBudgets = opData.budgets.filter(b => !b.is_fixed_obligation && b.id !== 'domain');
-    const totalVar = variableBudgets.reduce((sum, b) => sum + b.allocated_amount, 0) || 1;
+    const totalVar = variableBudgets.reduce((sum, b) => sum + b.remaining_amount, 0);
+    const caption = document.getElementById('op-allocation-caption');
+    if (caption) caption.textContent = opData.allocationError
+      ? 'Target 20% per kategori; kewajiban domain terpisah. Nominal ditetapkan setelah dasar dana dikonfirmasi.'
+      : `Target 20% dari sisa dana sah ${formatRupiah(totalVar)} per kategori. Sisa pembulatan rupiah dibagikan menurut urutan kategori. Kewajiban domain terpisah.`;
+    if (opData.allocationError) {
+      wrap.innerHTML = '<svg viewBox="0 0 260 260" role="img" aria-label="Alokasi menunggu rekonsiliasi"><circle cx="130" cy="130" r="86" fill="none" stroke="#E5E9EF" stroke-width="36"/><text x="130" y="125" text-anchor="middle" fill="var(--ink-secondary)" font-size="13">Menunggu</text><text x="130" y="147" text-anchor="middle" fill="var(--ink)" font-size="15">rekonsiliasi</text></svg>';
+      variableBudgets.forEach(cat => {
+        const item = document.createElement('div');
+        item.textContent = `${cat.name}: target 20% · nominal belum ditetapkan`;
+        item.className = 'chart-caption';
+        legendEl.appendChild(item);
+      });
+      return;
+    }
 
     const size = 260;
     const cx = size / 2;
@@ -341,13 +350,13 @@
 
     let currentAngle = -90; // Start at 12 o'clock
 
-    variableBudgets.forEach((cat) => {
-      const sliceAngle = (cat.allocated_amount / totalVar) * 360;
+    variableBudgets.filter(cat => cat.remaining_amount > 0).forEach((cat) => {
+      const sliceAngle = (cat.remaining_amount / totalVar) * 360;
       const startAngle = currentAngle;
       const endAngle = currentAngle + sliceAngle;
       currentAngle = endAngle;
 
-      const pct = cat.percentage ? cat.percentage.toFixed(2) : ((cat.allocated_amount / totalVar) * 100).toFixed(2);
+      const pct = '20.00';
 
       const startRad = (startAngle * Math.PI) / 180;
       const endRad = (endAngle * Math.PI) / 180;
@@ -380,12 +389,12 @@
       path.setAttribute('tabindex', '0');
 
       const title = document.createElementNS(svgNS, 'title');
-      title.textContent = `${cat.name}: ${formatRupiah(cat.allocated_amount)} (${pct}%)`;
+      title.textContent = `${cat.name}: ${formatRupiah(cat.remaining_amount)} (target ${pct}%)`;
       path.appendChild(title);
 
       path.addEventListener('mouseenter', () => {
         path.setAttribute('opacity', '0.85');
-        updateDonutCenterText(cat.name, formatRupiah(cat.allocated_amount), `${pct}%`);
+        updateDonutCenterText(cat.name, formatRupiah(cat.remaining_amount), `Target ${pct}%`);
       });
 
       path.addEventListener('mouseleave', () => {
@@ -428,7 +437,7 @@
     centerSub.setAttribute('font-weight', '600');
     centerSub.setAttribute('fill', '#10B981');
     centerSub.setAttribute('id', 'op-donut-center-sub');
-    centerSub.textContent = '100% (5 Pos)';
+    centerSub.textContent = totalVar > 0 ? '100% (5 Pos)' : 'Belum ada sisa dana';
 
     textGroup.appendChild(centerLabel);
     textGroup.appendChild(centerVal);
@@ -439,7 +448,7 @@
 
     // Legend for the 4 variable categories
     variableBudgets.forEach(cat => {
-      const pct = cat.percentage ? cat.percentage.toFixed(2) : ((cat.allocated_amount / totalVar) * 100).toFixed(2);
+      const pct = '20.00';
       const item = document.createElement('div');
       item.style.cssText = 'display: flex; justify-content: space-between; align-items: center; font-size: 12px; padding: 3px 0;';
       item.innerHTML = `
@@ -448,7 +457,7 @@
           <span style="color: var(--ink); font-weight: 600;">${cat.name}</span>
         </div>
         <div style="text-align: right; font-weight: 700; color: var(--ink); font-variant-numeric: tabular-nums;">
-          ${formatRupiah(cat.allocated_amount)} <span style="font-size: 11px; color: var(--ink-secondary); font-weight: 500;">(${pct}%)</span>
+          ${formatRupiah(cat.remaining_amount)} <span style="font-size: 11px; color: var(--ink-secondary); font-weight: 500;">(target ${pct}%)</span>
         </div>
       `;
       legendEl.appendChild(item);
@@ -481,22 +490,22 @@
 
     opData.budgets.forEach(cat => {
       const spent = cat.spent_amount || 0;
-      const allocated = cat.allocated_amount || 1;
+      const allocated = cat.allocated_amount || 0;
       const remaining = Math.max(0, allocated - spent);
-      const pctSpent = Math.min(100, (spent / allocated) * 100);
+      const pctSpent = allocated > 0 ? Math.min(100, (spent / allocated) * 100) : 0;
 
       const row = document.createElement('div');
       row.className = 'op-bar-row';
       row.style.cssText = 'display: flex; flex-direction: column; gap: 4px;';
 
       row.innerHTML = `
-        <div style="display: flex; justify-content: space-between; align-items: baseline; font-size: 13px;">
+        <div style="display: flex; flex-wrap: wrap; gap: 6px 12px; justify-content: space-between; align-items: baseline; font-size: 13px;">
           <span style="font-weight: 700; color: var(--ink); display: flex; align-items: center; gap: 6px;">
             <span style="width: 8px; height: 8px; border-radius: 50%; background: ${cat.color};"></span>
             ${cat.name} ${cat.is_fixed_obligation ? '<span style="font-size: 10px; padding: 1px 6px; border-radius: 4px; background: #EBF1FF; color: var(--accent-blue); font-weight: 700;">Nominal Tetap</span>' : ''}
           </span>
           <span style="font-size: 12px; color: var(--ink-secondary);">
-            Anggaran: <strong style="color: var(--ink);">${formatRupiah(allocated)}</strong>
+            Anggaran: <strong style="color: var(--ink);">${opData.allocationError && !cat.is_fixed_obligation ? 'Belum ditetapkan' : formatRupiah(allocated)}</strong>
           </span>
         </div>
         <div style="width: 100%; height: 10px; background: #E5E9EF; border-radius: 999px; overflow: hidden; position: relative;">
@@ -504,7 +513,7 @@
         </div>
         <div style="display: flex; justify-content: space-between; align-items: center; font-size: 11px; color: var(--ink-secondary);">
           <span>Terpakai: <strong style="color: ${spent > 0 ? 'var(--balance-red)' : 'var(--ink)'};">${formatRupiah(spent)}</strong> (${pctSpent.toFixed(1)}%)</span>
-          <span>Sisa: <strong style="color: #10B981;">${formatRupiah(remaining)}</strong></span>
+          <span>Sisa: <strong style="color: #10B981;">${opData.allocationError && !cat.is_fixed_obligation ? '—' : formatRupiah(remaining)}</strong></span>
         </div>
       `;
 
@@ -513,7 +522,7 @@
   }
 
   function renderPromoSubsystem() {
-    const promoCat = opData.budgets.find(b => b.id === 'promo') || { allocated_amount: 4648, spent_amount: 0 };
+    const promoCat = opData.budgets.find(b => b.id === 'promo') || { allocated_amount: 0, spent_amount: 0 };
     const spent = promoCat.spent_amount || 0;
     const remaining = Math.max(0, promoCat.allocated_amount - spent);
 
@@ -522,13 +531,13 @@
     const elRem = document.getElementById('op-promo-remaining');
     const historyContainer = document.getElementById('op-promo-history');
 
-    if (elBudgetBadge) elBudgetBadge.textContent = `Anggaran: ${formatRupiah(promoCat.allocated_amount)}`;
+    if (elBudgetBadge) elBudgetBadge.textContent = opData.allocationError ? 'Anggaran menunggu rekonsiliasi' : `Anggaran: ${formatRupiah(promoCat.allocated_amount)}`;
     if (elSpent) elSpent.textContent = formatRupiah(spent);
-    if (elRem) elRem.textContent = formatRupiah(remaining);
+    if (elRem) elRem.textContent = opData.allocationError ? '—' : formatRupiah(remaining);
 
     if (historyContainer) {
       if (opData.promos.length === 0) {
-        historyContainer.innerHTML = `<p class="chart-caption" style="text-align: center; padding: 16px 0;">Belum ada subsidi promo yang dicatat. Anggaran ${formatRupiah(promoCat.allocated_amount)} masih utuh.</p>`;
+        historyContainer.innerHTML = `<p class="chart-caption" style="text-align: center; padding: 16px 0;">Belum ada subsidi promo yang dicatat. ${opData.allocationError ? 'Anggaran menunggu rekonsiliasi.' : `Sisa anggaran ${formatRupiah(remaining)}.`}</p>`;
       } else {
         historyContainer.innerHTML = opData.promos.map(p => `
           <div style="display: flex; justify-content: space-between; align-items: center; padding: 8px 10px; border-bottom: 1px solid var(--border-light); font-size: 12px;">
@@ -547,7 +556,7 @@
   }
 
   function renderBonusSubsystem() {
-    const bonusCat = opData.budgets.find(b => b.id === 'bonus') || { allocated_amount: 2789, spent_amount: 0 };
+    const bonusCat = opData.budgets.find(b => b.id === 'bonus') || { allocated_amount: 0, spent_amount: 0 };
     const spent = bonusCat.spent_amount || 0;
     const remaining = Math.max(0, bonusCat.allocated_amount - spent);
 
@@ -556,9 +565,9 @@
     const elRem = document.getElementById('op-bonus-remaining');
     const historyContainer = document.getElementById('op-bonus-history');
 
-    if (elBudgetBadge) elBudgetBadge.textContent = `Anggaran: ${formatRupiah(bonusCat.allocated_amount)}`;
+    if (elBudgetBadge) elBudgetBadge.textContent = opData.allocationError ? 'Anggaran menunggu rekonsiliasi' : `Anggaran: ${formatRupiah(bonusCat.allocated_amount)}`;
     if (elSpent) elSpent.textContent = formatRupiah(spent);
-    if (elRem) elRem.textContent = formatRupiah(remaining);
+    if (elRem) elRem.textContent = opData.allocationError ? '—' : formatRupiah(remaining);
 
     if (historyContainer) {
       if (opData.bonuses.length === 0) {
@@ -643,8 +652,8 @@
     const btnTabTx = document.getElementById('op-reseller-tab-history');
     const captionEl = document.getElementById('op-reseller-table-caption');
 
-    if (badge) badge.textContent = `Anggaran: ${formatRupiah(s.budget_allocated)} (20%)`;
-    if (elCash) elCash.textContent = Math.round(s.capital_remaining).toLocaleString('id-ID');
+    if (badge) badge.textContent = opData.allocationError ? 'Anggaran menunggu rekonsiliasi' : `Anggaran: ${formatRupiah(s.budget_allocated)} (target 20%)`;
+    if (elCash) elCash.textContent = opData.allocationError ? '—' : Math.round(s.capital_remaining).toLocaleString('id-ID');
     if (elSpentNote) elSpentNote.textContent = `Belanja stok: ${formatRupiah(s.capital_spent)}`;
     if (elValuation) elValuation.textContent = Math.round(s.stock_valuation).toLocaleString('id-ID');
     if (elStockNote) elStockNote.textContent = `${s.total_units} unit produk tersedia`;
@@ -938,6 +947,7 @@
   }
 
   async function payDomainObligation() {
+    if (!allocationConfirmed()) return false;
     if (opData.summary.current_balance < 22000) {
       alert(`Saldo kas operasional tidak mencukupi untuk membayar kewajiban domain Rp22.000. Saldo saat ini: ${formatRupiah(opData.summary.current_balance)}.`);
       return false;
@@ -969,6 +979,7 @@
   }
 
   async function addExpense(categoryId, amount, description, recipient, notes) {
+    if (!allocationConfirmed()) return false;
     if (amount <= 0) {
       alert('Nominal pengeluaran harus lebih besar dari Rp0.');
       return false;
@@ -1012,6 +1023,7 @@
   }
 
   async function addPromoSubsidy(promoName, amount, description) {
+    if (!allocationConfirmed()) return false;
     if (amount <= 0) {
       alert('Nominal subsidi harus lebih besar dari Rp0.');
       return false;
@@ -1051,6 +1063,7 @@
   }
 
   async function createTeamBonus(adminId, amount, reason, period) {
+    if (!allocationConfirmed()) return false;
     if (amount <= 0) {
       alert('Nominal bonus harus lebih besar dari Rp0.');
       return false;
@@ -1091,6 +1104,7 @@
   }
 
   async function payTeamBonus(targetBonus) {
+    if (!allocationConfirmed()) return false;
     if (!targetBonus) return;
 
     if (targetBonus.amount > opData.summary.current_balance) {
@@ -1122,6 +1136,7 @@
   }
 
   async function recordResellerPurchase(productName, category, qty, unitCost, notes) {
+    if (!allocationConfirmed()) return false;
     const totalNeeded = Math.round(qty * unitCost);
     if (totalNeeded <= 0) {
       alert('Total modal pengadaan harus lebih besar dari Rp0.');
@@ -2014,6 +2029,7 @@
         .on('postgres_changes', { event: '*', schema: 'public', table: 'operational_reseller_transactions' }, handleRealtimeChange)
         .on('postgres_changes', { event: '*', schema: 'public', table: 'orders' }, handleRealtimeChange)
         .on('postgres_changes', { event: '*', schema: 'public', table: 'mayar_monthly_withdrawals' }, handleRealtimeChange)
+        .on('postgres_changes', { event: '*', schema: 'public', table: 'business_bookkeeping_records' }, handleRealtimeChange)
         .subscribe((status, err) => {
           updateRealtimeBadge(status);
           if (status === 'SUBSCRIBED') {
@@ -2048,7 +2064,28 @@
     }, 150);
   }
 
+  function allocationConfirmed() {
+    if (!opData.allocationError) return true;
+    alert(opData.allocationError);
+    return false;
+  }
+
+  function renderBookkeepingReferences() {
+    for (const [id, category] of [
+      ['op-bookkeeping-business-capital', 'capital_injection'],
+      ['op-bookkeeping-personal-capital', 'order_cogs_liability'],
+      ['op-bookkeeping-profit', 'order_profit_allocation'],
+      ['op-bookkeeping-sales', 'reported_sales_reconciliation']
+    ]) {
+      const element = document.getElementById(id);
+      const records = opData.bookkeepingRecords.filter(row => row.category === category);
+      if (element) element.textContent = records.length === 1 && Number.isFinite(Number(records[0].net_amount))
+        ? Number(records[0].net_amount).toLocaleString('id-ID') : '—';
+    }
+  }
+
   function renderAll() {
+    renderBookkeepingReferences();
     renderMayarMonthlyWithdrawals();
     renderKPI();
     renderDomainCard();
@@ -2058,6 +2095,12 @@
     renderBonusSubsystem();
     renderResellerSubsystem();
     renderHistoryTables();
+    for (const id of ['btn-add-expense', 'btn-add-promo-subsidy', 'btn-add-team-bonus', 'btn-add-reseller-quick', 'btn-reseller-add-stock']) {
+      const button = document.getElementById(id);
+      if (button) { button.disabled = Boolean(opData.allocationError); button.title = opData.allocationError; }
+    }
+    const domainButton = document.getElementById('btn-pay-domain');
+    if (domainButton && opData.allocationError) { domainButton.disabled = true; domainButton.title = opData.allocationError; }
   }
 
   // Export to window

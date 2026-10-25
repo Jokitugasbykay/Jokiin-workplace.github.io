@@ -501,7 +501,7 @@
                   </div>
                   <div style="display: flex; align-items: baseline; gap: 4px; margin-top: 6px;">
                     <span style="font-size: 13px; font-weight: 700; color: #B45309;">Rp</span>
-                    <strong style="font-size: 20px; font-weight: 800; color: var(--ink); font-variant-numeric: tabular-nums;">192.000</strong>
+                    <strong id="op-bookkeeping-personal-capital" style="font-size: 20px; font-weight: 800; color: var(--ink); font-variant-numeric: tabular-nums;">192.000</strong>
                   </div>
                   <span style="font-size: 11px; color: var(--ink-secondary); display: block; margin-top: 6px;">12 pesanan x Rp16.000 (Talangan admin)</span>
                 </div>
@@ -514,7 +514,7 @@
                   </div>
                   <div style="display: flex; align-items: baseline; gap: 4px; margin-top: 6px;">
                     <span style="font-size: 13px; font-weight: 700; color: #10B981;">Rp</span>
-                    <strong style="font-size: 20px; font-weight: 800; color: #10B981; font-variant-numeric: tabular-nums;">63.600</strong>
+                    <strong id="op-bookkeeping-profit" style="font-size: 20px; font-weight: 800; color: #10B981; font-variant-numeric: tabular-nums;">63.600</strong>
                   </div>
                   <span style="font-size: 11px; color: var(--ink-secondary); display: block; margin-top: 6px;">12 × Rp21.300 = Rp255.600 bersih; dikurangi talangan Rp192.000. Harga jual Rp22.000 per pesanan.</span>
                 </div>
@@ -527,7 +527,7 @@
                   </div>
                   <div style="display: flex; align-items: baseline; gap: 4px; margin-top: 6px;">
                     <span style="font-size: 13px; font-weight: 700; color: #0EA5E9;">Rp</span>
-                    <strong style="font-size: 20px; font-weight: 800; color: var(--ink); font-variant-numeric: tabular-nums;">277.700</strong>
+                    <strong id="op-bookkeeping-sales" style="font-size: 20px; font-weight: 800; color: var(--ink); font-variant-numeric: tabular-nums;">277.700</strong>
                   </div>
                   <span style="font-size: 11px; color: var(--ink-secondary); display: block; margin-top: 6px;">Selisih Rp22.100 terhadap Rp255.600: perlu direkonsiliasi, sumber belum diketahui.</span>
                 </div>
@@ -646,14 +646,14 @@
                 <!-- Card 1: Saldo Kas Operasional -->
                 <article class="ac-12__card" style="border-left: 4px solid var(--accent-blue);">
                   <div class="ac-12__top">
-                    <p class="ac-12__key">Saldo kas operasional</p>
-                    <span id="op-pill-balance" class="ac-12__pill ac-12__pill--up">Tersedia</span>
+                    <p class="ac-12__key">Saldo buku operasional</p>
+                    <span id="op-pill-balance" class="ac-12__pill ac-12__pill--flat">Rekonsiliasi</span>
                   </div>
                   <p class="ac-12__val">
                     <span class="ac-12__cur">Rp</span>
                     <span id="op-val-balance" class="ac-12__num">0</span>
                   </p>
-                  <p class="ac-12__foot" id="op-foot-balance">Sisa saldo riil kas operasional sistem</p>
+                  <p class="ac-12__foot" id="op-foot-balance">Saldo buku belum menjadi bukti saldo bank.</p>
                 </article>
 
                 <!-- Card 2: Total Dana Operasional -->
@@ -692,7 +692,7 @@
                     <span class="ac-12__cur">Rp</span>
                     <span id="op-val-remaining" class="ac-12__num">0</span>
                   </p>
-                  <p class="ac-12__foot">Saldo kas operasional yang dapat digunakan</p>
+                  <p class="ac-12__foot">Basis alokasi setelah kewajiban domain dipisahkan.</p>
                 </article>
               </div>
             </div>
@@ -734,7 +734,8 @@
                 <div class="section-header" style="margin-bottom: 4px;">
                   <h4 class="section-title" style="font-size: 16px; font-weight: 800;">Alokasi Sisa Dana Operasional</h4>
                 </div>
-                <p class="chart-caption" style="margin-bottom: 16px;">Pembagian target alokasi rata 20% terhadap sisa dana operasional (Rp13.196) untuk 5 pos pengeluaran di luar kewajiban domain.</p>
+                <p id="op-allocation-caption" class="chart-caption" style="margin-bottom: 16px;">Target 20% per kategori setelah dasar dana direkonsiliasi; kewajiban domain terpisah.</p>
+                <p id="op-allocation-status" class="chart-caption" role="status" style="margin-bottom: 12px;">Menunggu verifikasi sumber dana.</p>
                 
                 <div id="op-donut-container" style="display: flex; flex-direction: column; align-items: center; justify-content: center; position: relative; min-height: 240px;">
                   <div id="op-donut-svg-wrap" style="width: 100%; max-width: 260px; height: 260px; position: relative;"></div>
@@ -2045,7 +2046,7 @@
   <!-- Application Main Script (Universal script for file://, localhost, & cloud hosting) -->
   <script src="./js/app.js?v=42"></script>
   <script src="./js/produk-promo.js?v=2"></script>
-  <script src="./js/operational-fund.js?v=7"></script>
+  <script src="./js/operational-fund.js?v=8"></script>
   <script src="./js/contribution-skyline.js?v=3"></script>
 
   <!-- Failsafe Watchdog & Service Worker -->
