@@ -50,6 +50,33 @@ async function refresh(){await api.fetchOperationalData();api.renderAll();return
   assert.match(nodes.get('op-foot-balance').textContent,/Saldo awal Rp5.000 sudah termasuk/);
   assert.notEqual(nodes.get('op-val-balance').textContent,'52.003'); // opening must not be added twice
   assert.equal(data.budgets.filter(b=>b.id!=='domain').reduce((sum,b)=>sum+b.remaining_amount,0),25003);
+  const varBudgets = data.budgets.filter(b => !b.is_fixed_obligation);
+  assert.equal(varBudgets.length, 5, 'Tepat 5 kategori alokasi variabel');
+  assert.ok(varBudgets.every(b => b.percentage === 20), 'Setiap kategori tepat 20%');
+  assert.equal(varBudgets.reduce((sum, b) => sum + b.percentage, 0), 100, 'Total persentase alokasi tepat 100%');
+  assert.deepEqual([...ctx.window.OperationalFund.calculateAllocation(25003, 5)], [5001, 5001, 5001, 5000, 5000], 'Distribusi pembulatan rupiah deterministik');
+  assert.equal(ctx.window.OperationalFund.calculateAllocation(25003, 5).reduce((a, b) => a + b, 0), 25003, 'Total pembulatan sama persis dengan basis');
+
+  // Uji konsistensi persentase 20% dan pembaruan nominal saat saldo berubah
+  const updatedBasis = 35002;
+  const newNominals = [...ctx.window.OperationalFund.calculateAllocation(updatedBasis, 5)];
+  assert.deepEqual(newNominals, [7001, 7001, 7000, 7000, 7000], 'Distribusi deterministik untuk basis baru 35.002');
+  assert.equal(newNominals.reduce((a, b) => a + b, 0), updatedBasis);
+  Object.assign(summary, { allocation_basis: updatedBasis, current_balance: 57002, total_fund: 57002, total_allocated: updatedBasis });
+  fixture.operational_budgets_status.filter(b => b.id !== 'domain').forEach((b, i) => Object.assign(b, { allocated_amount: newNominals[i], remaining_amount: newNominals[i] }));
+  data = await refresh();
+  assert.equal(data.allocationError, '');
+  assert.equal(nodes.get('op-val-remaining').textContent, '35.002');
+  assert.equal(nodes.get('op-val-balance').textContent, '57.002');
+  const refreshedVars = data.budgets.filter(b => !b.is_fixed_obligation);
+  assert.ok(refreshedVars.every(b => b.percentage === 20), 'Kelima kategori tetap 20% setelah refresh');
+  assert.equal(refreshedVars.reduce((sum, b) => sum + b.remaining_amount, 0), updatedBasis, 'Total sisa nominal sama persis dengan saldo terbaru');
+
+  // Kembalikan ke baseline 25003 untuk pengujian berikutnya
+  Object.assign(summary, { allocation_basis: 25003, current_balance: 47003, total_fund: 47003, total_allocated: 25003 });
+  fixture.operational_budgets_status.filter(b => b.id !== 'domain').forEach((b, i) => Object.assign(b, { allocated_amount: i < 3 ? 5001 : 5000, remaining_amount: i < 3 ? 5001 : 5000 }));
+  data = await refresh();
+
   assert.equal(nodes.get('op-promo-remaining').textContent,'Rp5.000');
   assert.equal(nodes.get('op-reseller-cash-remaining').textContent,'5.000');
   assert.equal(nodes.get('btn-add-expense').disabled,false);

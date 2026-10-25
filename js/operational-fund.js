@@ -56,6 +56,16 @@
     { id: 'reseller', name: 'Modal reseller produk digital', allocated_amount: 0, percentage: 20.00, is_fixed_obligation: false, color: '#0EA5E9', icon: 'shopping-bag' }
   ];
 
+  // Pembagian rata ke 5 kategori masing-masing tepat 20%, total 100%.
+  // Sisa pembulatan rupiah didistribusikan secara deterministik dari kategori pertama.
+  function calculateDeterministicAllocation(totalAmount, count = 5) {
+    const total = Math.max(0, Math.floor(Number(totalAmount) || 0));
+    if (count <= 0 || total === 0) return Array(count).fill(0);
+    const base = Math.floor(total / count);
+    const remainder = total % count;
+    return Array.from({ length: count }, (_, i) => base + (i < remainder ? 1 : 0));
+  }
+
   async function fetchOperationalData() {
     opData.loading = true;
     try {
@@ -101,7 +111,7 @@
           spent_amount: parseFloat(b.spent_amount) || 0,
           remaining_amount: parseFloat(b.remaining_amount) || 0,
           percent_spent: parseFloat(b.percent_spent) || 0,
-          percentage: b.percentage ? parseFloat(b.percentage) : null,
+          percentage: b.is_fixed_obligation ? null : 20.00,
           is_fixed_obligation: Boolean(b.is_fixed_obligation),
           due_date: b.due_date || '2027-09-12',
           payment_status: b.payment_status || 'unpaid'
@@ -2601,6 +2611,9 @@
     },
     getData: function () {
       return opData;
+    },
+    calculateAllocation: function (totalAmount, count = 5) {
+      return calculateDeterministicAllocation(totalAmount, count);
     }
   };
 
