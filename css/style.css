@@ -2971,6 +2971,10 @@ body:has(#modal-order-detail.open) { overflow:hidden; }
   font-size: 13px;
 }
 
+#op-mayar-withdrawal-panel .keuangan-table-card { overflow-x: auto; }
+#op-mayar-withdrawal-panel table { min-width: 760px; }
+#op-bookkeeping-panel .keuangan-metric-box { min-width: 0; overflow-wrap: anywhere; }
+
 .keuangan-table-card th {
   background: #F8FAFD;
   color: var(--ink-secondary);

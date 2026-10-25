@@ -18,7 +18,7 @@
   <meta name="theme-color" content="#000000">
 
   <!-- Stylesheet -->
-  <link rel="stylesheet" href="./css/style.css?v=42">
+  <link rel="stylesheet" href="./css/style.css?v=43">
 
   <!-- Supabase JS Library -->
   <script defer src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
@@ -468,7 +468,7 @@
             </div>
 
             <!-- Panel Pembukuan & Rekonsiliasi Arus Kas JOKI.IN -->
-            <article class="keuangan-card" style="border-top: 4px solid var(--accent-blue); margin-bottom: 20px;">
+            <article class="keuangan-card" id="op-bookkeeping-panel" style="border-top: 4px solid var(--accent-blue); margin-bottom: 20px;">
               <div style="display: flex; justify-content: space-between; align-items: flex-start; flex-wrap: wrap; gap: 14px; margin-bottom: 16px;">
                 <div>
                   <div style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">
@@ -488,9 +488,9 @@
                   </div>
                   <div style="display: flex; align-items: baseline; gap: 4px; margin-top: 6px;">
                     <span style="font-size: 13px; font-weight: 700; color: #3158A8;">Rp</span>
-                    <strong style="font-size: 20px; font-weight: 800; color: var(--ink); font-variant-numeric: tabular-nums;">300.000</strong>
+                    <strong id="op-bookkeeping-business-capital" style="font-size: 20px; font-weight: 800; color: var(--ink); font-variant-numeric: tabular-nums;">400.000</strong>
                   </div>
-                  <span style="font-size: 11px; color: var(--ink-secondary); display: block; margin-top: 6px;">Total Rp400.000 (-Rp100.000 keperluan pribadi)</span>
+                  <span style="font-size: 11px; color: var(--ink-secondary); display: block; margin-top: 6px;">Total dana awal kakak Rp500.000. Alokasi pribadi Kayla Rp100.000 di luar dana bisnis; pendanaan bukan omzet.</span>
                 </div>
 
                 <!-- 2. Modal 12 Pesanan (Uang Pribadi Admin) -->
@@ -516,25 +516,30 @@
                     <span style="font-size: 13px; font-weight: 700; color: #10B981;">Rp</span>
                     <strong style="font-size: 20px; font-weight: 800; color: #10B981; font-variant-numeric: tabular-nums;">63.600</strong>
                   </div>
-                  <span style="font-size: 11px; color: var(--ink-secondary); display: block; margin-top: 6px;">Bersih Rp255.600 - Modal Rp192.000</span>
+                  <span style="font-size: 11px; color: var(--ink-secondary); display: block; margin-top: 6px;">12 × Rp21.300 = Rp255.600 bersih; dikurangi talangan Rp192.000. Harga jual Rp22.000 per pesanan.</span>
                 </div>
 
                 <!-- 4. Saldo Penjualan Dilaporkan -->
                 <div class="keuangan-metric-box" style="border-left: 3px solid #0EA5E9;">
                   <div style="display: flex; justify-content: space-between; align-items: center;">
                     <span style="font-size: 11px; color: var(--ink-secondary); font-weight: 600;">Saldo Penjualan Riil</span>
-                    <span class="status-badge" style="background: rgba(14, 165, 233, 0.12); color: #0EA5E9; font-size: 10px; font-weight: 700; padding: 2px 6px;">Gateway/Rekening</span>
+                    <span class="status-badge" style="background: rgba(14, 165, 233, 0.12); color: #0EA5E9; font-size: 10px; font-weight: 700; padding: 2px 6px;">Dilaporkan</span>
                   </div>
                   <div style="display: flex; align-items: baseline; gap: 4px; margin-top: 6px;">
                     <span style="font-size: 13px; font-weight: 700; color: #0EA5E9;">Rp</span>
                     <strong style="font-size: 20px; font-weight: 800; color: var(--ink); font-variant-numeric: tabular-nums;">277.700</strong>
                   </div>
-                  <span style="font-size: 11px; color: var(--ink-secondary); display: block; margin-top: 6px;">Selisih rekonsiliasi: Rp22.100</span>
+                  <span style="font-size: 11px; color: var(--ink-secondary); display: block; margin-top: 6px;">Selisih Rp22.100 terhadap Rp255.600: perlu direkonsiliasi, sumber belum diketahui.</span>
+                </div>
+                <div class="keuangan-metric-box">
+                  <span style="font-size: 11px; color: var(--ink-secondary); font-weight: 600;">Saldo Awal Kas JOKI.IN</span>
+                  <div style="margin-top: 6px; font-size: 20px; font-weight: 800;">Rp0</div>
+                  <span style="font-size: 11px; color: var(--ink-secondary); display: block; margin-top: 6px;">Saldo awal pembukuan baru, bukan saldo rekening saat ini. Laba Rp63.600 dialokasikan ke kas bisnis.</span>
                 </div>
               </div>
 
               <div style="background: var(--bg-body); border: 1px solid var(--border); border-radius: 12px; padding: 12px 16px; font-size: 12px; color: var(--ink-secondary); line-height: 1.6;">
-                <strong style="color: var(--ink);">Ketentuan Tata Kelola Keuangan:</strong> Saldo kas awal JOKI.IN ditetapkan ulang menjadi Rp0 sebagai saldo awal pembukuan baru yang bersih. Modal pesanan Rp192.000 berasal dari dana talangan pribadi admin dan dicatat terpisah sebagai kewajiban pengembalian modal (bukan keuntungan bisnis). Dana Rp100.000 dari suntikan dana kakak dipisahkan untuk keperluan pribadi dan tidak dihitung ke kas bisnis. Saldo penjualan Rp277.700 tetap utuh mencerminkan dana nyata yang tersedia.
+                <strong style="color: var(--ink);">Ketentuan Tata Kelola Keuangan:</strong> Referensi pembukuan berdasarkan laporan 25 Oktober 2026; saldo rekening aktual perlu dicocokkan dengan mutasi. Dana bisnis Rp400.000 tidak dikurangi talangan pribadi admin Rp192.000. Pengembalian talangan adalah pelunasan kewajiban, bukan keuntungan. Saldo penjualan yang dilaporkan Rp277.700 mencakup penerimaan yang dihitung Rp255.600; keduanya tidak dijumlahkan. Selisih Rp22.100 belum dialokasikan sebagai laba. Pendanaan dan laba bukan bukti seluruh dana masih tersedia, dan angka referensi ini tidak otomatis menambahkan transaksi kas.
               </div>
             </article>
 
@@ -599,9 +604,9 @@
                   <span style="font-size: 11px; color: var(--ink-secondary); font-weight: 600; display: block;">Total Pencairan Terkonfirmasi</span>
                   <div style="display: flex; align-items: baseline; gap: 4px; margin-top: 6px;">
                     <span style="font-size: 13px; font-weight: 700; color: #10B981;">Rp</span>
-                    <strong id="op-mayar-total-success-net" style="font-size: 20px; font-weight: 800; color: #10B981; font-variant-numeric: tabular-nums;">0</strong>
+                    <strong id="op-mayar-total-success-net" style="font-size: 20px; font-weight: 800; color: #10B981; font-variant-numeric: tabular-nums;">—</strong>
                   </div>
-                  <span id="op-mayar-total-count-note" style="font-size: 11px; color: var(--ink-secondary); display: block; margin-top: 6px;">0 transaksi terkonfirmasi</span>
+                  <span id="op-mayar-total-count-note" role="status" style="font-size: 11px; color: var(--ink-secondary); display: block; margin-top: 6px;">Menunggu data pencairan.</span>
                 </div>
               </div>
 
@@ -1983,7 +1988,7 @@
             <option value="failed">Failed (Gagal)</option>
             <option value="cancelled">Cancelled (Dibatalkan)</option>
           </select>
-          <span style="font-size: 11px; color: var(--ink-secondary); margin-top: 4px; display: block;">Status awal adalah pending sampai dana terkonfirmasi di rekening.</span>
+          <span style="font-size: 11px; color: var(--ink-secondary); margin-top: 4px; display: block;">Status awal pending. Status berhasil membutuhkan konfirmasi dana sudah diterima. Isi referensi transaksi jika tersedia.</span>
         </div>
         <div class="form-group">
           <label class="form-label" for="mayar-withdraw-notes" style="font-size: 12px; font-weight: 700; color: var(--ink);">Catatan Tambahan (Opsional)</label>
@@ -2040,7 +2045,7 @@
   <!-- Application Main Script (Universal script for file://, localhost, & cloud hosting) -->
   <script src="./js/app.js?v=42"></script>
   <script src="./js/produk-promo.js?v=2"></script>
-  <script src="./js/operational-fund.js?v=6"></script>
+  <script src="./js/operational-fund.js?v=7"></script>
   <script src="./js/contribution-skyline.js?v=3"></script>
 
   <!-- Failsafe Watchdog & Service Worker -->

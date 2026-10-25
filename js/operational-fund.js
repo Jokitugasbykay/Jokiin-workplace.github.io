@@ -26,6 +26,7 @@
     },
     activeResellerTab: 'inventory',
     mayarWithdrawals: [],
+    mayarWithdrawalsError: 'Menunggu data pencairan.',
     bookkeepingRecords: [],
     summary: {
       initial_fund: 0,
@@ -68,7 +69,7 @@
         { data: resellerTxData, error: errResellerTx },
         { data: settingsData },
         { data: summaryData },
-        { data: mayarWdData },
+        { data: mayarWdData, error: errMayarWd },
         { data: bkData }
       ] = await Promise.all([
         supabase.from('operational_budgets_status').select('*'),
@@ -109,7 +110,9 @@
       opData.bonuses = bonusesData || [];
       opData.promos = promosData || [];
       opData.inflows = inflowsData || [];
-      opData.mayarWithdrawals = mayarWdData || [];
+      opData.mayarWithdrawalsError = errMayarWd || !Array.isArray(mayarWdData)
+        ? 'Data pencairan Mayar belum dapat diverifikasi. Segarkan data atau periksa akses database.' : '';
+      opData.mayarWithdrawals = opData.mayarWithdrawalsError ? [] : mayarWdData;
       opData.bookkeepingRecords = bkData || [];
 
       // Process Reseller Subsystem Data
@@ -198,6 +201,7 @@
 
     } catch (err) {
       console.warn('Gagal memuat data dana operasional:', err);
+      opData.mayarWithdrawalsError = 'Data pencairan Mayar belum dapat diverifikasi. Segarkan data atau periksa akses database.';
       opData.budgets = DEFAULT_BUDGETS.map(b => ({
         ...b,
         spent_amount: 0,
@@ -1284,6 +1288,20 @@
   // ========================================================
   // Mayar Monthly Withdrawal Subsystem
   // ========================================================
+  function mayarScheduleDate(now = new Date()) {
+    const date = new Intl.DateTimeFormat('en-CA', { timeZone: 'Asia/Jakarta', year: 'numeric', month: '2-digit', day: '2-digit' }).format(now);
+    return date.slice(0, 7) + '-25';
+  }
+
+  function confirmedMayarWithdrawal(w) {
+    const gross = Number(w.gross_amount);
+    const fee = Number(w.fee_amount);
+    const net = Number(w.net_amount);
+    return w.status === 'success' && Boolean(w.confirmed_by)
+      && Number.isFinite(Date.parse(w.confirmed_at)) && Number.isSafeInteger(gross) && gross > 2775
+      && fee === 2775 && Number.isSafeInteger(net) && net === gross - fee;
+  }
+
   function renderMayarMonthlyWithdrawals() {
     const tbody = document.getElementById('op-mayar-withdrawals-tbody');
     const scheduleBadge = document.getElementById('op-mayar-schedule-badge');
@@ -1292,14 +1310,11 @@
     const totalNetEl = document.getElementById('op-mayar-total-success-net');
     const countNoteEl = document.getElementById('op-mayar-total-count-note');
 
-    // Reference date: current actual date (2026-10-25)
     const today = new Date();
-    const currentYear = today.getFullYear();
-    const currentMonth = today.getMonth(); // 0-based
-    const currentDay = today.getDate();
+    const currentDay = Number(new Intl.DateTimeFormat('en-US', { timeZone: 'Asia/Jakarta', day: 'numeric' }).format(today));
 
     // Scheduled date string for this month (YYYY-MM-25)
-    const thisMonthStr = `${currentYear}-${String(currentMonth + 1).padStart(2, '0')}-25`;
+    const thisMonthStr = mayarScheduleDate(today);
     const recordedThisMonth = (opData.mayarWithdrawals || []).find(
       w => w.scheduled_date === thisMonthStr && !['cancelled', 'failed'].includes(w.status)
     );
@@ -1311,7 +1326,9 @@
     if (currentDay === 25) {
       if (statusSubtextEl) {
         if (recordedThisMonth) {
-          statusSubtextEl.textContent = `Tercatat untuk hari ini (${recordedThisMonth.status.toUpperCase()})`;
+          statusSubtextEl.textContent = recordedThisMonth.status === 'success' && !confirmedMayarWithdrawal(recordedThisMonth)
+            ? 'Tercatat berhasil, tetapi bukti/nominal masih perlu diverifikasi.'
+            : `Tercatat untuk hari ini (${recordedThisMonth.status.toUpperCase()})`;
           statusSubtextEl.style.color = recordedThisMonth.status === 'success' ? '#10B981' : '#D97706';
         } else {
           statusSubtextEl.textContent = 'Hari Jadwal Pencairan (Tanggal 25) - Siap Dicatat';
@@ -1326,7 +1343,9 @@
     } else if (currentDay > 25) {
       if (recordedThisMonth) {
         if (statusSubtextEl) {
-          statusSubtextEl.textContent = `Pencairan tanggal 25 tercatat (${recordedThisMonth.status.toUpperCase()})`;
+          statusSubtextEl.textContent = recordedThisMonth.status === 'success' && !confirmedMayarWithdrawal(recordedThisMonth)
+            ? 'Tercatat berhasil, tetapi bukti/nominal masih perlu diverifikasi.'
+            : `Pencairan tanggal 25 tercatat (${recordedThisMonth.status.toUpperCase()})`;
           statusSubtextEl.style.color = recordedThisMonth.status === 'success' ? '#10B981' : '#D97706';
         }
         if (scheduleBadge) {
@@ -1357,19 +1376,24 @@
       }
     }
 
-    // Total net successful
-    const successList = (opData.mayarWithdrawals || []).filter(w => w.status === 'success');
-    const totalNetSuccess = successList.reduce((sum, w) => sum + (parseFloat(w.net_amount) || 0), 0);
+    const successList = opData.mayarWithdrawals.filter(confirmedMayarWithdrawal);
+    const unverifiedCount = opData.mayarWithdrawals.filter(w => w.status === 'success' && !confirmedMayarWithdrawal(w)).length;
+    const totalNetSuccess = successList.reduce((sum, w) => sum + Number(w.net_amount), 0);
     if (totalNetEl) {
-      totalNetEl.textContent = totalNetSuccess.toLocaleString('id-ID');
+      totalNetEl.textContent = opData.mayarWithdrawalsError ? '—' : totalNetSuccess.toLocaleString('id-ID');
     }
     if (countNoteEl) {
       const allCount = (opData.mayarWithdrawals || []).length;
-      countNoteEl.textContent = `${allCount} pencatatan (${successList.length} berhasil cair)`;
+      countNoteEl.textContent = opData.mayarWithdrawalsError || `${allCount} pencatatan (${successList.length} terkonfirmasi)${unverifiedCount ? `; ${unverifiedCount} perlu verifikasi bukti/nominal` : ''}`;
     }
 
     // Render table
     if (!tbody) return;
+    if (opData.mayarWithdrawalsError) {
+      tbody.innerHTML = `<tr><td colspan="7" style="padding:24px;text-align:center;">${escapeHtml(opData.mayarWithdrawalsError)}</td></tr>`;
+      if (statusSubtextEl) statusSubtextEl.textContent = 'Status pencairan belum terverifikasi.';
+      return;
+    }
     if (!opData.mayarWithdrawals || opData.mayarWithdrawals.length === 0) {
       tbody.innerHTML = `
         <tr>
@@ -1383,9 +1407,9 @@
 
     tbody.innerHTML = opData.mayarWithdrawals.map(w => {
       const gross = parseFloat(w.gross_amount) || 0;
-      const fee = parseFloat(w.fee_amount) || 2775;
-      const net = parseFloat(w.net_amount) || (gross - fee);
-      const statusBadge = getMayarStatusBadge(w.status);
+      const fee = w.fee_amount == null ? 2775 : Number(w.fee_amount);
+      const net = w.net_amount == null ? gross - fee : Number(w.net_amount);
+      const statusBadge = getMayarStatusBadge(w.status) + (w.status === 'success' && !confirmedMayarWithdrawal(w) ? '<div>Belum terverifikasi</div>' : '');
       const ref = w.transaction_reference ? escapeHtml(w.transaction_reference) : '-';
       const notes = w.notes ? escapeHtml(w.notes) : '';
 
@@ -1411,7 +1435,7 @@
             ${ref}
           </td>
           <td style="text-align: center;">
-            <button class="btn-outline btn-update-mayar-status" data-id="${w.id}" data-date="${w.scheduled_date}" data-net="${net}" data-status="${w.status}" data-ref="${w.transaction_reference || ''}" style="height: 30px; padding: 0 10px; font-size: 11px; font-weight: 700; border-radius: 8px;">
+            <button class="btn-outline btn-update-mayar-status" data-id="${escapeHtml(w.id)}" data-date="${escapeHtml(w.scheduled_date)}" data-net="${net}" data-status="${escapeHtml(w.status)}" data-ref="${escapeHtml(w.transaction_reference || '')}" style="height: 30px; padding: 0 10px; font-size: 11px; font-weight: 700; border-radius: 8px;">
               Ubah Status
             </button>
           </td>
@@ -1480,8 +1504,21 @@
 
   async function recordMayarWithdrawal(scheduledDate, grossAmount, refNumber, initialStatus, notes) {
     const fee = 2775;
-    if (!grossAmount || grossAmount <= fee) {
+    if (!Number.isSafeInteger(grossAmount) || grossAmount <= fee) {
       alert('Nominal bruto penarikan wajib lebih besar daripada biaya penarikan Rp2.775.');
+      return false;
+    }
+    if (!/^\d{4}-(0[1-9]|1[0-2])-25$/.test(scheduledDate) || !Number.isFinite(Date.parse(scheduledDate))
+      || !['pending', 'processing', 'success', 'failed', 'cancelled'].includes(initialStatus)) {
+      alert('Pilih jadwal tanggal 25 dan status transaksi yang valid.');
+      return false;
+    }
+    if (opData.mayarWithdrawalsError) {
+      alert('Muat ulang data pencairan sebelum mencatat transaksi agar tidak terjadi duplikasi.');
+      return false;
+    }
+    if (initialStatus === 'success' && !confirm('Sudah memeriksa transaksi Mayar dan memastikan dana bersih benar-benar masuk ke rekening? Sertakan referensi transaksi jika tersedia.')) {
+      alert('Status berhasil memerlukan konfirmasi penerimaan dana.');
       return false;
     }
 
@@ -1497,6 +1534,7 @@
       const supabase = await getSupabase();
       const currentAdmin = (typeof state !== 'undefined' && state.admin) ? state.admin : {};
 
+      if (!currentAdmin.id) throw new Error('Sesi admin belum tersedia. Muat ulang lalu coba lagi.');
       const { data, error } = await supabase
         .from('mayar_monthly_withdrawals')
         .insert([{
@@ -1506,14 +1544,15 @@
           status: initialStatus || 'pending',
           transaction_reference: refNumber || null,
           notes: notes || null,
-          recorded_by: currentAdmin.id || null
+          recorded_by: currentAdmin.id || null,
+          ...(initialStatus === 'success' ? { confirmed_by: currentAdmin.id, confirmed_at: new Date().toISOString() } : {})
         }])
         .select()
         .single();
 
       if (error) throw error;
 
-      alert(`Pencatatan penarikan Mayar tanggal ${scheduledDate} berhasil disimpan dengan status [${initialStatus || 'pending'}]. Nominal bersih diterima: ${formatRupiah(grossAmount - fee)}.`);
+      alert(`Pencatatan penarikan Mayar tanggal ${scheduledDate} disimpan dengan status [${initialStatus}]. Nominal bersih transaksi: ${formatRupiah(grossAmount - fee)}.`);
       closeModal('modal-record-mayar-withdraw');
       await fetchOperationalData();
       renderAll();
@@ -1526,10 +1565,16 @@
 
   async function updateMayarWithdrawalStatus(withdrawalId, newStatus, refNumber) {
     if (!withdrawalId) return false;
+    if (!['pending', 'processing', 'success', 'failed', 'cancelled'].includes(newStatus)) return false;
+    if (newStatus === 'success' && !confirm('Sudah memeriksa transaksi Mayar dan memastikan dana bersih benar-benar masuk ke rekening? Sertakan referensi transaksi jika tersedia.')) {
+      alert('Status berhasil memerlukan konfirmasi penerimaan dana.');
+      return false;
+    }
     try {
       const supabase = await getSupabase();
       const currentAdmin = (typeof state !== 'undefined' && state.admin) ? state.admin : {};
 
+      if (!currentAdmin.id) throw new Error('Sesi admin belum tersedia. Muat ulang lalu coba lagi.');
       const updatePayload = {
         status: newStatus,
         updated_at: new Date().toISOString()
@@ -1543,7 +1588,9 @@
       const { error } = await supabase
         .from('mayar_monthly_withdrawals')
         .update(updatePayload)
-        .eq('id', withdrawalId);
+        .eq('id', withdrawalId)
+        .select('id')
+        .single();
 
       if (error) throw error;
 
@@ -1565,7 +1612,7 @@
     if (btnRecordMayar) {
       btnRecordMayar.addEventListener('click', () => {
         const dateInput = document.getElementById('mayar-withdraw-date');
-        if (dateInput) dateInput.value = '2026-10-25';
+        if (dateInput) dateInput.value = mayarScheduleDate();
         updateMayarCalc();
         openModal('modal-record-mayar-withdraw');
       });
@@ -1611,7 +1658,11 @@
           return;
         }
 
-        await recordMayarWithdrawal(date, gross, ref, status, notes);
+        const button = document.getElementById('btn-submit-mayar-withdraw');
+        if (button.disabled) return;
+        button.disabled = true;
+        try { await recordMayarWithdrawal(date, gross, ref, status, notes); }
+        finally { button.disabled = false; }
       });
     }
 
@@ -1623,7 +1674,11 @@
         const status = document.getElementById('update-mayar-status-select').value;
         const ref = document.getElementById('update-mayar-ref').value.trim();
 
-        await updateMayarWithdrawalStatus(id, status, ref);
+        const button = document.getElementById('btn-submit-update-mayar-status');
+        if (button.disabled) return;
+        button.disabled = true;
+        try { await updateMayarWithdrawalStatus(id, status, ref); }
+        finally { button.disabled = false; }
       });
     }
 
@@ -1691,7 +1746,6 @@
       btnResellerTabInv.addEventListener('click', () => {
         opData.activeResellerTab = 'inventory';
         renderResellerSubsystem();
-    renderMayarMonthlyWithdrawals();
       });
     }
 
@@ -1959,6 +2013,7 @@
         .on('postgres_changes', { event: '*', schema: 'public', table: 'operational_reseller_inventory' }, handleRealtimeChange)
         .on('postgres_changes', { event: '*', schema: 'public', table: 'operational_reseller_transactions' }, handleRealtimeChange)
         .on('postgres_changes', { event: '*', schema: 'public', table: 'orders' }, handleRealtimeChange)
+        .on('postgres_changes', { event: '*', schema: 'public', table: 'mayar_monthly_withdrawals' }, handleRealtimeChange)
         .subscribe((status, err) => {
           updateRealtimeBadge(status);
           if (status === 'SUBSCRIBED') {
@@ -1994,6 +2049,7 @@
   }
 
   function renderAll() {
+    renderMayarMonthlyWithdrawals();
     renderKPI();
     renderDomainCard();
     renderDonutChart();
