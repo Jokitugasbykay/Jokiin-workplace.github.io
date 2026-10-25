@@ -1163,7 +1163,7 @@ function createOrderCard(ord) {
     statusSelectorHtml = `
       <div style="display: flex; align-items: center; gap: 8px; margin-top: 4px;">
         <span style="font-size: 13px; font-weight: 600;">Ubah status:</span>
-        <select class="form-input order-status-select" data-order-id="${ord.id}" data-current-status="${ord.status || 'pending'}" style="height: 38px; padding: 0 10px; font-size: 13px; border-radius: 10px; flex: 1;">
+        <select class="form-input form-select order-status-select" data-order-id="${ord.id}" data-current-status="${ord.status || 'pending'}" style="height: 38px; font-size: 13px; border-radius: 10px; flex: 1; min-width: 0;">
           <option value="" disabled selected>Pilih Status</option>
           ${targets.map(s => `<option value="${s}">${statusLabel(s)}</option>`).join('')}
         </select>

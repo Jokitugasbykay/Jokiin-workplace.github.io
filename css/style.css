@@ -430,29 +430,158 @@ input, textarea, select, button {
   box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.12);
 }
 
-/* Keep native select behavior while styling the opened menu where supported. */
+/* ========================================================
+   Unified Dropdown and Select System
+   Cross-browser appearance, custom chevron, focus states,
+   touch target ergonomics, and text ellipsis.
+   ======================================================== */
+
+select,
+select.form-input,
+select.form-select,
+.form-select {
+  appearance: none;
+  -webkit-appearance: none;
+  -moz-appearance: none;
+  display: block;
+  width: 100%;
+  height: 46px;
+  min-height: 44px;
+  padding: 0 38px 0 14px;
+  border-radius: 12px;
+  border: 1px solid var(--border);
+  background-color: #FFFFFF;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%235A6474' stroke-width='2.2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'%3E%3C/polyline%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 14px center;
+  background-size: 16px 16px;
+  font-family: var(--font-family);
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--ink);
+  line-height: 1.4;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  overflow: hidden;
+  cursor: pointer;
+  outline: none;
+  box-shadow: 0 1px 2px rgba(24, 34, 46, 0.04);
+  transition: border-color 0.15s ease, box-shadow 0.15s ease, background-image 0.15s ease;
+}
+
+select:hover:not(:disabled),
+select.form-input:hover:not(:disabled),
+select.form-select:hover:not(:disabled),
+.form-select:hover:not(:disabled) {
+  border-color: #3158A8;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%233158A8' stroke-width='2.2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'%3E%3C/polyline%3E%3C/svg%3E");
+}
+
+select:focus,
+select.form-input:focus,
+select.form-select:focus,
+.form-select:focus {
+  border-color: #2563EB;
+  box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.15);
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%232563EB' stroke-width='2.2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'%3E%3C/polyline%3E%3C/svg%3E");
+}
+
+select:disabled,
+select.form-input:disabled,
+select.form-select:disabled,
+.form-select:disabled {
+  background-color: var(--bg-primary);
+  color: var(--ink-muted);
+  cursor: not-allowed;
+  opacity: 0.65;
+  border-color: var(--border-light);
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%23A0AEC0' stroke-width='2.2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'%3E%3C/polyline%3E%3C/svg%3E");
+}
+
+/* Compact select variant (filters, table controls, order cards) */
+.form-select-sm,
+.order-status-select,
+#op-filter-category {
+  height: 38px !important;
+  min-height: 38px !important;
+  font-size: 13px !important;
+  padding: 0 32px 0 12px !important;
+  border-radius: 10px !important;
+  background-position: right 10px center !important;
+  background-size: 14px 14px !important;
+}
+
+/* Modal and dialog select styling */
+.modal-sheet select.form-select,
+.modal-sheet select.form-input {
+  height: 44px;
+  min-height: 44px;
+  font-size: 13.5px;
+  padding: 0 36px 0 12px;
+  border-radius: 10px;
+  margin-top: 4px;
+}
+
+/* Option elements across desktop browsers */
+select option,
+select.form-input option,
+select.form-select option,
+.form-select option {
+  font-family: var(--font-family);
+  font-size: 14px;
+  background: #FFFFFF;
+  color: var(--ink);
+  padding: 8px 12px;
+}
+
+select option:checked,
+select.form-input option:checked,
+select.form-select option:checked {
+  background-color: var(--accent-blue-bg);
+  color: var(--accent-blue);
+  font-weight: 600;
+}
+
+select option:disabled {
+  color: var(--ink-muted);
+}
+
+/* Invoice Order Selector Row */
+.invoice-selector-row {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+  flex-wrap: wrap;
+}
+
+.invoice-selector-row select {
+  flex: 1 1 240px;
+  min-width: 0;
+  max-width: 100%;
+  height: 46px;
+}
+
+.invoice-selector-row .btn-primary {
+  width: auto;
+  padding: 0 20px;
+  height: 46px;
+  border-radius: 12px;
+  font-size: 14px;
+  flex-shrink: 0;
+}
+
+/* Progressive enhancement for browsers supporting base-select */
 @supports (appearance: base-select) {
   select.form-input,
-  select.form-input::picker(select) {
+  select.form-select,
+  .form-select {
     appearance: base-select;
   }
 
-  select.form-input {
-    display: flex;
-    align-items: center;
-    gap: 10px;
-    cursor: pointer;
-    line-height: 1.35;
-  }
-
-  select.form-input::picker-icon {
-    color: var(--ink-secondary);
-    transition: transform 160ms ease-out;
-  }
-
-  select.form-input:open::picker-icon { transform: rotate(180deg); }
-
-  select.form-input::picker(select) {
+  select.form-input::picker(select),
+  select.form-select::picker(select),
+  .form-select::picker(select) {
+    appearance: base-select;
     width: max(220px, anchor-size(width));
     max-width: min(480px, calc(100vw - 24px));
     max-height: min(320px, 50dvh);
@@ -463,32 +592,7 @@ input, textarea, select, button {
     background: var(--bg-surface);
     box-shadow: 0 14px 36px rgba(24, 34, 46, 0.16);
   }
-
-  select.form-input option {
-    min-height: 42px;
-    padding: 10px 12px;
-    border-radius: 9px;
-    color: var(--ink);
-    background: var(--bg-surface);
-    line-height: 1.4;
-    white-space: normal;
-    overflow-wrap: anywhere;
-    cursor: pointer;
-  }
-
-  select.form-input option:hover,
-  select.form-input option:focus-visible {
-    background: var(--accent-blue-bg);
-    color: var(--accent-blue);
-  }
-
-  select.form-input option:checked {
-    background: var(--accent-blue-bg);
-    color: var(--accent-blue);
-    font-weight: 700;
-  }
-
-  select.form-input option::checkmark { color: var(--accent-blue); }
+}
 }
 
 .btn-primary {
@@ -3370,5 +3474,50 @@ body:has(#modal-order-detail.open) { overflow:hidden; }
   .skyline-footer {
     flex-direction: column;
     align-items: flex-start;
+  }
+}
+
+
+/* Controls for operational filters and invoice selector */
+#op-expenses-filter-controls {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+  flex-wrap: wrap;
+}
+
+#op-expenses-filter-controls select {
+  flex: 1 1 180px;
+  min-width: 140px;
+}
+
+#op-expenses-filter-controls input {
+  flex: 1 1 200px;
+  min-width: 160px;
+}
+
+@media (max-width: 640px) {
+  #op-expenses-filter-controls {
+    flex-direction: column !important;
+    align-items: stretch !important;
+    gap: 8px !important;
+    width: 100%;
+  }
+
+  #op-expenses-filter-controls select,
+  #op-expenses-filter-controls input {
+    width: 100% !important;
+    min-width: 0 !important;
+    max-width: 100% !important;
+  }
+
+  .invoice-selector-row {
+    flex-direction: column !important;
+    align-items: stretch !important;
+  }
+
+  .invoice-selector-row select,
+  .invoice-selector-row .btn-primary {
+    width: 100% !important;
   }
 }
