@@ -72,7 +72,8 @@ const confirmed = { id: 'one', scheduled_date: '2026-10-25', gross_amount: 10000
 
   const html = fs.readFileSync('index.html', 'utf8');
   const panel = html.split('id="op-bookkeeping-panel"')[1].split('</article>')[0];
-  for (const value of ['400.000', '500.000', '100.000', '192.000', '21.300', '255.600', '63.600', '277.700', '22.100', 'Rp0']) assert.ok(panel.includes(value), value);
+  for (const value of ['400.000', '500.000', '100.000', '192.000', '21.300', '255.600', '63.600', '277.700', '22.100']) assert.ok(panel.includes(value), value);
+  assert.ok(panel.includes('id="op-bookkeeping-opening-balance"')); // opening value is loaded from the canonical summary
   assert.ok(!panel.includes('300.000'));
   assert.equal(12 * 16000, 192000);
   assert.equal(12 * 21300, 255600);

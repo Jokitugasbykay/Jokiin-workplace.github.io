@@ -29,6 +29,7 @@
     mayarWithdrawalsError: 'Menunggu data pencairan.',
     bookkeepingRecords: [],
     allocationError: 'Diperlukan rekonsiliasi dasar dana operasional.',
+    summaryLoaded: false,
     summary: {
       initial_fund: 0,
       total_inflow: 0,
@@ -115,7 +116,9 @@
         ? 'Data pencairan Mayar belum dapat diverifikasi. Segarkan data atau periksa akses database.' : '';
       opData.mayarWithdrawals = opData.mayarWithdrawalsError ? [] : mayarWdData;
       opData.bookkeepingRecords = bkData || [];
-      opData.allocationError = errSummary || !summaryData || errBudgets || errExpenses || errInflows || errBookkeeping
+      opData.summaryLoaded = !errSummary && summaryData && !Array.isArray(summaryData)
+        && ['initial_fund', 'current_balance', 'total_fund'].every(key => summaryData[key] != null && Number.isFinite(Number(summaryData[key])));
+      opData.allocationError = !opData.summaryLoaded || errBudgets || errExpenses || errInflows || errBookkeeping
         ? 'Diperlukan rekonsiliasi: sumber data keuangan belum dapat diverifikasi.'
         : summaryData.allocation_ready !== true
           ? 'Diperlukan rekonsiliasi: saldo buku belum dikonfirmasi sebagai dana operasional tersedia.' : '';
@@ -191,6 +194,7 @@
       };
     } catch (err) {
       console.warn('Gagal memuat data dana operasional:', err);
+      opData.summaryLoaded = false;
       opData.allocationError = 'Diperlukan rekonsiliasi: data keuangan gagal dimuat.';
       opData.mayarWithdrawalsError = 'Data pencairan Mayar belum dapat diverifikasi. Segarkan data atau periksa akses database.';
       opData.budgets = DEFAULT_BUDGETS.map(b => ({
@@ -276,14 +280,20 @@
     const pillFund = document.getElementById('op-pill-fund');
     const footFund = document.getElementById('op-foot-fund');
 
-    if (valBalance) valBalance.textContent = s.current_balance.toLocaleString('id-ID');
-    if (valAllocated) valAllocated.textContent = s.total_fund.toLocaleString('id-ID');
+    const openingBalance = document.getElementById('op-bookkeeping-opening-balance');
+    if (openingBalance) openingBalance.textContent = opData.summaryLoaded ? formatRupiah(s.initial_fund) : '—';
+    if (valBalance) valBalance.textContent = !opData.summaryLoaded || opData.allocationError ? '—' : s.current_balance.toLocaleString('id-ID');
+    if (valAllocated) valAllocated.textContent = opData.summaryLoaded ? s.total_fund.toLocaleString('id-ID') : '—';
     if (valSpent) valSpent.textContent = s.total_spent.toLocaleString('id-ID');
     if (valRemaining) valRemaining.textContent = opData.allocationError ? '—' : s.allocation_basis.toLocaleString('id-ID');
     const status = document.getElementById('op-allocation-status');
     if (status) status.textContent = opData.allocationError || `Basis alokasi ${formatRupiah(s.allocation_basis)}; kewajiban domain belum dibayar ${formatRupiah(s.domain_reserved)} dipisahkan, bukan pengeluaran.`;
     const balanceNote = document.getElementById('op-foot-balance');
-    if (balanceNote) balanceNote.textContent = 'Saldo buku; belum menjadi bukti saldo bank. ' + (opData.allocationError || 'Dasar dana operasional terkonfirmasi.');
+    if (balanceNote) balanceNote.textContent = !opData.summaryLoaded
+      ? 'Ringkasan kas gagal dimuat. Saldo belum dapat ditampilkan.'
+      : opData.allocationError
+        ? `Kas belum terkonfirmasi. Saldo buku ${formatRupiah(s.current_balance)} = awal ${formatRupiah(s.initial_fund)} + pemasukan ${formatRupiah(s.total_inflow)} − pengeluaran ${formatRupiah(s.total_spent)}. Saldo awal sudah termasuk; jangan ditambahkan lagi.`
+        : `Kas terkonfirmasi dari saldo berjalan. Saldo awal ${formatRupiah(s.initial_fund)} sudah termasuk. Kewajiban domain ${formatRupiah(s.domain_reserved)} dipisahkan pada Dana Siap Dialokasikan, bukan saldo kas tambahan.`;
     const balancePill = document.getElementById('op-pill-balance');
     if (balancePill) balancePill.textContent = opData.allocationError ? 'Rekonsiliasi' : 'Terverifikasi';
 
