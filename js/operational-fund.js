@@ -25,13 +25,15 @@
       profit_margin: 0
     },
     activeResellerTab: 'inventory',
+    mayarWithdrawals: [],
+    bookkeepingRecords: [],
     summary: {
-      initial_fund: 35196,
+      initial_fund: 0,
       total_inflow: 0,
-      total_fund: 35196,
-      total_allocated: 35196,
+      total_fund: 0,
+      total_allocated: 0,
       total_spent: 0,
-      current_balance: 35196,
+      current_balance: 0,
       domain_obligation: 22000,
       domain_status: 'unpaid',
       domain_due_date: '2027-09-12'
@@ -65,7 +67,9 @@
         { data: resellerInvData, error: errResellerInv },
         { data: resellerTxData, error: errResellerTx },
         { data: settingsData },
-        { data: summaryData }
+        { data: summaryData },
+        { data: mayarWdData },
+        { data: bkData }
       ] = await Promise.all([
         supabase.from('operational_budgets_status').select('*'),
         supabase.from('operational_expenses').select('*').order('created_at', { ascending: false }),
@@ -75,7 +79,9 @@
         supabase.from('operational_reseller_inventory').select('*').order('product_name', { ascending: true }),
         supabase.from('operational_reseller_transactions').select('*').order('created_at', { ascending: false }),
         supabase.from('operational_settings').select('*'),
-        supabase.from('operational_fund_summary').select('*').single()
+        supabase.from('operational_fund_summary').select('*').single(),
+        supabase.from('mayar_monthly_withdrawals').select('*').order('scheduled_date', { ascending: false }),
+        supabase.from('business_bookkeeping_records').select('*').order('created_at', { ascending: true })
       ]);
 
       if (errBudgets || !budgetsData || budgetsData.length === 0) {
@@ -103,6 +109,8 @@
       opData.bonuses = bonusesData || [];
       opData.promos = promosData || [];
       opData.inflows = inflowsData || [];
+      opData.mayarWithdrawals = mayarWdData || [];
+      opData.bookkeepingRecords = bkData || [];
 
       // Process Reseller Subsystem Data
       opData.resellerInventory = (resellerInvData || []).map(item => ({
@@ -150,10 +158,10 @@
       };
 
       // Calculate Summary
-      let initialFund = 35196;
+      let initialFund = 0;
       if (settingsData && settingsData.length > 0) {
         const found = settingsData.find(s => s.key === 'initial_fund');
-        if (found) initialFund = parseFloat(found.value) || 35196;
+        if (found) initialFund = parseFloat(found.value) || 0;
       }
 
       const activeInflow = opData.inflows
@@ -197,12 +205,12 @@
         percent_spent: 0
       }));
       opData.summary = {
-        initial_fund: 35196,
+        initial_fund: 0,
         total_inflow: 0,
-        total_fund: 35196,
-        total_allocated: 35196,
+        total_fund: 0,
+        total_allocated: 0,
         total_spent: 0,
-        current_balance: 35196,
+        current_balance: 0,
         domain_obligation: 22000,
         domain_status: 'unpaid',
         domain_due_date: '2027-09-12'
@@ -279,13 +287,13 @@
     if (valRemaining) valRemaining.textContent = s.current_balance.toLocaleString('id-ID');
 
     if (pillFund) {
-      pillFund.textContent = s.total_inflow > 0 ? `+${formatRupiah(s.total_inflow)} Realtime` : 'Awal Rp35.196';
+      pillFund.textContent = s.total_inflow > 0 ? `+${formatRupiah(s.total_inflow)} Realtime` : 'Awal Rp0';
       pillFund.className = `ac-12__pill ${s.total_inflow > 0 ? 'ac-12__pill--up' : 'ac-12__pill--flat'}`;
     }
 
     if (footFund) {
       footFund.textContent = s.total_inflow > 0 
-        ? `Rp35.196 awal + ${formatRupiah(s.total_inflow)} dari 10% pesanan` 
+        ? `Rp0 awal + ${formatRupiah(s.total_inflow)} dari 10% pesanan` 
         : 'Total alokasi dana operasional JOKI.IN';
     }
 
@@ -884,7 +892,7 @@
       tbody.innerHTML = `
         <tr>
           <td colspan="5" style="text-align: center; padding: 24px; color: var(--ink-secondary);">
-            Belum ada pemasukan 10% dari pesanan baru. Alokasi awal Rp35.196 aktif.
+            Belum ada pemasukan 10% dari pesanan baru. Alokasi awal Rp0 aktif.
           </td>
         </tr>
       `;
@@ -1272,7 +1280,353 @@
     `).join('');
   }
 
+
+  // ========================================================
+  // Mayar Monthly Withdrawal Subsystem
+  // ========================================================
+  function renderMayarMonthlyWithdrawals() {
+    const tbody = document.getElementById('op-mayar-withdrawals-tbody');
+    const scheduleBadge = document.getElementById('op-mayar-schedule-badge');
+    const dateTextEl = document.getElementById('op-mayar-current-date-text');
+    const statusSubtextEl = document.getElementById('op-mayar-date-status-subtext');
+    const totalNetEl = document.getElementById('op-mayar-total-success-net');
+    const countNoteEl = document.getElementById('op-mayar-total-count-note');
+
+    // Reference date: current actual date (2026-10-25)
+    const today = new Date();
+    const currentYear = today.getFullYear();
+    const currentMonth = today.getMonth(); // 0-based
+    const currentDay = today.getDate();
+
+    // Scheduled date string for this month (YYYY-MM-25)
+    const thisMonthStr = `${currentYear}-${String(currentMonth + 1).padStart(2, '0')}-25`;
+    const recordedThisMonth = (opData.mayarWithdrawals || []).find(
+      w => w.scheduled_date === thisMonthStr && !['cancelled', 'failed'].includes(w.status)
+    );
+
+    if (dateTextEl) {
+      dateTextEl.textContent = formatIndoDate(thisMonthStr);
+    }
+
+    if (currentDay === 25) {
+      if (statusSubtextEl) {
+        if (recordedThisMonth) {
+          statusSubtextEl.textContent = `Tercatat untuk hari ini (${recordedThisMonth.status.toUpperCase()})`;
+          statusSubtextEl.style.color = recordedThisMonth.status === 'success' ? '#10B981' : '#D97706';
+        } else {
+          statusSubtextEl.textContent = 'Hari Jadwal Pencairan (Tanggal 25) - Siap Dicatat';
+          statusSubtextEl.style.color = '#10B981';
+        }
+      }
+      if (scheduleBadge) {
+        scheduleBadge.textContent = 'Jadwal Hari Ini: Tanggal 25';
+        scheduleBadge.style.background = '#E6F8F0';
+        scheduleBadge.style.color = '#10B981';
+      }
+    } else if (currentDay > 25) {
+      if (recordedThisMonth) {
+        if (statusSubtextEl) {
+          statusSubtextEl.textContent = `Pencairan tanggal 25 tercatat (${recordedThisMonth.status.toUpperCase()})`;
+          statusSubtextEl.style.color = recordedThisMonth.status === 'success' ? '#10B981' : '#D97706';
+        }
+        if (scheduleBadge) {
+          scheduleBadge.textContent = 'Pencairan Bulan Ini Tercatat';
+          scheduleBadge.style.background = '#E6F8F0';
+          scheduleBadge.style.color = '#10B981';
+        }
+      } else {
+        if (statusSubtextEl) {
+          statusSubtextEl.textContent = 'Status: Terlambat / Menunggu Konfirmasi';
+          statusSubtextEl.style.color = '#EF4444';
+        }
+        if (scheduleBadge) {
+          scheduleBadge.textContent = 'Pencairan Terlambat';
+          scheduleBadge.style.background = '#FEE2E2';
+          scheduleBadge.style.color = '#EF4444';
+        }
+      }
+    } else {
+      if (statusSubtextEl) {
+        statusSubtextEl.textContent = `Menunggu tanggal 25 (${25 - currentDay} hari lagi)`;
+        statusSubtextEl.style.color = '#3158A8';
+      }
+      if (scheduleBadge) {
+        scheduleBadge.textContent = 'Jadwal: Tanggal 25';
+        scheduleBadge.style.background = '#E8EDF8';
+        scheduleBadge.style.color = '#3158A8';
+      }
+    }
+
+    // Total net successful
+    const successList = (opData.mayarWithdrawals || []).filter(w => w.status === 'success');
+    const totalNetSuccess = successList.reduce((sum, w) => sum + (parseFloat(w.net_amount) || 0), 0);
+    if (totalNetEl) {
+      totalNetEl.textContent = totalNetSuccess.toLocaleString('id-ID');
+    }
+    if (countNoteEl) {
+      const allCount = (opData.mayarWithdrawals || []).length;
+      countNoteEl.textContent = `${allCount} pencatatan (${successList.length} berhasil cair)`;
+    }
+
+    // Render table
+    if (!tbody) return;
+    if (!opData.mayarWithdrawals || opData.mayarWithdrawals.length === 0) {
+      tbody.innerHTML = `
+        <tr>
+          <td colspan="7" style="text-align: center; padding: 24px; color: var(--ink-secondary);">
+            Belum ada catatan pencairan Mayar. Jika sudah melakukan penarikan tanggal 25 di Dashboard Mayar, klik tombol "Catat Pencairan Mayar".
+          </td>
+        </tr>
+      `;
+      return;
+    }
+
+    tbody.innerHTML = opData.mayarWithdrawals.map(w => {
+      const gross = parseFloat(w.gross_amount) || 0;
+      const fee = parseFloat(w.fee_amount) || 2775;
+      const net = parseFloat(w.net_amount) || (gross - fee);
+      const statusBadge = getMayarStatusBadge(w.status);
+      const ref = w.transaction_reference ? escapeHtml(w.transaction_reference) : '-';
+      const notes = w.notes ? escapeHtml(w.notes) : '';
+
+      return `
+        <tr>
+          <td style="font-weight: 700; color: var(--ink);">
+            ${formatIndoDate(w.scheduled_date)}
+            ${notes ? `<div style="font-size: 11px; font-weight: normal; color: var(--ink-secondary);">${notes}</div>` : ''}
+          </td>
+          <td style="text-align: right; font-weight: 700; color: var(--ink); font-variant-numeric: tabular-nums;">
+            ${formatRupiah(gross)}
+          </td>
+          <td style="text-align: right; color: var(--balance-red); font-variant-numeric: tabular-nums;">
+            -${formatRupiah(fee)}
+          </td>
+          <td style="text-align: right; font-weight: 800; color: #10B981; font-variant-numeric: tabular-nums;">
+            ${formatRupiah(net)}
+          </td>
+          <td style="text-align: center;">
+            ${statusBadge}
+          </td>
+          <td style="font-family: monospace; font-size: 12px; color: var(--ink);">
+            ${ref}
+          </td>
+          <td style="text-align: center;">
+            <button class="btn-outline btn-update-mayar-status" data-id="${w.id}" data-date="${w.scheduled_date}" data-net="${net}" data-status="${w.status}" data-ref="${w.transaction_reference || ''}" style="height: 30px; padding: 0 10px; font-size: 11px; font-weight: 700; border-radius: 8px;">
+              Ubah Status
+            </button>
+          </td>
+        </tr>
+      `;
+    }).join('');
+
+    // Attach listeners to Ubah Status buttons
+    tbody.querySelectorAll('.btn-update-mayar-status').forEach(btn => {
+      btn.addEventListener('click', () => {
+        const id = btn.getAttribute('data-id');
+        const date = btn.getAttribute('data-date');
+        const net = parseFloat(btn.getAttribute('data-net')) || 0;
+        const currentStatus = btn.getAttribute('data-status');
+        const currentRef = btn.getAttribute('data-ref') || '';
+
+        const idInput = document.getElementById('update-mayar-id');
+        const dateLabel = document.getElementById('update-mayar-date-label');
+        const netLabel = document.getElementById('update-mayar-net-label');
+        const statusSelect = document.getElementById('update-mayar-status-select');
+        const refInput = document.getElementById('update-mayar-ref');
+
+        if (idInput) idInput.value = id;
+        if (dateLabel) dateLabel.textContent = formatIndoDate(date);
+        if (netLabel) netLabel.textContent = formatRupiah(net);
+        if (statusSelect) statusSelect.value = currentStatus;
+        if (refInput) refInput.value = currentRef;
+
+        openModal('modal-update-mayar-status');
+      });
+    });
+  }
+
+  function getMayarStatusBadge(status) {
+    switch (status) {
+      case 'success':
+        return '<span class="status-badge" style="background: #E6F8F0; color: #10B981; font-weight: 700; font-size: 11px; padding: 3px 8px; border-radius: 6px;">Success</span>';
+      case 'processing':
+        return '<span class="status-badge" style="background: #E8EDF8; color: #3158A8; font-weight: 700; font-size: 11px; padding: 3px 8px; border-radius: 6px;">Processing</span>';
+      case 'failed':
+        return '<span class="status-badge" style="background: #FEE2E2; color: #EF4444; font-weight: 700; font-size: 11px; padding: 3px 8px; border-radius: 6px;">Failed</span>';
+      case 'cancelled':
+        return '<span class="status-badge" style="background: #F3F4F6; color: #6B7280; font-weight: 700; font-size: 11px; padding: 3px 8px; border-radius: 6px;">Cancelled</span>';
+      case 'pending':
+      default:
+        return '<span class="status-badge" style="background: #FEF3C7; color: #B45309; font-weight: 700; font-size: 11px; padding: 3px 8px; border-radius: 6px;">Pending</span>';
+    }
+  }
+
+  function formatIndoDate(dateStr) {
+    if (!dateStr) return '-';
+    try {
+      const parts = dateStr.split('-');
+      if (parts.length === 3) {
+        const y = parseInt(parts[0], 10);
+        const m = parseInt(parts[1], 10) - 1;
+        const d = parseInt(parts[2], 10);
+        const months = ['Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni', 'Juli', 'Agustus', 'September', 'Oktober', 'November', 'Desember'];
+        return `${d} ${months[m]} ${y}`;
+      }
+      return dateStr;
+    } catch (e) {
+      return dateStr;
+    }
+  }
+
+  async function recordMayarWithdrawal(scheduledDate, grossAmount, refNumber, initialStatus, notes) {
+    const fee = 2775;
+    if (!grossAmount || grossAmount <= fee) {
+      alert('Nominal bruto penarikan wajib lebih besar daripada biaya penarikan Rp2.775.');
+      return false;
+    }
+
+    const existing = (opData.mayarWithdrawals || []).find(
+      w => w.scheduled_date === scheduledDate && !['cancelled', 'failed'].includes(w.status)
+    );
+    if (existing) {
+      alert(`Sudah ada pencatatan pencairan aktif untuk tanggal ${scheduledDate} dengan status [${existing.status}]. Gunakan tombol 'Ubah Status' jika ingin memperbarui transaksinya.`);
+      return false;
+    }
+
+    try {
+      const supabase = await getSupabase();
+      const currentAdmin = (typeof state !== 'undefined' && state.admin) ? state.admin : {};
+
+      const { data, error } = await supabase
+        .from('mayar_monthly_withdrawals')
+        .insert([{
+          scheduled_date: scheduledDate,
+          gross_amount: grossAmount,
+          fee_amount: fee,
+          status: initialStatus || 'pending',
+          transaction_reference: refNumber || null,
+          notes: notes || null,
+          recorded_by: currentAdmin.id || null
+        }])
+        .select()
+        .single();
+
+      if (error) throw error;
+
+      alert(`Pencatatan penarikan Mayar tanggal ${scheduledDate} berhasil disimpan dengan status [${initialStatus || 'pending'}]. Nominal bersih diterima: ${formatRupiah(grossAmount - fee)}.`);
+      closeModal('modal-record-mayar-withdraw');
+      await fetchOperationalData();
+      renderAll();
+      return true;
+    } catch (err) {
+      alert('Gagal mencatat penarikan Mayar: ' + err.message);
+      return false;
+    }
+  }
+
+  async function updateMayarWithdrawalStatus(withdrawalId, newStatus, refNumber) {
+    if (!withdrawalId) return false;
+    try {
+      const supabase = await getSupabase();
+      const currentAdmin = (typeof state !== 'undefined' && state.admin) ? state.admin : {};
+
+      const updatePayload = {
+        status: newStatus,
+        updated_at: new Date().toISOString()
+      };
+      if (refNumber) updatePayload.transaction_reference = refNumber;
+      if (newStatus === 'success') {
+        updatePayload.confirmed_by = currentAdmin.id || null;
+        updatePayload.confirmed_at = new Date().toISOString();
+      }
+
+      const { error } = await supabase
+        .from('mayar_monthly_withdrawals')
+        .update(updatePayload)
+        .eq('id', withdrawalId);
+
+      if (error) throw error;
+
+      alert(`Status pencairan Mayar berhasil diperbarui menjadi [${newStatus}].`);
+      closeModal('modal-update-mayar-status');
+      await fetchOperationalData();
+      renderAll();
+      return true;
+    } catch (err) {
+      alert('Gagal memperbarui status pencairan Mayar: ' + err.message);
+      return false;
+    }
+  }
+
   function setupEventListeners() {
+
+    // Mayar Monthly Withdrawal Actions & Form Listeners
+    const btnRecordMayar = document.getElementById('btn-record-mayar-withdraw');
+    if (btnRecordMayar) {
+      btnRecordMayar.addEventListener('click', () => {
+        const dateInput = document.getElementById('mayar-withdraw-date');
+        if (dateInput) dateInput.value = '2026-10-25';
+        updateMayarCalc();
+        openModal('modal-record-mayar-withdraw');
+      });
+    }
+
+    const mayarGrossInput = document.getElementById('mayar-withdraw-gross');
+    const mayarCalcGrossEl = document.getElementById('mayar-calc-gross');
+    const mayarCalcNetEl = document.getElementById('mayar-calc-net');
+
+    function updateMayarCalc() {
+      const gross = parseFloat(mayarGrossInput?.value) || 0;
+      const fee = 2775;
+      const net = Math.max(0, gross - fee);
+
+      if (mayarCalcGrossEl) mayarCalcGrossEl.textContent = formatRupiah(gross);
+      if (mayarCalcNetEl) {
+        mayarCalcNetEl.textContent = gross > fee ? formatRupiah(net) : 'Rp0 (Bruto < Biaya)';
+        mayarCalcNetEl.style.color = gross > fee ? '#10B981' : '#EF4444';
+      }
+    }
+
+    if (mayarGrossInput) {
+      mayarGrossInput.addEventListener('input', updateMayarCalc);
+    }
+
+    const formRecordMayar = document.getElementById('form-record-mayar-withdraw');
+    if (formRecordMayar) {
+      formRecordMayar.addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const date = document.getElementById('mayar-withdraw-date').value;
+        const gross = parseFloat(document.getElementById('mayar-withdraw-gross').value) || 0;
+        const ref = document.getElementById('mayar-withdraw-ref').value.trim();
+        const status = document.getElementById('mayar-withdraw-status-select').value;
+        const notes = document.getElementById('mayar-withdraw-notes').value.trim();
+
+        if (!date) {
+          alert('Tanggal jadwal penarikan wajib diisi.');
+          return;
+        }
+
+        if (gross <= 2775) {
+          alert('Nominal bruto penarikan wajib lebih besar dari biaya penarikan Rp2.775.');
+          return;
+        }
+
+        await recordMayarWithdrawal(date, gross, ref, status, notes);
+      });
+    }
+
+    const formUpdateMayar = document.getElementById('form-update-mayar-status');
+    if (formUpdateMayar) {
+      formUpdateMayar.addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const id = document.getElementById('update-mayar-id').value;
+        const status = document.getElementById('update-mayar-status-select').value;
+        const ref = document.getElementById('update-mayar-ref').value.trim();
+
+        await updateMayarWithdrawalStatus(id, status, ref);
+      });
+    }
+
     // Action Buttons
     const btnExpense = document.getElementById('btn-add-expense');
     if (btnExpense) {
@@ -1337,6 +1691,7 @@
       btnResellerTabInv.addEventListener('click', () => {
         opData.activeResellerTab = 'inventory';
         renderResellerSubsystem();
+    renderMayarMonthlyWithdrawals();
       });
     }
 

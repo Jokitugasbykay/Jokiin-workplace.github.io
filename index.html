@@ -467,6 +467,174 @@
               </div>
             </div>
 
+            <!-- Panel Pembukuan & Rekonsiliasi Arus Kas JOKI.IN -->
+            <article class="keuangan-card" style="border-top: 4px solid var(--accent-blue); margin-bottom: 20px;">
+              <div style="display: flex; justify-content: space-between; align-items: flex-start; flex-wrap: wrap; gap: 14px; margin-bottom: 16px;">
+                <div>
+                  <div style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">
+                    <h4 class="section-title" style="margin: 0; font-size: 17px; font-weight: 800;">Pembukuan & Rekonsiliasi Arus Kas JOKI.IN</h4>
+                    <span class="status-badge" style="background: rgba(49, 88, 168, 0.12); color: var(--accent-blue); font-weight: 700; font-size: 11px;">Audit Baseline 25 Oktober 2026</span>
+                  </div>
+                  <p class="chart-caption" style="margin-top: 4px;">Pemisahan transparan antara modal bisnis, talangan modal pribadi admin, laba bersih penjualan, dan saldo penjualan riil.</p>
+                </div>
+              </div>
+
+              <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(210px, 1fr)); gap: 14px; margin-bottom: 16px;">
+                <!-- 1. Suntikan Modal Bisnis -->
+                <div class="keuangan-metric-box" style="border-left: 3px solid #3158A8;">
+                  <div style="display: flex; justify-content: space-between; align-items: center;">
+                    <span style="font-size: 11px; color: var(--ink-secondary); font-weight: 600;">Suntikan Modal Bisnis</span>
+                    <span class="status-badge" style="background: #E8EDF8; color: #3158A8; font-size: 10px; font-weight: 700; padding: 2px 6px;">Dana Kakak</span>
+                  </div>
+                  <div style="display: flex; align-items: baseline; gap: 4px; margin-top: 6px;">
+                    <span style="font-size: 13px; font-weight: 700; color: #3158A8;">Rp</span>
+                    <strong style="font-size: 20px; font-weight: 800; color: var(--ink); font-variant-numeric: tabular-nums;">300.000</strong>
+                  </div>
+                  <span style="font-size: 11px; color: var(--ink-secondary); display: block; margin-top: 6px;">Total Rp400.000 (-Rp100.000 keperluan pribadi)</span>
+                </div>
+
+                <!-- 2. Modal 12 Pesanan (Uang Pribadi Admin) -->
+                <div class="keuangan-metric-box" style="border-left: 3px solid #F59E0B;">
+                  <div style="display: flex; justify-content: space-between; align-items: center;">
+                    <span style="font-size: 11px; color: var(--ink-secondary); font-weight: 600;">Modal 12 Pesanan</span>
+                    <span class="status-badge" style="background: #FEF3C7; color: #B45309; font-size: 10px; font-weight: 700; padding: 2px 6px;">Uang Pribadi Admin</span>
+                  </div>
+                  <div style="display: flex; align-items: baseline; gap: 4px; margin-top: 6px;">
+                    <span style="font-size: 13px; font-weight: 700; color: #B45309;">Rp</span>
+                    <strong style="font-size: 20px; font-weight: 800; color: var(--ink); font-variant-numeric: tabular-nums;">192.000</strong>
+                  </div>
+                  <span style="font-size: 11px; color: var(--ink-secondary); display: block; margin-top: 6px;">12 pesanan x Rp16.000 (Talangan admin)</span>
+                </div>
+
+                <!-- 3. Laba Bersih 12 Pesanan -->
+                <div class="keuangan-metric-box" style="border-left: 3px solid #10B981;">
+                  <div style="display: flex; justify-content: space-between; align-items: center;">
+                    <span style="font-size: 11px; color: var(--ink-secondary); font-weight: 600;">Laba Bersih 12 Pesanan</span>
+                    <span class="status-badge" style="background: #E6F8F0; color: #10B981; font-size: 10px; font-weight: 700; padding: 2px 6px;">Masuk Kas Bisnis</span>
+                  </div>
+                  <div style="display: flex; align-items: baseline; gap: 4px; margin-top: 6px;">
+                    <span style="font-size: 13px; font-weight: 700; color: #10B981;">Rp</span>
+                    <strong style="font-size: 20px; font-weight: 800; color: #10B981; font-variant-numeric: tabular-nums;">63.600</strong>
+                  </div>
+                  <span style="font-size: 11px; color: var(--ink-secondary); display: block; margin-top: 6px;">Bersih Rp255.600 - Modal Rp192.000</span>
+                </div>
+
+                <!-- 4. Saldo Penjualan Dilaporkan -->
+                <div class="keuangan-metric-box" style="border-left: 3px solid #0EA5E9;">
+                  <div style="display: flex; justify-content: space-between; align-items: center;">
+                    <span style="font-size: 11px; color: var(--ink-secondary); font-weight: 600;">Saldo Penjualan Riil</span>
+                    <span class="status-badge" style="background: rgba(14, 165, 233, 0.12); color: #0EA5E9; font-size: 10px; font-weight: 700; padding: 2px 6px;">Gateway/Rekening</span>
+                  </div>
+                  <div style="display: flex; align-items: baseline; gap: 4px; margin-top: 6px;">
+                    <span style="font-size: 13px; font-weight: 700; color: #0EA5E9;">Rp</span>
+                    <strong style="font-size: 20px; font-weight: 800; color: var(--ink); font-variant-numeric: tabular-nums;">277.700</strong>
+                  </div>
+                  <span style="font-size: 11px; color: var(--ink-secondary); display: block; margin-top: 6px;">Selisih rekonsiliasi: Rp22.100</span>
+                </div>
+              </div>
+
+              <div style="background: var(--bg-body); border: 1px solid var(--border); border-radius: 12px; padding: 12px 16px; font-size: 12px; color: var(--ink-secondary); line-height: 1.6;">
+                <strong style="color: var(--ink);">Ketentuan Tata Kelola Keuangan:</strong> Saldo kas awal JOKI.IN ditetapkan ulang menjadi Rp0 sebagai saldo awal pembukuan baru yang bersih. Modal pesanan Rp192.000 berasal dari dana talangan pribadi admin dan dicatat terpisah sebagai kewajiban pengembalian modal (bukan keuntungan bisnis). Dana Rp100.000 dari suntikan dana kakak dipisahkan untuk keperluan pribadi dan tidak dihitung ke kas bisnis. Saldo penjualan Rp277.700 tetap utuh mencerminkan dana nyata yang tersedia.
+              </div>
+            </article>
+
+            <!-- Modul Pencatatan & Jadwal Withdraw Mayar Bulanan -->
+            <article class="keuangan-card" id="op-mayar-withdrawal-panel" style="border-top: 4px solid #8B5CF6; margin-bottom: 20px;">
+              <div style="display: flex; justify-content: space-between; align-items: flex-start; flex-wrap: wrap; gap: 14px; margin-bottom: 16px;">
+                <div style="display: flex; align-items: flex-start; gap: 12px;">
+                  <div style="width: 44px; height: 44px; border-radius: 12px; background: rgba(139, 92, 246, 0.12); display: flex; align-items: center; justify-content: center; color: #8B5CF6; flex-shrink: 0;">
+                    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                      <rect x="2" y="4" width="20" height="16" rx="2"></rect>
+                      <line x1="2" y1="10" x2="22" y2="10"></line>
+                    </svg>
+                  </div>
+                  <div>
+                    <div style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">
+                      <h4 class="section-title" style="margin: 0; font-size: 17px; font-weight: 800;">Withdraw Mayar Bulanan</h4>
+                      <span id="op-mayar-schedule-badge" class="status-badge" style="background: #E8EDF8; color: #3158A8; font-weight: 700; font-size: 11px;">Jadwal: Setiap Tanggal 25</span>
+                    </div>
+                    <p class="chart-caption" style="margin-top: 4px;">Pencatatan dan rekonsiliasi penarikan saldo payment gateway Mayar. Biaya flat Rp2.775 per penarikan.</p>
+                  </div>
+                </div>
+                <div style="display: flex; gap: 10px; flex-wrap: wrap;">
+                  <button id="btn-record-mayar-withdraw" class="btn-primary" style="height: 38px; padding: 0 16px; font-size: 12px; font-weight: 700; background: #8B5CF6; border-color: #8B5CF6; display: inline-flex; align-items: center; gap: 6px; border-radius: 10px;">
+                    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M12 5v14M5 12h14"/></svg>
+                    Catat Pencairan Mayar
+                  </button>
+                </div>
+              </div>
+
+              <!-- Cards Grid Info Jadwal & Biaya -->
+              <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(210px, 1fr)); gap: 14px; margin-bottom: 18px;">
+                <!-- Card 1: Tanggal Jadwal & Status -->
+                <div class="keuangan-metric-box">
+                  <span style="font-size: 11px; color: var(--ink-secondary); font-weight: 600; display: block;">Jadwal Pencairan Bulan Ini</span>
+                  <div style="display: flex; align-items: baseline; gap: 4px; margin-top: 6px;">
+                    <strong id="op-mayar-current-date-text" style="font-size: 18px; font-weight: 800; color: var(--ink);">25 Oktober 2026</strong>
+                  </div>
+                  <span id="op-mayar-date-status-subtext" style="font-size: 11px; color: #10B981; font-weight: 600; display: block; margin-top: 6px;">Hari Jadwal Pencairan (Tanggal 25)</span>
+                </div>
+
+                <!-- Card 2: Biaya Flat Mayar -->
+                <div class="keuangan-metric-box">
+                  <span style="font-size: 11px; color: var(--ink-secondary); font-weight: 600; display: block;">Biaya Penarikan Flat</span>
+                  <div style="display: flex; align-items: baseline; gap: 4px; margin-top: 6px;">
+                    <span style="font-size: 13px; font-weight: 700; color: var(--balance-red);">Rp</span>
+                    <strong style="font-size: 20px; font-weight: 800; color: var(--ink); font-variant-numeric: tabular-nums;">2.775</strong>
+                  </div>
+                  <span style="font-size: 11px; color: var(--ink-secondary); display: block; margin-top: 6px;">Per 1 kali transaksi penarikan</span>
+                </div>
+
+                <!-- Card 3: Rumus Perhitungan -->
+                <div class="keuangan-metric-box">
+                  <span style="font-size: 11px; color: var(--ink-secondary); font-weight: 600; display: block;">Rumus Penerimaan Bersih</span>
+                  <div style="display: flex; align-items: baseline; gap: 4px; margin-top: 6px;">
+                    <strong style="font-size: 14px; font-weight: 800; color: var(--accent-blue);">Bruto - Rp2.775</strong>
+                  </div>
+                  <span style="font-size: 11px; color: var(--ink-secondary); display: block; margin-top: 6px;">Bruto wajib lebih besar dari Rp2.775</span>
+                </div>
+
+                <!-- Card 4: Total Bersih Berhasil Dicairkan -->
+                <div class="keuangan-metric-box">
+                  <span style="font-size: 11px; color: var(--ink-secondary); font-weight: 600; display: block;">Total Pencairan Terkonfirmasi</span>
+                  <div style="display: flex; align-items: baseline; gap: 4px; margin-top: 6px;">
+                    <span style="font-size: 13px; font-weight: 700; color: #10B981;">Rp</span>
+                    <strong id="op-mayar-total-success-net" style="font-size: 20px; font-weight: 800; color: #10B981; font-variant-numeric: tabular-nums;">0</strong>
+                  </div>
+                  <span id="op-mayar-total-count-note" style="font-size: 11px; color: var(--ink-secondary); display: block; margin-top: 6px;">0 transaksi terkonfirmasi</span>
+                </div>
+              </div>
+
+              <!-- Catatan Alur & Batasan API Mayar -->
+              <div style="background: rgba(139, 92, 246, 0.06); border: 1px solid rgba(139, 92, 246, 0.2); border-radius: 12px; padding: 12px 16px; margin-bottom: 18px; font-size: 12px; color: var(--ink-secondary); line-height: 1.6;">
+                <strong style="color: #6D28D9;">Informasi Alur Mayar:</strong> Penarikan dana dari payment gateway Mayar dilakukan langsung melalui Dashboard Mayar resmi. Modul ini melakukan pencatatan rekonsiliasi, pengingat tanggal 25, dan penguncian pembukuan. Status awal transaksi yang baru dicatat adalah pending hingga status pencairan selesai di rekening. Kredensial dan API key Mayar tidak diekspos ke antarmuka demi keamanan sistem.
+              </div>
+
+              <!-- Tabel Riwayat Pencairan Mayar Bulanan -->
+              <div class="keuangan-table-card">
+                <table class="op-table">
+                  <thead>
+                    <tr>
+                      <th style="text-align: left;">Tanggal Jadwal</th>
+                      <th style="text-align: right;">Nominal Bruto</th>
+                      <th style="text-align: right;">Biaya Withdraw</th>
+                      <th style="text-align: right;">Nominal Bersih</th>
+                      <th style="text-align: center;">Status</th>
+                      <th style="text-align: left;">Referensi Mayar</th>
+                      <th style="text-align: center;">Aksi</th>
+                    </tr>
+                  </thead>
+                  <tbody id="op-mayar-withdrawals-tbody">
+                    <tr>
+                      <td colspan="7" style="text-align: center; padding: 24px; color: var(--ink-secondary);">
+                        Belum ada catatan pencairan Mayar. Jika sudah melakukan penarikan tanggal 25 di Dashboard Mayar, klik tombol "Catat Pencairan Mayar".
+                      </td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+            </article>
+
             <!-- KPI Cards for Operational Fund -->
             <div class="ac-12 keuangan-kpi-wrap" aria-label="Metrik Dana Operasional">
               <div class="ac-12__grid" style="grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));">
@@ -478,7 +646,7 @@
                   </div>
                   <p class="ac-12__val">
                     <span class="ac-12__cur">Rp</span>
-                    <span id="op-val-balance" class="ac-12__num">35.196</span>
+                    <span id="op-val-balance" class="ac-12__num">0</span>
                   </p>
                   <p class="ac-12__foot" id="op-foot-balance">Sisa saldo riil kas operasional sistem</p>
                 </article>
@@ -491,9 +659,9 @@
                   </div>
                   <p class="ac-12__val">
                     <span class="ac-12__cur">Rp</span>
-                    <span id="op-val-allocated" class="ac-12__num">35.196</span>
+                    <span id="op-val-allocated" class="ac-12__num">0</span>
                   </p>
-                  <p class="ac-12__foot" id="op-foot-fund">Alokasi awal Rp35.196 + akumulasi 10%</p>
+                  <p class="ac-12__foot" id="op-foot-fund">Alokasi awal Rp0 + akumulasi 10%</p>
                 </article>
 
                 <!-- Card 3: Total Pengeluaran Aktual -->
@@ -517,7 +685,7 @@
                   </div>
                   <p class="ac-12__val">
                     <span class="ac-12__cur">Rp</span>
-                    <span id="op-val-remaining" class="ac-12__num">35.196</span>
+                    <span id="op-val-remaining" class="ac-12__num">0</span>
                   </p>
                   <p class="ac-12__foot">Saldo kas operasional yang dapat digunakan</p>
                 </article>
@@ -835,7 +1003,7 @@
                   <tbody id="op-expenses-tbody">
                     <tr>
                       <td colspan="6" style="text-align: center; padding: 28px; color: var(--ink-secondary);">
-                        Belum ada transaksi pengeluaran. Anggaran awal Rp35.196 masih utuh.
+                        Belum ada transaksi pengeluaran. Saldo kas operasional aman.
                       </td>
                     </tr>
                   </tbody>
@@ -857,7 +1025,7 @@
                   <tbody id="op-inflows-tbody">
                     <tr>
                       <td colspan="5" style="text-align: center; padding: 28px; color: var(--ink-secondary);">
-                        Belum ada pemasukan 10% dari pesanan baru. Alokasi awal Rp35.196 aktif.
+                        Belum ada pemasukan 10% dari pesanan baru.
                       </td>
                     </tr>
                   </tbody>
@@ -991,7 +1159,7 @@
               <label><input id="violation-freeze-balance" type="checkbox" checked> Pembekuan rekening</label>
               <label><input id="violation-block-withdrawals" type="checkbox" checked> Tidak dapat mengajukan pencairan</label>
             </fieldset>
-            <div class="form-group"><label class="form-label" for="violation-status">Status penyelesaian</label><select id="violation-status" class="form-input"><option value="false">Belum selesai — sanksi aktif sesuai durasi</option><option value="true">Selesai — akhiri sanksi</option></select></div>
+            <div class="form-group"><label class="form-label" for="violation-status">Status penyelesaian</label><select id="violation-status" class="form-input"><option value="false">Belum selesai - sanksi aktif sesuai durasi</option><option value="true">Selesai - akhiri sanksi</option></select></div>
             <button class="btn-primary" type="submit">Simpan pelanggaran</button>
             <p id="violation-form-status" role="status"></p>
           </form>
@@ -1523,7 +1691,7 @@
         <label class="form-label" for="discount-percent-input">Diskon Persen (%)</label>
         <input type="number" id="discount-percent-input" class="form-input" placeholder="0" min="0" max="99">
       </div>
-      <p style="text-align: center; font-size: 12px; color: var(--ink-muted); margin: 6px 0;">— ATAU —</p>
+      <p style="text-align: center; font-size: 12px; color: var(--ink-muted); margin: 6px 0;">- ATAU -</p>
       <div class="form-group">
         <label class="form-label" for="discount-amount-input">Diskon Nominal (Rp)</label>
         <input type="number" id="discount-amount-input" class="form-input" placeholder="0" min="0">
@@ -1559,7 +1727,7 @@
         <button class="modal-close-btn" data-close-modal="modal-add-expense" aria-label="Tutup" style="background: transparent; border: none; font-size: 20px; cursor: pointer;">&times;</button>
       </div>
       <p id="expense-available-info" style="font-size: 13px; color: var(--accent-blue); font-weight: 600; margin-bottom: 16px; background: var(--accent-blue-bg); padding: 8px 12px; border-radius: 8px;">
-        Saldo kas operasional tersedia: Rp35.196
+        Saldo kas operasional tersedia: Rp0
       </p>
       <form id="form-add-expense" style="display: flex; flex-direction: column; gap: 14px;">
         <div class="form-group">
@@ -1767,6 +1935,103 @@
     </div>
   </div>
 
+
+  <!-- Modal 6: Catat Pencairan Mayar Bulanan -->
+  <div id="modal-record-mayar-withdraw" class="modal-overlay">
+    <div class="modal-sheet" style="border-radius: 28px; max-width: 480px; margin: auto; padding: 24px;">
+      <div class="modal-header" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 14px;">
+        <h3 class="modal-title" style="font-size: 18px; margin: 0;">Catat Pencairan Mayar Bulanan</h3>
+        <button class="modal-close-btn" data-close-modal="modal-record-mayar-withdraw" aria-label="Tutup" style="background: transparent; border: none; font-size: 20px; cursor: pointer;">&times;</button>
+      </div>
+      <form id="form-record-mayar-withdraw" style="display: flex; flex-direction: column; gap: 14px;">
+        <div class="form-group">
+          <label class="form-label" for="mayar-withdraw-date" style="font-size: 12px; font-weight: 700; color: var(--ink);">Tanggal Jadwal Pencairan</label>
+          <input type="date" id="mayar-withdraw-date" class="form-input" value="2026-10-25" required style="width: 100%; height: 42px; border-radius: 10px; border: 1px solid var(--border); padding: 0 12px; font-size: 13px; margin-top: 4px;">
+        </div>
+        <div class="form-group">
+          <label class="form-label" for="mayar-withdraw-gross" style="font-size: 12px; font-weight: 700; color: var(--ink);">Nominal Bruto Penarikan (Rp)</label>
+          <input type="number" id="mayar-withdraw-gross" class="form-input" placeholder="Contoh: 100000" min="2776" required style="width: 100%; height: 42px; border-radius: 10px; border: 1px solid var(--border); padding: 0 12px; font-size: 14px; margin-top: 4px;">
+          <span style="font-size: 11px; color: var(--ink-secondary); margin-top: 4px; display: block;">Wajib lebih besar dari biaya penarikan Rp2.775.</span>
+        </div>
+        
+        <!-- Live Calculation Box -->
+        <div style="background: var(--bg-body); border: 1px solid var(--border); border-radius: 12px; padding: 12px 14px; display: flex; flex-direction: column; gap: 6px; font-size: 12px;">
+          <div style="display: flex; justify-content: space-between; color: var(--ink-secondary);">
+            <span>Nominal Bruto:</span>
+            <strong id="mayar-calc-gross" style="color: var(--ink);">Rp0</strong>
+          </div>
+          <div style="display: flex; justify-content: space-between; color: var(--ink-secondary);">
+            <span>Biaya Penarikan Flat:</span>
+            <strong style="color: var(--balance-red);">-Rp2.775</strong>
+          </div>
+          <div style="border-top: 1px dashed var(--border); padding-top: 6px; margin-top: 2px; display: flex; justify-content: space-between; align-items: center; font-size: 13px;">
+            <strong style="color: var(--ink);">Nominal Bersih Diterima:</strong>
+            <strong id="mayar-calc-net" style="color: #10B981; font-size: 15px;">Rp0</strong>
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label" for="mayar-withdraw-ref" style="font-size: 12px; font-weight: 700; color: var(--ink);">Nomor Referensi Transaksi Mayar (Opsional)</label>
+          <input type="text" id="mayar-withdraw-ref" class="form-input" placeholder="Contoh: WD-MAYAR-20261025-01" style="width: 100%; height: 42px; border-radius: 10px; border: 1px solid var(--border); padding: 0 12px; font-size: 13px; margin-top: 4px;">
+        </div>
+        <div class="form-group">
+          <label class="form-label" for="mayar-withdraw-status-select" style="font-size: 12px; font-weight: 700; color: var(--ink);">Status Transaksi</label>
+          <select id="mayar-withdraw-status-select" class="form-select" style="width: 100%; height: 42px; border-radius: 10px; border: 1px solid var(--border); padding: 0 12px; font-size: 13px; margin-top: 4px;">
+            <option value="pending" selected>Pending (Menunggu konfirmasi / pemrosesan)</option>
+            <option value="processing">Processing (Sedang diproses)</option>
+            <option value="success">Success (Terkonfirmasi berhasil)</option>
+            <option value="failed">Failed (Gagal)</option>
+            <option value="cancelled">Cancelled (Dibatalkan)</option>
+          </select>
+          <span style="font-size: 11px; color: var(--ink-secondary); margin-top: 4px; display: block;">Status awal adalah pending sampai dana terkonfirmasi di rekening.</span>
+        </div>
+        <div class="form-group">
+          <label class="form-label" for="mayar-withdraw-notes" style="font-size: 12px; font-weight: 700; color: var(--ink);">Catatan Tambahan (Opsional)</label>
+          <input type="text" id="mayar-withdraw-notes" class="form-input" placeholder="Rekening tujuan / nomor penarikan" style="width: 100%; height: 42px; border-radius: 10px; border: 1px solid var(--border); padding: 0 12px; font-size: 13px; margin-top: 4px;">
+        </div>
+        <div style="display: flex; gap: 10px; margin-top: 8px;">
+          <button type="button" class="btn-outline" data-close-modal="modal-record-mayar-withdraw" style="flex: 1; height: 44px; font-weight: 700;">Batal</button>
+          <button type="submit" id="btn-submit-mayar-withdraw" class="btn-primary" style="flex: 1; height: 44px; font-weight: 700; background: #8B5CF6; border-color: #8B5CF6;">Simpan Pencairan</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Modal 7: Perbarui Status Pencairan Mayar -->
+  <div id="modal-update-mayar-status" class="modal-overlay">
+    <div class="modal-sheet" style="border-radius: 28px; max-width: 440px; margin: auto; padding: 24px;">
+      <div class="modal-header" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 14px;">
+        <h3 class="modal-title" style="font-size: 18px; margin: 0;">Perbarui Status Pencairan Mayar</h3>
+        <button class="modal-close-btn" data-close-modal="modal-update-mayar-status" aria-label="Tutup" style="background: transparent; border: none; font-size: 20px; cursor: pointer;">&times;</button>
+      </div>
+      <form id="form-update-mayar-status" style="display: flex; flex-direction: column; gap: 14px;">
+        <input type="hidden" id="update-mayar-id">
+        <div style="background: var(--bg-body); border-radius: 10px; padding: 12px; font-size: 13px; line-height: 1.5;">
+          <div>Tanggal Jadwal: <strong id="update-mayar-date-label">-</strong></div>
+          <div>Nominal Bersih: <strong id="update-mayar-net-label" style="color: #10B981;">-</strong></div>
+        </div>
+        <div class="form-group">
+          <label class="form-label" for="update-mayar-status-select" style="font-size: 12px; font-weight: 700; color: var(--ink);">Status Terbaru</label>
+          <select id="update-mayar-status-select" class="form-select" required style="width: 100%; height: 42px; border-radius: 10px; border: 1px solid var(--border); padding: 0 12px; font-size: 13px; margin-top: 4px;">
+            <option value="pending">Pending (Menunggu)</option>
+            <option value="processing">Processing (Sedang diproses)</option>
+            <option value="success">Success (Pencairan Berhasil)</option>
+            <option value="failed">Failed (Gagal)</option>
+            <option value="cancelled">Cancelled (Dibatalkan)</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label class="form-label" for="update-mayar-ref" style="font-size: 12px; font-weight: 700; color: var(--ink);">Nomor Referensi Transaksi</label>
+          <input type="text" id="update-mayar-ref" class="form-input" placeholder="ID transaksi / mutasi rekening" style="width: 100%; height: 42px; border-radius: 10px; border: 1px solid var(--border); padding: 0 12px; font-size: 13px; margin-top: 4px;">
+        </div>
+        <div style="display: flex; gap: 10px; margin-top: 8px;">
+          <button type="button" class="btn-outline" data-close-modal="modal-update-mayar-status" style="flex: 1; height: 44px; font-weight: 700;">Batal</button>
+          <button type="submit" id="btn-submit-update-mayar-status" class="btn-primary" style="flex: 1; height: 44px; font-weight: 700;">Simpan Perubahan</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
   <!-- Audio Chime for In-App Notifications -->
   <audio id="notification-sound" preload="auto">
     <source src="data:audio/wav;base64,UklGRnoGAABXQVZFZm10IBAAAAABAAEAQB8AAEAfAAABAAgAZGF0YQoGAACBhYqFbF1fdJivrJBhNjVgodDbq2EcBj+a2/LDciUFLI7L8M98KAUkg8vwz3woBSyPy/DPfCgFLI/L8M98KAUkg8vwz3woBSyPy/DPfCgFLI/L8M98KAUkg8vwz3woBSyPy/DPfCgFLI/L8M98KAUkg8vwz3woBSyPy/DPfCg=" type="audio/wav">
@@ -1775,7 +2040,7 @@
   <!-- Application Main Script (Universal script for file://, localhost, & cloud hosting) -->
   <script src="./js/app.js?v=42"></script>
   <script src="./js/produk-promo.js?v=2"></script>
-  <script src="./js/operational-fund.js?v=5"></script>
+  <script src="./js/operational-fund.js?v=6"></script>
   <script src="./js/contribution-skyline.js?v=3"></script>
 
   <!-- Failsafe Watchdog & Service Worker -->
