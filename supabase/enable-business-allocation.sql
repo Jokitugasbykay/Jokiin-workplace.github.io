@@ -1,0 +1,2 @@
+-- Applied migration: migrations/20261026082534_allocate_confirmed_business_cash_five_equal_categories.sql
+-- Does not mark bank reconciliation verified.

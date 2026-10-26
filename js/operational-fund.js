@@ -29,6 +29,7 @@
     mayarWithdrawalsError: 'Menunggu data pencairan.',
     bookkeepingRecords: [],
     allocationError: 'Diperlukan rekonsiliasi dasar dana operasional.',
+    spendingError: 'Pengeluaran menunggu pemeriksaan keuangan.',
     summaryLoaded: false,
     cashflowMonth: new Intl.DateTimeFormat('en-CA', { timeZone: 'Asia/Jakarta', year: 'numeric', month: '2-digit', day: '2-digit' }).format(new Date()).slice(0, 7),
     cashflowCategory: 'all',
@@ -177,6 +178,8 @@
       opData.cashflowSales = { orders: cfOrders || [], checkouts: cfCheckouts || [], payments: cfPayments || [] };
       opData.cashflowError = errExpenses || errResellerTx || errBookkeeping || errMayarWd || errCfOrders || errCfCheckouts || errCfPayments
         ? 'Sumber transaksi belum lengkap. Total arus kas belum dapat dihitung.' : '';
+      const approvedAllocation = summaryData?.allocation_guard_version === 3
+        && summaryData.allocation_approval_source === 'user_confirmed_formula' && summaryData.actual_cash_status === 'user_confirmed_formula';
       opData.summaryLoaded = !errSummary && summaryData && !Array.isArray(summaryData)
         && ['initial_fund', 'total_inflow', 'total_spent', 'current_balance', 'total_fund', 'domain_reserved', 'allocation_basis'].every(key => isRupiah(summaryData[key]));
       opData.allocationError = !opData.summaryLoaded || errBudgets || errExpenses || errInflows || errBookkeeping
@@ -196,7 +199,7 @@
       if (!opData.allocationError && !validateCategoryAllocations(budgetsData, summaryData.allocation_basis)) {
         opData.allocationError = 'Data berubah saat dimuat. Segarkan Keuangan untuk mencocokkan seluruh alokasi.';
       }
-      if (!opData.allocationError && (!supportedCashContract(summaryData) || summaryData.reconciliation_status !== 'verified'
+      if (!opData.allocationError && !approvedAllocation && (!supportedCashContract(summaryData) || summaryData.reconciliation_status !== 'verified'
           || summaryData.actual_cash_verified !== true || !isRupiah(summaryData.actual_cash_balance) || Number(summaryData.actual_cash_balance) !== signedBalance)) {
         opData.allocationError = 'Alokasi diblokir: backend dan bukti rekonsiliasi belum memenuhi pemeriksaan keamanan.';
       }
@@ -272,6 +275,7 @@
         current_balance: bookBalance ?? (Number(summaryData?.current_balance) || 0),
         allocation_basis: opData.allocationError ? 0 : Number(summaryData?.allocation_basis) || 0,
         allocation_ready: !opData.allocationError,
+        allocation_approval_source: summaryData?.allocation_approval_source || null,
         domain_reserved: domainReserved,
         total_active_reserves: totalReserves,
         actual_cash_balance: actualCash,
@@ -285,11 +289,14 @@
         domain_status: confirmedDomain ? 'paid' : 'reserved',
         domain_due_date: summaryData?.domain_due_date || '2027-09-12'
       };
+      opData.spendingError = opData.allocationError || (summaryData.reconciliation_status === 'verified' && summaryData.actual_cash_verified === true
+        ? '' : 'Anggaran sudah dialokasikan; pencatatan pengeluaran masih memerlukan rekonsiliasi rekening.');
     } catch (err) {
       console.warn('Gagal memuat data dana operasional:', err);
       opData.summaryLoaded = false;
       opData.cashflowError = 'Data arus kas gagal dimuat.';
       opData.allocationError = 'Diperlukan rekonsiliasi: data keuangan gagal dimuat.';
+      opData.spendingError = opData.allocationError;
       opData.mayarWithdrawalsError = 'Data pencairan Mayar belum dapat diverifikasi. Segarkan data atau periksa akses database.';
       opData.budgets = DEFAULT_BUDGETS.map(b => ({
         ...b,
@@ -359,7 +366,7 @@
     }, opData.cashflowMonth, opData.cashflowCategory, opData.cashflowError,
     opData.summaryLoaded ? opData.summary : null);
     const status = document.getElementById('op-allocation-status');
-    if (status) status.textContent = opData.allocationError || `Basis alokasi ${formatRupiah(opData.summary.allocation_basis)}; kewajiban domain terpisah.`;
+    if (status) status.textContent = opData.allocationError || `Basis alokasi ${formatRupiah(opData.summary.allocation_basis)}; cadangan domain terpisah. Rekonsiliasi rekening tidak mengubah pembagian anggaran ini.`;
   }
   function selectAllocationCategory(id, animate = true) {
     opData.activeAllocationCategory = opData.activeAllocationCategory === id ? null : id;
@@ -2061,8 +2068,8 @@
   }
 
   function allocationConfirmed() {
-    if (!opData.allocationError) return true;
-    alert(opData.allocationError);
+    if (!opData.spendingError && !opData.allocationError) return true;
+    alert(opData.spendingError || opData.allocationError);
     return false;
   }
 
@@ -2093,7 +2100,7 @@
     renderHistoryTables();
     for (const id of ['btn-add-expense', 'btn-add-promo-subsidy', 'btn-add-team-bonus', 'btn-add-reseller-quick', 'btn-reseller-add-stock']) {
       const button = document.getElementById(id);
-      if (button) { button.disabled = Boolean(opData.allocationError); button.title = opData.allocationError; }
+      if (button) { button.disabled = Boolean(opData.spendingError || opData.allocationError); button.title = opData.spendingError || opData.allocationError; }
     }
   }
 
