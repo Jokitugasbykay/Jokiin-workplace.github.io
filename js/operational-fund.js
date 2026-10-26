@@ -63,6 +63,12 @@
   const VARIABLE_CATEGORY_IDS = ['ai_tools', 'bonus', 'emergency', 'promo', 'reseller'];
   const isRupiah = value => (typeof value === 'number' || typeof value === 'string' && /^-?\d+$/.test(value)) && Number.isSafeInteger(Number(value));
   let expenseRequest = null;
+  let domainConfirmationPending = false;
+  function cashAfterReserves(cash, reserves) {
+    if (!isRupiah(cash) || !isRupiah(reserves) || Number(reserves) < 0) return null;
+    const result = Number(cash) - Number(reserves);
+    return Number.isSafeInteger(result) ? result : null;
+  }
 
   // Pembagian rata ke 5 kategori masing-masing tepat 20%, total 100%.
   // Sisa pembulatan rupiah didistribusikan secara deterministik dari kategori pertama.
@@ -176,17 +182,19 @@
         ? 'Diperlukan rekonsiliasi: sumber data keuangan belum dapat diverifikasi.'
         : summaryData.allocation_ready !== true
           ? 'Diperlukan rekonsiliasi: saldo buku belum dikonfirmasi sebagai dana operasional tersedia.' : '';
+      const activeReserves = summaryData?.allocation_guard_version === 2 && isRupiah(summaryData.total_active_reserves) ? Number(summaryData.total_active_reserves) : 22000;
       const signedBalance = opData.summaryLoaded ? Number(summaryData.initial_fund) + Number(summaryData.total_inflow) - Number(summaryData.total_spent) : null;
-      if (!opData.allocationError && (Number(summaryData.domain_reserved) < 0 || Number(summaryData.total_spent) < 0 || Number(summaryData.total_inflow) < 0
+      if (!opData.allocationError && (Number(summaryData.domain_reserved) !== (summaryData.domain_payment_confirmed === true && summaryData.allocation_guard_version === 2 ? 0 : 22000) || activeReserves < Number(summaryData.domain_reserved) || Number(summaryData.total_spent) < 0 || Number(summaryData.total_inflow) < 0
           || Number(summaryData.total_fund) !== Number(summaryData.initial_fund) + Number(summaryData.total_inflow)
           || Number(summaryData.current_balance) !== signedBalance
-          || Number(summaryData.allocation_basis) !== Math.floor(Math.max(0, signedBalance - Number(summaryData.domain_reserved))))) {
+          || Number(summaryData.allocation_basis) !== Math.floor(Math.max(0, signedBalance - activeReserves)))) {
         opData.allocationError = 'Data berubah saat dimuat. Basis alokasi tidak cocok dengan saldo buku dan kewajiban.';
       }
       if (!opData.allocationError && !validateCategoryAllocations(budgetsData, summaryData.allocation_basis)) {
         opData.allocationError = 'Data berubah saat dimuat. Segarkan Keuangan untuk mencocokkan seluruh alokasi.';
       }
-      if (!opData.allocationError && (summaryData.allocation_guard_version !== 1 || summaryData.reconciliation_status !== 'verified')) {
+      if (!opData.allocationError && (summaryData.allocation_guard_version !== 2 || summaryData.reconciliation_status !== 'verified'
+          || summaryData.actual_cash_verified !== true || !isRupiah(summaryData.actual_cash_balance) || Number(summaryData.actual_cash_balance) !== signedBalance)) {
         opData.allocationError = 'Alokasi diblokir: backend dan bukti rekonsiliasi belum memenuhi pemeriksaan keamanan.';
       }
       if (opData.allocationError) {
@@ -245,6 +253,13 @@
       if (bookBalance !== null && bookBalance !== Number(summaryData.current_balance)) {
         opData.allocationError = 'Alokasi diblokir: saldo buku berbeda dari proyeksi backend. Perlu sinkronisasi view keuangan.';
       }
+      const confirmedDomain = summaryData?.allocation_guard_version === 2 && summaryData.domain_payment_confirmed === true;
+      // No legacy expense or mutable budget flag is proof of payment/cancellation.
+      const domainReserved = confirmedDomain ? 0 : 22000;
+      const totalReserves = summaryData?.allocation_guard_version === 2 && isRupiah(summaryData.total_active_reserves)
+        && Number(summaryData.total_active_reserves) >= domainReserved ? Number(summaryData.total_active_reserves) : domainReserved;
+      const actualCash = summaryData?.allocation_guard_version === 2 && summaryData.actual_cash_verified === true
+        && isRupiah(summaryData.actual_cash_balance) ? Number(summaryData.actual_cash_balance) : null;
       // Signed accounting identity, from the same database summary; never hide a deficit.
       opData.summary = {
         initial_fund: Number(summaryData?.initial_fund) || 0,
@@ -255,9 +270,16 @@
         current_balance: bookBalance ?? (Number(summaryData?.current_balance) || 0),
         allocation_basis: opData.allocationError ? 0 : Number(summaryData?.allocation_basis) || 0,
         allocation_ready: !opData.allocationError,
-        domain_reserved: Number(summaryData?.domain_reserved) || 0,
+        domain_reserved: domainReserved,
+        total_active_reserves: totalReserves,
+        actual_cash_balance: actualCash,
+        actual_cash_verified: actualCash !== null,
+        free_cash_balance: actualCash === null ? null : cashAfterReserves(actualCash, totalReserves),
+        book_free_cash_balance: cashAfterReserves(bookBalance, totalReserves),
+        domain_payment_confirmed: confirmedDomain,
+        domain_confirmation_available: summaryData?.allocation_guard_version === 2 && summaryData.domain_confirmation_available === true,
         domain_obligation: Number(summaryData?.domain_obligation) || 22000,
-        domain_status: summaryData?.domain_status || 'unpaid',
+        domain_status: confirmedDomain ? 'paid' : 'reserved',
         domain_due_date: summaryData?.domain_due_date || '2027-09-12'
       };
     } catch (err) {
@@ -293,24 +315,34 @@
     const known = opData.summaryLoaded && !opData.cashflowError;
     const hasRecordedPayment = known && opData.expenses.some(row => row.category_id === 'domain');
     const text = {
-      'op-domain-status-badge': !known ? 'Menunggu data' : hasRecordedPayment ? 'Pembayaran tercatat, belum diverifikasi' : 'Belum dibayar',
+      'op-domain-status-badge': !known ? 'Menunggu data' : s.domain_payment_confirmed ? 'Dibayar, cadangan diselesaikan' : hasRecordedPayment ? 'Dicadangkan · pembayaran belum diverifikasi' : 'Dicadangkan, belum dibayar',
       'op-domain-due-date': known ? new Date(s.domain_due_date + 'T00:00:00+07:00').toLocaleDateString('id-ID', {timeZone:'Asia/Jakarta',day:'numeric',month:'long',year:'numeric'}) : '—',
-      'op-domain-payment-note': !known ? 'Status pembayaran belum dapat diverifikasi.' : hasRecordedPayment
-        ? 'Pengeluaran sudah tercatat; bukti pembayaran belum memiliki sumber verifikasi. Cadangan tidak dipotong ulang.'
+      'op-domain-payment-note': !known ? 'Status pembayaran belum dapat diverifikasi.' : s.domain_payment_confirmed ? 'Pembayaran dikonfirmasi oleh staf berotorisasi; cadangan diselesaikan dan kas buku berkurang satu kali.' : hasRecordedPayment
+        ? 'Ada pengeluaran historis tanpa bukti terverifikasi. Cadangan tetap aktif sampai catatan tersebut direkonsiliasi.'
         : 'Cadangan kewajiban, belum menjadi pengeluaran. Klik tombol bukan bukti pembayaran.',
       'op-domain-book-balance': opData.summaryLoaded ? formatRupiah(s.current_balance) : '—',
       'op-domain-reserve': known ? formatRupiah(s.domain_reserved) : '—',
+      'op-domain-total-reserves': known ? formatRupiah(s.total_active_reserves) : '—',
+      'op-domain-actual-cash': known && s.actual_cash_verified ? formatRupiah(s.actual_cash_balance) : 'Belum diverifikasi',
+      'op-domain-free-cash': known && s.free_cash_balance !== null ? formatRupiah(s.free_cash_balance) : 'Belum diketahui',
+      'op-domain-book-free-cash': known && s.book_free_cash_balance !== null ? formatRupiah(s.book_free_cash_balance) : '—',
       'op-domain-available': opData.allocationError ? 'Belum terverifikasi' : formatRupiah(s.allocation_basis)
     };
     for (const [id, value] of Object.entries(text)) {
       const element = document.getElementById(id);
       if (element) element.textContent = value;
     }
+    for (const [id, amount] of [['op-domain-free-cash', s.free_cash_balance], ['op-domain-book-free-cash', s.book_free_cash_balance]]) {
+      const element = document.getElementById(id);
+      if (element) element.style.color = amount < 0 ? 'var(--balance-red)' : 'var(--ink)';
+    }
+    const submit = document.getElementById('btn-confirm-domain-payment');
+    if (submit) { submit.disabled = domainConfirmationPending; submit.textContent = domainConfirmationPending ? 'Mencatat konfirmasi…' : 'Catat konfirmasi pembayaran'; }
     const button = document.getElementById('btn-pay-domain');
     if (button) {
-      button.disabled = true;
-      button.textContent = 'Menunggu verifikasi pembayaran';
-      button.title = 'Sumber bukti pembayaran dan konfirmasi backend belum tersedia. Tidak ada pengeluaran yang dibuat.';
+      button.disabled = !known || !s.domain_confirmation_available || s.domain_payment_confirmed || hasRecordedPayment || domainConfirmationPending;
+      button.textContent = s.domain_payment_confirmed ? 'Pembayaran sudah dikonfirmasi' : s.domain_confirmation_available && !hasRecordedPayment ? 'Konfirmasi bukti pembayaran' : 'Menunggu verifikasi pembayaran';
+      button.title = 'Hanya mencatat pembayaran yang telah berhasil dan buktinya diperiksa; tidak melakukan transfer dana.';
     }
   }
 
@@ -903,9 +935,27 @@
     }).join('');
   }
 
-  async function payDomainObligation() {
-    alert('Pembayaran domain belum dapat dicatat: diperlukan bukti pembayaran yang sah dan konfirmasi backend. Tidak ada saldo yang dipotong.');
-    return false;
+  async function payDomainObligation(evidence) {
+    if (!opData.summaryLoaded || !opData.summary.domain_confirmation_available || opData.summary.domain_payment_confirmed || domainConfirmationPending) return false;
+    const reference = String(evidence?.reference || '').trim(), source = String(evidence?.source || '').trim();
+    const paidAt = new Date(evidence?.paidAt);
+    if (evidence?.confirmed !== true || reference.length < 3 || reference.length > 200 || source.length < 3 || source.length > 200
+        || !Number.isFinite(paidAt.getTime()) || paidAt > new Date()) {
+      alert('Periksa bukti transaksi berhasil, sumber pembayaran, tanggal, dan konfirmasi pemeriksaan.'); return false;
+    }
+    domainConfirmationPending = true;
+    renderDomainCard();
+    try {
+      const db = await getSupabase();
+      const {data, error} = await db.rpc('workplace_confirm_domain_payment', {p_reference:reference,p_source:source,p_paid_at:paidAt.toISOString(),p_confirmed:true});
+      if (error) throw error;
+      if (!data || Number(data.amount) !== 22000 || data.due_date !== '2027-09-12' || !data.expense_id) throw new Error('Konfirmasi backend belum dapat diverifikasi.');
+      await fetchOperationalData();renderAll();closeModal('modal-domain-payment');
+      alert('Bukti pembayaran domain telah dicatat. Tidak ada transfer yang dijalankan oleh tombol ini.');
+      return true;
+    } catch (error) {
+      alert('Konfirmasi belum berhasil: ' + error.message);return false;
+    } finally {domainConfirmationPending = false;renderDomainCard();}
   }
 
   async function addExpense(categoryId, amount, description, recipient, notes) {
@@ -1699,8 +1749,20 @@
     // Pay Domain Button
     const btnDomain = document.getElementById('btn-pay-domain');
     if (btnDomain) {
-      btnDomain.addEventListener('click', payDomainObligation);
+      btnDomain.addEventListener('click', () => {
+        if (btnDomain.disabled) return;
+        document.getElementById('form-domain-payment')?.reset();openModal('modal-domain-payment');
+      });
     }
+
+    const domainForm = document.getElementById('form-domain-payment');
+    if (domainForm) domainForm.addEventListener('submit', async event => {
+      event.preventDefault();
+      await payDomainObligation({reference:document.getElementById('domain-payment-reference').value,
+        source:document.getElementById('domain-payment-source').value,
+        paidAt:document.getElementById('domain-payment-date').value,
+        confirmed:document.getElementById('domain-payment-verified').checked});
+    });
 
     // Modal Form Submissions
     const formExpense = document.getElementById('form-add-expense');
@@ -2029,8 +2091,6 @@
       const button = document.getElementById(id);
       if (button) { button.disabled = Boolean(opData.allocationError); button.title = opData.allocationError; }
     }
-    const domainButton = document.getElementById('btn-pay-domain');
-    if (domainButton && opData.allocationError) { domainButton.disabled = true; domainButton.title = opData.allocationError; }
   }
 
   // Export to window

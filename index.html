@@ -664,7 +664,7 @@
                 <table class="op-table"><thead><tr><th scope="col">Tanggal</th><th scope="col">Jenis transaksi</th><th scope="col">Kategori</th><th scope="col">Nominal</th><th scope="col">Status</th><th scope="col">Keterangan</th></tr></thead><tbody id="cf-history"><tr><td colspan="6">Menunggu data arus kas.</td></tr></tbody></table>
               </div>
             </section>
-            <!-- Kartu Kewajiban Perpanjangan Domain (Nominal Tetap & Terpisah) -->
+            <!-- Kartu Dana Cadangan Domain (Nominal Tetap & Terpisah) -->
             <div class="entry-card domain-obligation-banner" id="op-domain-card">
               <div class="domain-content-left">
                 <div class="domain-icon-box">
@@ -677,9 +677,9 @@
                 <div>
                   <div class="domain-title-row">
                     <h4 style="margin: 0; font-size: 16px; font-weight: 800; color: var(--ink);">Kewajiban Perpanjangan Domain</h4>
-                    <span id="op-domain-status-badge" class="status-badge" style="background: #FFF2DC; color: #895000; font-weight: 700; font-size: 11px;">Belum dibayar</span>
+                    <span id="op-domain-status-badge" class="status-badge" style="background: #FFF2DC; color: #895000; font-weight: 700; font-size: 11px;">Dicadangkan, belum dibayar</span>
                   </div>
-                  <p style="font-size: 13px; color: var(--ink-secondary); margin: 4px 0 0;">Nominal tetap tahunan tanpa persentase alokasi. Dana diprioritaskan untuk menjamin stabilitas alamat website jokiin.my.id.</p>
+                  <p style="font-size: 13px; color: var(--ink-secondary); margin: 4px 0 0;">Cadangan untuk perpanjangan jokiin.my.id, jatuh tempo 12 September 2027. Bukan pengeluaran dan bukan bukti dana dipindahkan ke rekening terpisah.</p>
                   <div class="domain-pills-row">
                     <span class="domain-pill-item">Kewajiban: <strong>Rp22.000 / tahun</strong></span>
                     <span class="domain-pill-item">Jatuh Tempo: <strong id="op-domain-due-date" style="color: var(--accent-blue);">12 September 2027</strong></span>
@@ -688,7 +688,7 @@
                 </div>
               </div>
               <div style="display: flex; gap: 12px; align-items: center; flex-wrap: wrap;">
-                <div class="chart-caption" aria-live="polite">Kas pembukuan: <strong id="op-domain-book-balance">—</strong><br>Cadangan domain: <strong id="op-domain-reserve">—</strong><br>Dana layak alokasi: <strong id="op-domain-available">Belum terverifikasi</strong></div>
+                <div class="chart-caption" aria-live="polite">Kas pembukuan: <strong id="op-domain-book-balance">—</strong><br>Saldo kas aktual: <strong id="op-domain-actual-cash">Belum diverifikasi</strong><br>Cadangan domain: <strong id="op-domain-reserve">—</strong><br>Total cadangan aktif tercatat: <strong id="op-domain-total-reserves">—</strong><br>Kas bebas aktual: <strong id="op-domain-free-cash">Belum diketahui</strong><br>Proyeksi kas bebas dari buku: <strong id="op-domain-book-free-cash">—</strong><br>Dana layak alokasi: <strong id="op-domain-available">Belum terverifikasi</strong></div>
                 <button id="btn-pay-domain" disabled class="btn-primary" style="height: 40px; padding: 0 18px; font-size: 13px; font-weight: 750; border-radius: 10px;">
                   Menunggu verifikasi pembayaran
                 </button>
@@ -1694,6 +1694,20 @@
   </div>
 
   <!-- Modal 1: Tambah Pengeluaran Operasional -->
+  <div id="modal-domain-payment" class="modal-overlay">
+    <div class="modal-sheet" style="max-width:460px;margin:auto;border-radius:24px;" role="dialog" aria-modal="true" aria-labelledby="domain-payment-heading">
+      <div class="modal-header"><h3 id="domain-payment-heading" class="modal-title">Konfirmasi bukti pembayaran domain</h3><button type="button" class="modal-close-btn" data-close-modal="modal-domain-payment" aria-label="Tutup">&times;</button></div>
+      <form id="form-domain-payment" style="display:grid;gap:14px;">
+        <p class="chart-caption">Catat hanya pembayaran Rp22.000 yang sudah berhasil untuk jatuh tempo 12 September 2027. Form ini tidak mentransfer uang. Konfirmasi dicatat bersama identitas pemeriksa.</p>
+        <label>Referensi transaksi/bukti<input id="domain-payment-reference" class="form-input" required minlength="3" maxlength="200" autocomplete="off"></label>
+        <label>Sumber pembayaran<input id="domain-payment-source" class="form-input" required minlength="3" maxlength="200" placeholder="Bank atau dompet pembayaran"></label>
+        <label>Waktu pembayaran<input id="domain-payment-date" class="form-input" type="datetime-local" required></label>
+        <label style="display:flex;gap:10px;align-items:flex-start;"><input id="domain-payment-verified" type="checkbox" required>Saya telah memeriksa bukti bahwa pembayaran Rp22.000 berhasil, bukan transaksi pending atau gagal.</label>
+        <button id="btn-confirm-domain-payment" type="submit" class="btn-primary">Catat konfirmasi pembayaran</button>
+      </form>
+    </div>
+  </div>
+
   <div id="modal-add-expense" class="modal-overlay">
     <div class="modal-sheet" style="border-radius: 28px; max-width: 460px; margin: auto; padding: 24px;">
       <div class="modal-header" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 14px;">
@@ -2014,8 +2028,8 @@
   <!-- Application Main Script (Universal script for file://, localhost, & cloud hosting) -->
   <script src="./js/app.js?v=45"></script>
   <script src="./js/produk-promo.js?v=2"></script>
-  <script src="./js/monthly-cashflow.js?v=1"></script>
-  <script src="./js/operational-fund.js?v=12"></script>
+  <script src="./js/monthly-cashflow.js?v=2"></script>
+  <script src="./js/operational-fund.js?v=13"></script>
   <script src="./js/contribution-skyline.js?v=3"></script>
 
   <!-- Failsafe Watchdog & Service Worker -->

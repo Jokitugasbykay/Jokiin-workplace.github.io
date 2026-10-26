@@ -38,7 +38,7 @@ async function refresh(){await api.fetchOperationalData();api.renderAll();return
   assert.equal(await api.recordResellerPurchase('test','test',1,100,''),false);
   assert.equal(writes,0);
   const summary=fixture.operational_fund_summary;
-  Object.assign(summary,{initial_fund:5000,total_inflow:42003,allocation_ready:true,allocation_guard_version:1,reconciliation_status:'verified',allocation_basis:25003,current_balance:47003,total_fund:47003,total_allocated:25003});
+  Object.assign(summary,{initial_fund:5000,total_inflow:42003,allocation_ready:true,allocation_guard_version:2,reconciliation_status:'verified',actual_cash_verified:true,actual_cash_balance:47003,total_active_reserves:22000,allocation_basis:25003,current_balance:47003,total_fund:47003,total_allocated:25003});
   fixture.operational_budgets_status.filter(b=>b.id!=='domain').forEach((b,i)=>Object.assign(b,{allocated_amount:i<3?5001:5000,remaining_amount:i<3?5001:5000}));
   data=await refresh();
   assert.equal(data.allocationError,'');
@@ -59,7 +59,7 @@ async function refresh(){await api.fetchOperationalData();api.renderAll();return
   const newNominals = [...ctx.window.OperationalFund.calculateAllocation(updatedBasis, 5)];
   assert.deepEqual(newNominals, [7001, 7001, 7000, 7000, 7000], 'Distribusi deterministik untuk basis baru 35.002');
   assert.equal(newNominals.reduce((a, b) => a + b, 0), updatedBasis);
-  Object.assign(summary, { allocation_basis: updatedBasis, current_balance: 57002, total_fund: 57002, total_inflow: 52002, total_allocated: updatedBasis });
+  Object.assign(summary, { allocation_basis: updatedBasis, current_balance: 57002, actual_cash_balance: 57002, total_fund: 57002, total_inflow: 52002, total_allocated: updatedBasis });
   fixture.operational_budgets_status.filter(b => b.id !== 'domain').forEach((b, i) => Object.assign(b, { allocated_amount: newNominals[i], remaining_amount: newNominals[i] }));
   data = await refresh();
   assert.equal(data.allocationError, '');
@@ -70,7 +70,7 @@ async function refresh(){await api.fetchOperationalData();api.renderAll();return
   assert.equal(refreshedVars.reduce((sum, b) => sum + b.remaining_amount, 0), updatedBasis, 'Total sisa nominal sama persis dengan saldo terbaru');
 
   // Kembalikan ke baseline 25003 untuk pengujian berikutnya
-  Object.assign(summary, { allocation_basis: 25003, current_balance: 47003, total_fund: 47003, total_inflow: 42003, total_allocated: 25003 });
+  Object.assign(summary, { allocation_basis: 25003, current_balance: 47003, actual_cash_balance: 47003, total_fund: 47003, total_inflow: 42003, total_allocated: 25003 });
   fixture.operational_budgets_status.filter(b => b.id !== 'domain').forEach((b, i) => Object.assign(b, { allocated_amount: i < 3 ? 5001 : 5000, remaining_amount: i < 3 ? 5001 : 5000 }));
   data = await refresh();
 
