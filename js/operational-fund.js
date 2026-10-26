@@ -64,6 +64,7 @@
   const isRupiah = value => (typeof value === 'number' || typeof value === 'string' && /^-?\d+$/.test(value)) && Number.isSafeInteger(Number(value));
   let expenseRequest = null;
   let domainConfirmationPending = false;
+  const supportedCashContract = summary => [2,3].includes(summary?.allocation_guard_version);
   function cashAfterReserves(cash, reserves) {
     if (!isRupiah(cash) || !isRupiah(reserves) || Number(reserves) < 0) return null;
     const result = Number(cash) - Number(reserves);
@@ -182,10 +183,12 @@
         ? 'Diperlukan rekonsiliasi: sumber data keuangan belum dapat diverifikasi.'
         : summaryData.allocation_ready !== true
           ? 'Diperlukan rekonsiliasi: saldo buku belum dikonfirmasi sebagai dana operasional tersedia.' : '';
-      const activeReserves = summaryData?.allocation_guard_version === 2 && isRupiah(summaryData.total_active_reserves) ? Number(summaryData.total_active_reserves) : 22000;
-      const signedBalance = opData.summaryLoaded ? Number(summaryData.initial_fund) + Number(summaryData.total_inflow) - Number(summaryData.total_spent) : null;
-      if (!opData.allocationError && (Number(summaryData.domain_reserved) !== (summaryData.domain_payment_confirmed === true && summaryData.allocation_guard_version === 2 ? 0 : 22000) || activeReserves < Number(summaryData.domain_reserved) || Number(summaryData.total_spent) < 0 || Number(summaryData.total_inflow) < 0
-          || Number(summaryData.total_fund) !== Number(summaryData.initial_fund) + Number(summaryData.total_inflow)
+      const activeReserves = supportedCashContract(summaryData) && isRupiah(summaryData.total_active_reserves) ? Number(summaryData.total_active_reserves) : 22000;
+      const cashSources = summaryData?.allocation_guard_version === 3 ? ['business_capital','business_net_profit'] : ['initial_fund','total_inflow'];
+      const fundingTotal = cashSources.every(key => isRupiah(summaryData?.[key])) ? cashSources.reduce((sum,key) => sum + Number(summaryData[key]),0) : null;
+      const signedBalance = opData.summaryLoaded && fundingTotal !== null ? fundingTotal - Number(summaryData.total_spent) : null;
+      if (!opData.allocationError && (Number(summaryData.domain_reserved) !== (summaryData.domain_payment_confirmed === true && supportedCashContract(summaryData) ? 0 : 22000) || activeReserves < Number(summaryData.domain_reserved) || Number(summaryData.total_spent) < 0 || Number(summaryData.total_inflow) < 0
+          || Number(summaryData.total_fund) !== fundingTotal
           || Number(summaryData.current_balance) !== signedBalance
           || Number(summaryData.allocation_basis) !== Math.floor(Math.max(0, signedBalance - activeReserves)))) {
         opData.allocationError = 'Data berubah saat dimuat. Basis alokasi tidak cocok dengan saldo buku dan kewajiban.';
@@ -193,7 +196,7 @@
       if (!opData.allocationError && !validateCategoryAllocations(budgetsData, summaryData.allocation_basis)) {
         opData.allocationError = 'Data berubah saat dimuat. Segarkan Keuangan untuk mencocokkan seluruh alokasi.';
       }
-      if (!opData.allocationError && (summaryData.allocation_guard_version !== 2 || summaryData.reconciliation_status !== 'verified'
+      if (!opData.allocationError && (!supportedCashContract(summaryData) || summaryData.reconciliation_status !== 'verified'
           || summaryData.actual_cash_verified !== true || !isRupiah(summaryData.actual_cash_balance) || Number(summaryData.actual_cash_balance) !== signedBalance)) {
         opData.allocationError = 'Alokasi diblokir: backend dan bukti rekonsiliasi belum memenuhi pemeriksaan keamanan.';
       }
@@ -248,17 +251,16 @@
         profit_margin: profitMargin
       };
 
-      const bookBalance = ['initial_fund', 'total_inflow', 'total_spent'].every(key => isRupiah(summaryData?.[key]))
-        ? Number(summaryData.initial_fund) + Number(summaryData.total_inflow) - Number(summaryData.total_spent) : null;
+      const bookBalance = signedBalance;
       if (bookBalance !== null && bookBalance !== Number(summaryData.current_balance)) {
         opData.allocationError = 'Alokasi diblokir: saldo buku berbeda dari proyeksi backend. Perlu sinkronisasi view keuangan.';
       }
-      const confirmedDomain = summaryData?.allocation_guard_version === 2 && summaryData.domain_payment_confirmed === true;
+      const confirmedDomain = supportedCashContract(summaryData) && summaryData.domain_payment_confirmed === true;
       // No legacy expense or mutable budget flag is proof of payment/cancellation.
       const domainReserved = confirmedDomain ? 0 : 22000;
-      const totalReserves = summaryData?.allocation_guard_version === 2 && isRupiah(summaryData.total_active_reserves)
+      const totalReserves = supportedCashContract(summaryData) && isRupiah(summaryData.total_active_reserves)
         && Number(summaryData.total_active_reserves) >= domainReserved ? Number(summaryData.total_active_reserves) : domainReserved;
-      const actualCash = summaryData?.allocation_guard_version === 2 && summaryData.actual_cash_verified === true
+      const actualCash = supportedCashContract(summaryData) && (summaryData.actual_cash_verified === true || summaryData.actual_cash_status === 'user_confirmed_formula')
         && isRupiah(summaryData.actual_cash_balance) ? Number(summaryData.actual_cash_balance) : null;
       // Signed accounting identity, from the same database summary; never hide a deficit.
       opData.summary = {
@@ -273,11 +275,12 @@
         domain_reserved: domainReserved,
         total_active_reserves: totalReserves,
         actual_cash_balance: actualCash,
-        actual_cash_verified: actualCash !== null,
+        actual_cash_verified: actualCash !== null && summaryData.actual_cash_verified === true,
+        actual_cash_status: summaryData?.actual_cash_status || 'unverified',
         free_cash_balance: actualCash === null ? null : cashAfterReserves(actualCash, totalReserves),
         book_free_cash_balance: cashAfterReserves(bookBalance, totalReserves),
         domain_payment_confirmed: confirmedDomain,
-        domain_confirmation_available: summaryData?.allocation_guard_version === 2 && summaryData.domain_confirmation_available === true,
+        domain_confirmation_available: supportedCashContract(summaryData) && summaryData.domain_confirmation_available === true,
         domain_obligation: Number(summaryData?.domain_obligation) || 22000,
         domain_status: confirmedDomain ? 'paid' : 'reserved',
         domain_due_date: summaryData?.domain_due_date || '2027-09-12'
@@ -323,9 +326,10 @@
       'op-domain-book-balance': opData.summaryLoaded ? formatRupiah(s.current_balance) : '—',
       'op-domain-reserve': known ? formatRupiah(s.domain_reserved) : '—',
       'op-domain-total-reserves': known ? formatRupiah(s.total_active_reserves) : '—',
-      'op-domain-actual-cash': known && s.actual_cash_verified ? formatRupiah(s.actual_cash_balance) : 'Belum diverifikasi',
+      'op-domain-actual-cash': known && s.actual_cash_balance !== null ? formatRupiah(s.actual_cash_balance) : 'Belum diverifikasi',
       'op-domain-free-cash': known && s.free_cash_balance !== null ? formatRupiah(s.free_cash_balance) : 'Belum diketahui',
       'op-domain-book-free-cash': known && s.book_free_cash_balance !== null ? formatRupiah(s.book_free_cash_balance) : '—',
+      'op-domain-cash-source': s.actual_cash_status === 'user_confirmed_formula' ? 'Kas dikonfirmasi pengguna: suntikan modal bisnis + laba bersih, dikurangi pengeluaran tercatat. Mutasi rekening belum direkonsiliasi.' : 'Saldo rekening aktual belum direkonsiliasi.',
       'op-domain-available': opData.allocationError ? 'Belum terverifikasi' : formatRupiah(s.allocation_basis)
     };
     for (const [id, value] of Object.entries(text)) {
@@ -809,7 +813,7 @@
     if (captionEl) {
       captionEl.textContent = isExpenses 
         ? 'Catatan audit seluruh pengeluaran kas operasional JOKI.IN.' 
-        : 'Catatan audit pemasukan 10% dari transaksi pesanan yang berhasil dibayar secara realtime.';
+        : 'Catatan alokasi internal 10% pesanan; sudah menjadi bagian laba dan tidak ditambahkan lagi ke kas JOKI.IN.';
     }
 
     if (isExpenses) {

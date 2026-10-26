@@ -1,0 +1,2 @@
+-- Applied migration: migrations/20261026081442_sync_business_cash_from_funding_and_net_profit.sql
+-- Projection-only synchronization; no transaction is inserted.

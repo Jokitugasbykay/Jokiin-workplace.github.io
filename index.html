@@ -656,7 +656,7 @@
               </dl>
               <div class="cf-reconciliation">
                 <strong>Rekonsiliasi saldo</strong><span id="cf-reconciliation" class="status-badge">Belum Direkonsiliasi</span>
-                <dl><div><dt>Saldo pembukuan operasional saat ini</dt><dd id="cf-book-balance">—</dd></div><div><dt>Saldo rekening aktual</dt><dd id="cf-bank-balance">—</dd></div></dl>
+                <dl><div><dt>Kas JOKI.IN (modal + laba bersih)</dt><dd id="cf-book-balance">—</dd></div><div><dt>Kas aktual / dilaporkan</dt><dd id="cf-bank-balance">—</dd></div></dl>
                 <p id="cf-reconciliation-note" class="chart-caption">Saldo rekening belum diverifikasi.</p>
               </div>
               <p id="cf-status" class="chart-caption" role="status" aria-live="polite">Menunggu data.</p>
@@ -688,7 +688,7 @@
                 </div>
               </div>
               <div style="display: flex; gap: 12px; align-items: center; flex-wrap: wrap;">
-                <div class="chart-caption" aria-live="polite">Kas pembukuan: <strong id="op-domain-book-balance">—</strong><br>Saldo kas aktual: <strong id="op-domain-actual-cash">Belum diverifikasi</strong><br>Cadangan domain: <strong id="op-domain-reserve">—</strong><br>Total cadangan aktif tercatat: <strong id="op-domain-total-reserves">—</strong><br>Kas bebas aktual: <strong id="op-domain-free-cash">Belum diketahui</strong><br>Proyeksi kas bebas dari buku: <strong id="op-domain-book-free-cash">—</strong><br>Dana layak alokasi: <strong id="op-domain-available">Belum terverifikasi</strong></div>
+                <div class="chart-caption" aria-live="polite"><p id="op-domain-cash-source"></p>Kas JOKI.IN (pembukuan): <strong id="op-domain-book-balance">—</strong><br>Saldo kas aktual: <strong id="op-domain-actual-cash">Belum diverifikasi</strong><br>Cadangan domain: <strong id="op-domain-reserve">—</strong><br>Total cadangan aktif tercatat: <strong id="op-domain-total-reserves">—</strong><br>Kas bebas aktual: <strong id="op-domain-free-cash">Belum diketahui</strong><br>Proyeksi kas bebas dari buku: <strong id="op-domain-book-free-cash">—</strong><br>Dana layak alokasi: <strong id="op-domain-available">Belum terverifikasi</strong></div>
                 <button id="btn-pay-domain" disabled class="btn-primary" style="height: 40px; padding: 0 18px; font-size: 13px; font-weight: 750; border-radius: 10px;">
                   Menunggu verifikasi pembayaran
                 </button>
@@ -2028,8 +2028,8 @@
   <!-- Application Main Script (Universal script for file://, localhost, & cloud hosting) -->
   <script src="./js/app.js?v=45"></script>
   <script src="./js/produk-promo.js?v=2"></script>
-  <script src="./js/monthly-cashflow.js?v=2"></script>
-  <script src="./js/operational-fund.js?v=13"></script>
+  <script src="./js/monthly-cashflow.js?v=3"></script>
+  <script src="./js/operational-fund.js?v=14"></script>
   <script src="./js/contribution-skyline.js?v=3"></script>
 
   <!-- Failsafe Watchdog & Service Worker -->

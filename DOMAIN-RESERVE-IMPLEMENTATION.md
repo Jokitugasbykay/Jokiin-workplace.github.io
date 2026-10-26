@@ -1,3 +1,5 @@
+> Pembaruan saldo setelah koreksi pengguna: kas kini Rp463.600 = modal Rp400.000 + laba Rp63.600, kas bebas Rp441.600. Lihat CASH-SYNC-20261026.md. Angka Rp11.000 di bawah adalah hasil audit sebelum perubahan definisi sumber kas, dipertahankan sebagai riwayat.
+
 # Dana Cadangan Domain — Implementasi dan pengujian
 
 Tanggal audit: 26 Oktober 2026. Baseline Git: ab630ef.
