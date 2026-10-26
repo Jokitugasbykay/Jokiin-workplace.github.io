@@ -430,67 +430,42 @@ input, textarea, select, button {
   box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.12);
 }
 
-/* Keep native select behavior while styling the opened menu where supported. */
-@supports (appearance: base-select) {
-  select.form-input,
-  select.form-input::picker(select) {
-    appearance: base-select;
-  }
-
-  select.form-input {
-    display: flex;
-    align-items: center;
-    gap: 10px;
-    cursor: pointer;
-    line-height: 1.35;
-  }
-
-  select.form-input::picker-icon {
-    color: var(--ink-secondary);
-    transition: transform 160ms ease-out;
-  }
-
-  select.form-input:open::picker-icon { transform: rotate(180deg); }
-
-  select.form-input::picker(select) {
-    width: max(220px, anchor-size(width));
-    max-width: min(480px, calc(100vw - 24px));
-    max-height: min(320px, 50dvh);
-    padding: 6px;
-    overflow: auto;
-    border: 1px solid var(--border);
-    border-radius: 14px;
-    background: var(--bg-surface);
-    box-shadow: 0 14px 36px rgba(24, 34, 46, 0.16);
-  }
-
-  select.form-input option {
-    min-height: 42px;
-    padding: 10px 12px;
-    border-radius: 9px;
-    color: var(--ink);
-    background: var(--bg-surface);
-    line-height: 1.4;
-    white-space: normal;
-    overflow-wrap: anywhere;
-    cursor: pointer;
-  }
-
-  select.form-input option:hover,
-  select.form-input option:focus-visible {
-    background: var(--accent-blue-bg);
-    color: var(--accent-blue);
-  }
-
-  select.form-input option:checked {
-    background: var(--accent-blue-bg);
-    color: var(--accent-blue);
-    font-weight: 700;
-  }
-
-  select.form-input option::checkmark { color: var(--accent-blue); }
+/* Shared select control; keyboard, validation and form values remain native. */
+select:is(.form-input, .form-select) {
+  appearance: none;
+  width: 100%; max-width: 100%; min-width: 0 !important; min-height: 44px;
+  padding: 0 40px 0 14px !important;
+  border: 1px solid var(--border); border-radius: 12px;
+  color: var(--ink); background-color: var(--bg-surface);
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%235A6474' stroke-width='2'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E");
+  background-repeat: no-repeat; background-position: right 14px center;
+  font-family: inherit; font-size: 16px; line-height: 1.4; cursor: pointer;
+  text-overflow: ellipsis;
 }
-
+select:is(.form-input, .form-select):hover:not(:disabled) { border-color: var(--ink-muted) !important; }
+select:is(.form-input, .form-select):focus-visible { outline: 2px solid var(--accent-blue); outline-offset: 2px; }
+select:is(.form-input, .form-select):disabled { opacity: .55; cursor: not-allowed; }
+select:is(.form-input, .form-select):is([aria-invalid='true'], :user-invalid) { border-color: var(--balance-red) !important; }
+@supports (appearance: base-select) {
+  select:is(.form-input, .form-select), select:is(.form-input, .form-select)::picker(select) { appearance: base-select; }
+  select:is(.form-input, .form-select) { display:flex; align-items:center; gap:10px; background-image:none; padding-right:14px !important; }
+  select:is(.form-input, .form-select)::picker-icon { color:var(--ink-secondary); font-size:14px; transition:transform 160ms ease-out; }
+  select:is(.form-input, .form-select):open::picker-icon { transform:rotate(180deg); }
+  select:is(.form-input, .form-select)::picker(select) {
+    width:anchor-size(width); max-width:calc(100vw - 24px); max-height:min(320px,50dvh);
+    overflow-y:auto; overflow-x:hidden; padding:6px; margin-block:6px;
+    border:1px solid var(--border); border-radius:12px; color:var(--ink); background:var(--bg-surface);
+    box-shadow:0 12px 28px rgba(24,34,46,.14);
+  }
+  select:is(.form-input, .form-select) option { min-height:44px; padding:10px 12px; border-radius:8px; color:var(--ink); background:var(--bg-surface); font-size:16px; line-height:1.4; white-space:normal; overflow-wrap:anywhere; cursor:pointer; }
+  select:is(.form-input, .form-select) option:is(:hover,:focus-visible,:checked) { color:var(--accent-blue); background:var(--accent-blue-bg); }
+  select:is(.form-input, .form-select) option:checked { font-weight:700; }
+  select:is(.form-input, .form-select) option:disabled { color:var(--ink-muted); cursor:not-allowed; }
+  select:is(.form-input, .form-select) option::checkmark { color:var(--accent-blue); }
+}
+@media (prefers-reduced-motion: reduce) {
+  select:is(.form-input, .form-select)::picker-icon { transition:none; }
+}
 .btn-primary {
   width: 100%;
   height: 54px;
@@ -2647,6 +2622,7 @@ body:has(#modal-order-detail.open) { overflow:hidden; }
   width: 100%;
   height: auto;
   max-width: 260px;
+  overflow: visible;
 }
 .op-donut-slice {
   cursor: pointer;
@@ -2655,6 +2631,21 @@ body:has(#modal-order-detail.open) { overflow:hidden; }
 .op-donut-slice:hover, .op-donut-slice:focus-visible {
   outline: none;
   opacity: 0.85;
+}
+.op-donut-slice:focus-visible { stroke:var(--ink); stroke-width:2px; }
+.op-donut-legend-btn { display:flex; align-items:center; gap:10px; width:100%; min-height:48px; text-align:left; padding:10px; border:1px solid transparent; border-radius:10px; background:transparent; color:var(--ink); cursor:pointer; font-size:13px; }
+.op-donut-legend-btn .legend-dot { width:10px; height:10px; border-radius:50%; flex-shrink:0; }
+.op-donut-legend-btn .legend-copy { min-width:0; flex:1; overflow-wrap:anywhere; }
+.op-donut-legend-btn small { display:block; color:var(--ink-secondary); margin-top:4px; font-size:12px; }
+.op-donut-legend-btn[aria-pressed='true'] { background:var(--accent-blue-bg); border-color:var(--border); }
+.op-donut-legend-btn:focus-visible { outline:2px solid var(--accent-blue); outline-offset:2px; }
+.op-bar-row { transition:transform 180ms ease-out; }
+.op-bar-row[role='button'] { cursor:pointer; }
+.op-bar-row[role='button']:focus-visible { outline:2px solid var(--accent-blue); outline-offset:4px; border-radius:6px; }
+.op-bar-row.is-selected { transform:translateX(4px); }
+.op-bar-row.is-selected > div:first-child { color:var(--accent-blue); }
+@media (prefers-reduced-motion: reduce) {
+  .op-donut-slice, .op-bar-row { transition:none; }
 }
 .op-chart-tooltip {
   position: absolute;
@@ -2943,6 +2934,34 @@ body:has(#modal-order-detail.open) { overflow:hidden; }
 }
 
 /* Metric Boxes inside Reseller & Promo */
+.monthly-cashflow { margin-bottom: 20px; }
+.cf-header { display:flex; flex-wrap:wrap; justify-content:space-between; gap:16px; }
+.cf-header > div { min-width:0; }
+.cf-filters { display:flex; flex-wrap:wrap; gap:12px; }
+.cf-filters label { display:grid; gap:6px; font-size:12px; font-weight:600; color:var(--ink-secondary); }
+.cf-filters .form-input { height:44px; max-width:100%; }
+.cf-totals { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:18px; margin:20px 0; }
+.cf-totals > div { min-width:0; padding:16px; background:var(--bg-primary); border-radius:12px; }
+.cf-totals dt { font-size:13px; font-weight:600; }
+.cf-totals dd { font-size:26px; font-weight:800; margin:8px 0; font-variant-numeric:tabular-nums; }
+.cf-reconciliation { border-top:1px solid var(--border-light); padding-top:16px; margin-bottom:16px; }
+.cf-reconciliation > .status-badge { margin-left:10px; }
+.cf-reconciliation dl { display:flex; flex-wrap:wrap; gap:16px 32px; margin:12px 0; }
+.cf-reconciliation dt { font-size:12px; color:var(--ink-secondary); }
+.cf-reconciliation dd { margin-top:4px; font-weight:700; font-variant-numeric:tabular-nums; }
+#cf-status { margin-bottom:10px; }
+.cf-table-wrap { overflow-x:auto; margin-top:10px; }
+.cf-table-wrap table { min-width:800px; }
+.cf-table-wrap td { vertical-align:top; overflow-wrap:anywhere; }
+.cf-table-wrap td:last-child { min-width:260px; }
+.cf-table-wrap :is(th,td):nth-child(1) { min-width:110px; }
+.cf-table-wrap :is(th,td):nth-child(5) { min-width:135px; overflow-wrap:normal; }
+.cf-money { white-space:nowrap; font-variant-numeric:tabular-nums; font-weight:700; }
+@media (max-width:640px) {
+  .cf-totals { grid-template-columns:minmax(0,1fr); }
+  .cf-filters, .cf-filters label { width:100%; }
+}
+
 .keuangan-metric-box {
   background: #F8FAFD;
   border: 1px solid var(--border-light);

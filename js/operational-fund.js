@@ -30,6 +30,10 @@
     bookkeepingRecords: [],
     allocationError: 'Diperlukan rekonsiliasi dasar dana operasional.',
     summaryLoaded: false,
+    cashflowMonth: new Intl.DateTimeFormat('en-CA', { timeZone: 'Asia/Jakarta', year: 'numeric', month: '2-digit', day: '2-digit' }).format(new Date()).slice(0, 7),
+    cashflowCategory: 'all',
+    cashflowSales: { orders: [], checkouts: [], payments: [] },
+    cashflowError: 'Menunggu data arus kas.',
     summary: {
       initial_fund: 0,
       total_inflow: 0,
@@ -72,19 +76,25 @@
         { data: settingsData },
         { data: summaryData, error: errSummary },
         { data: mayarWdData, error: errMayarWd },
-        { data: bkData, error: errBookkeeping }
+        { data: bkData, error: errBookkeeping },
+        { data: cfOrders, error: errCfOrders },
+        { data: cfCheckouts, error: errCfCheckouts },
+        { data: cfPayments, error: errCfPayments }
       ] = await Promise.all([
         supabase.from('operational_budgets_status').select('*'),
-        supabase.from('operational_expenses').select('*').order('created_at', { ascending: false }),
+        window.MonthlyCashflow.readRows(supabase, 'operational_expenses'),
         supabase.from('operational_team_bonuses').select('*').order('created_at', { ascending: false }),
         supabase.from('operational_promo_subsidies').select('*').order('created_at', { ascending: false }),
         supabase.from('operational_inflows').select('*').order('created_at', { ascending: false }),
         supabase.from('operational_reseller_inventory').select('*').order('product_name', { ascending: true }),
-        supabase.from('operational_reseller_transactions').select('*').order('created_at', { ascending: false }),
+        window.MonthlyCashflow.readRows(supabase, 'operational_reseller_transactions'),
         supabase.from('operational_settings').select('*'),
         supabase.from('operational_fund_summary').select('*').single(),
-        supabase.from('mayar_monthly_withdrawals').select('*').order('scheduled_date', { ascending: false }),
-        supabase.from('business_bookkeeping_records').select('*').order('created_at', { ascending: true })
+        window.MonthlyCashflow.readRows(supabase, 'mayar_monthly_withdrawals'),
+        window.MonthlyCashflow.readRows(supabase, 'business_bookkeeping_records'),
+        window.MonthlyCashflow.readRows(supabase, 'orders', 'id,order_code,total_price,payment_status,created_at'),
+        window.MonthlyCashflow.readRows(supabase, 'payment_orders', 'id,order_code,total_price,payment_status,paid_at,created_at'),
+        window.MonthlyCashflow.readRows(supabase, 'payments', 'id,order_id,amount,status,created_at')
       ]);
 
       if (errBudgets || !budgetsData || budgetsData.length === 0) {
@@ -116,6 +126,9 @@
         ? 'Data pencairan Mayar belum dapat diverifikasi. Segarkan data atau periksa akses database.' : '';
       opData.mayarWithdrawals = opData.mayarWithdrawalsError ? [] : mayarWdData;
       opData.bookkeepingRecords = bkData || [];
+      opData.cashflowSales = { orders: cfOrders || [], checkouts: cfCheckouts || [], payments: cfPayments || [] };
+      opData.cashflowError = errExpenses || errResellerTx || errBookkeeping || errMayarWd || errCfOrders || errCfCheckouts || errCfPayments
+        ? 'Sumber transaksi belum lengkap. Total arus kas belum dapat dihitung.' : '';
       opData.summaryLoaded = !errSummary && summaryData && !Array.isArray(summaryData)
         && ['initial_fund', 'current_balance', 'total_fund'].every(key => summaryData[key] != null && Number.isFinite(Number(summaryData[key])));
       opData.allocationError = !opData.summaryLoaded || errBudgets || errExpenses || errInflows || errBookkeeping
@@ -195,6 +208,7 @@
     } catch (err) {
       console.warn('Gagal memuat data dana operasional:', err);
       opData.summaryLoaded = false;
+      opData.cashflowError = 'Data arus kas gagal dimuat.';
       opData.allocationError = 'Diperlukan rekonsiliasi: data keuangan gagal dimuat.';
       opData.mayarWithdrawalsError = 'Data pencairan Mayar belum dapat diverifikasi. Segarkan data atau periksa akses database.';
       opData.budgets = DEFAULT_BUDGETS.map(b => ({
@@ -269,220 +283,110 @@
     }
   }
 
-  function renderKPI() {
-    const s = opData.summary;
-    const valBalance = document.getElementById('op-val-balance');
-    const valAllocated = document.getElementById('op-val-allocated');
-    const valSpent = document.getElementById('op-val-spent');
-    const valRemaining = document.getElementById('op-val-remaining');
-    const pillRemaining = document.getElementById('op-pill-remaining');
-    const pillSpent = document.getElementById('op-pill-spent');
-    const pillFund = document.getElementById('op-pill-fund');
-    const footFund = document.getElementById('op-foot-fund');
-
-    const openingBalance = document.getElementById('op-bookkeeping-opening-balance');
-    if (openingBalance) openingBalance.textContent = opData.summaryLoaded ? formatRupiah(s.initial_fund) : '—';
-    if (valBalance) valBalance.textContent = !opData.summaryLoaded || opData.allocationError ? '—' : s.current_balance.toLocaleString('id-ID');
-    if (valAllocated) valAllocated.textContent = opData.summaryLoaded ? s.total_fund.toLocaleString('id-ID') : '—';
-    if (valSpent) valSpent.textContent = s.total_spent.toLocaleString('id-ID');
-    if (valRemaining) valRemaining.textContent = opData.allocationError ? '—' : s.allocation_basis.toLocaleString('id-ID');
+  function renderMonthlyCashflow() {
+    const opening = document.getElementById('op-bookkeeping-opening-balance');
+    if (opening) opening.textContent = opData.summaryLoaded ? formatRupiah(opData.summary.initial_fund) : '—';
+    window.MonthlyCashflow?.render({
+      ...opData.cashflowSales, books: opData.bookkeepingRecords, expenses: opData.expenses,
+      mayar: opData.mayarWithdrawals, reseller: opData.resellerTransactions
+    }, opData.cashflowMonth, opData.cashflowCategory, opData.cashflowError,
+    opData.summaryLoaded ? opData.summary : null);
     const status = document.getElementById('op-allocation-status');
-    if (status) status.textContent = opData.allocationError || `Basis alokasi ${formatRupiah(s.allocation_basis)}; kewajiban domain belum dibayar ${formatRupiah(s.domain_reserved)} dipisahkan, bukan pengeluaran.`;
-    const balanceNote = document.getElementById('op-foot-balance');
-    if (balanceNote) balanceNote.textContent = !opData.summaryLoaded
-      ? 'Ringkasan kas gagal dimuat. Saldo belum dapat ditampilkan.'
-      : opData.allocationError
-        ? `Kas belum terkonfirmasi. Saldo buku ${formatRupiah(s.current_balance)} = awal ${formatRupiah(s.initial_fund)} + pemasukan ${formatRupiah(s.total_inflow)} − pengeluaran ${formatRupiah(s.total_spent)}. Saldo awal sudah termasuk; jangan ditambahkan lagi.`
-        : `Kas terkonfirmasi dari saldo berjalan. Saldo awal ${formatRupiah(s.initial_fund)} sudah termasuk. Kewajiban domain ${formatRupiah(s.domain_reserved)} dipisahkan pada Dana Siap Dialokasikan, bukan saldo kas tambahan.`;
-    const balancePill = document.getElementById('op-pill-balance');
-    if (balancePill) balancePill.textContent = opData.allocationError ? 'Rekonsiliasi' : 'Terverifikasi';
+    if (status) status.textContent = opData.allocationError || `Basis alokasi ${formatRupiah(opData.summary.allocation_basis)}; kewajiban domain terpisah.`;
+  }
+  function selectAllocationCategory(id, animate = true) {
+    opData.activeAllocationCategory = opData.activeAllocationCategory === id ? null : id;
+    updateAllocationSelection(animate);
+  }
 
-    if (pillFund) {
-      pillFund.textContent = s.total_inflow > 0 ? `+${formatRupiah(s.total_inflow)} Realtime` : 'Awal Rp0';
-      pillFund.className = `ac-12__pill ${s.total_inflow > 0 ? 'ac-12__pill--up' : 'ac-12__pill--flat'}`;
+  function updateAllocationSelection(animate = false) {
+    const selected = opData.activeAllocationCategory;
+    const cat = opData.budgets.find(item => item.id === selected);
+    document.querySelectorAll('.op-donut-slice').forEach(path => {
+      const active = path.dataset.id === selected;
+      path.setAttribute('aria-pressed', String(active));
+      path.style.opacity = selected && !active ? '.48' : '1';
+      path.style.transform = active ? `translate(${path.dataset.dx}px, ${path.dataset.dy}px)` : 'translate(0, 0)';
+    });
+    document.querySelectorAll('.op-donut-legend-btn').forEach(button => button.setAttribute('aria-pressed', String(button.dataset.id === selected)));
+    document.querySelectorAll('.op-bar-row').forEach(row => {
+      row.classList.toggle('is-selected', row.dataset.id === selected);
+      if (row.getAttribute('role') === 'button') row.setAttribute('aria-pressed', String(row.dataset.id === selected));
+    });
+    const names = { ai_tools:'AI & tools', bonus:'Bonus tim', emergency:'Dana darurat', promo:'Promo pelanggan', reseller:'Modal reseller' };
+    const text = {
+      'op-donut-center-label': cat ? names[cat.id] || 'Kategori' : opData.allocationError ? 'Target alokasi' : 'Sisa dana',
+      'op-donut-center-val': cat ? opData.allocationError ? '20%' : formatRupiah(cat.remaining_amount) : opData.allocationError ? '20% per kategori' : formatRupiah(opData.summary.allocation_basis || 0),
+      'op-donut-center-sub': opData.allocationError ? 'Menunggu verifikasi' : cat ? 'Target 20%' : '5 kategori'
+    };
+    for (const [id, value] of Object.entries(text)) {
+      const element = document.getElementById(id);
+      if (element) element.textContent = value;
     }
-
-    if (footFund) {
-      footFund.textContent = `${formatRupiah(s.initial_fund)} awal + ${formatRupiah(s.total_inflow)} pemasukan tercatat; pendanaan dan saldo penjualan tidak dijumlahkan lagi.`;
-    }
-
-    if (pillSpent) {
-      pillSpent.textContent = s.total_spent > 0 ? `${formatRupiah(s.total_spent)}` : 'Realisasi: Rp0';
-      pillSpent.className = `ac-12__pill ${s.total_spent > 0 ? 'ac-12__pill--down' : 'ac-12__pill--flat'}`;
-    }
-
-    if (pillRemaining) {
-      const pct = s.total_fund > 0 ? Math.round((s.current_balance / s.total_fund) * 100) : 100;
-      pillRemaining.textContent = opData.allocationError ? 'Belum ditetapkan' : `${formatRupiah(s.allocation_basis)} dapat dialokasikan`;
-      pillRemaining.className = `ac-12__pill ${pct < 20 ? 'ac-12__pill--down' : 'ac-12__pill--up'}`;
+    const group = document.getElementById('op-donut-center-group');
+    if (animate && group?.animate && !window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+      group.animate([{ opacity:.35 }, { opacity:1 }], { duration:180, easing:'ease-out' });
     }
   }
 
   function renderDonutChart() {
     const wrap = document.getElementById('op-donut-svg-wrap');
-    const legendEl = document.getElementById('op-donut-legend');
-    if (!wrap || !legendEl) return;
-
-    wrap.innerHTML = '';
-    legendEl.innerHTML = '';
-
-    // STRICT REQUIREMENT: Domain is NOT included in percentage donut chart.
-    // Donut chart visualizes the 5 remaining categories: Promo, Bonus, AI, Emergency, Reseller (each 20%).
-    const variableBudgets = opData.budgets.filter(b => !b.is_fixed_obligation && b.id !== 'domain');
-    const totalVar = variableBudgets.reduce((sum, b) => sum + b.remaining_amount, 0);
+    const legend = document.getElementById('op-donut-legend');
+    if (!wrap || !legend) return;
+    wrap.innerHTML = ''; legend.innerHTML = '';
+    const categories = opData.budgets.filter(cat => !cat.is_fixed_obligation && cat.id !== 'domain');
+    const total = categories.reduce((sum, cat) => sum + cat.remaining_amount, 0);
+    const targetMode = Boolean(opData.allocationError);
     const caption = document.getElementById('op-allocation-caption');
-    if (caption) caption.textContent = opData.allocationError
-      ? 'Target 20% per kategori; kewajiban domain terpisah. Nominal ditetapkan setelah dasar dana dikonfirmasi.'
-      : `Target 20% dari sisa dana sah ${formatRupiah(totalVar)} per kategori. Sisa pembulatan rupiah dibagikan menurut urutan kategori. Kewajiban domain terpisah.`;
-    if (opData.allocationError) {
-      wrap.innerHTML = '<svg viewBox="0 0 260 260" role="img" aria-label="Alokasi menunggu rekonsiliasi"><circle cx="130" cy="130" r="86" fill="none" stroke="#E5E9EF" stroke-width="36"/><text x="130" y="125" text-anchor="middle" fill="var(--ink-secondary)" font-size="13">Menunggu</text><text x="130" y="147" text-anchor="middle" fill="var(--ink)" font-size="15">rekonsiliasi</text></svg>';
-      variableBudgets.forEach(cat => {
-        const item = document.createElement('div');
-        item.textContent = `${cat.name}: target 20% · nominal belum ditetapkan`;
-        item.className = 'chart-caption';
-        legendEl.appendChild(item);
-      });
-      return;
+    if (caption) caption.textContent = targetMode
+      ? 'Diagram target 20% per kategori, bukan dana tersedia. Pilih irisan atau kategori untuk melihat detail. Kewajiban domain terpisah.'
+      : `Sisa dana sah ${formatRupiah(total)}. Pilih irisan atau kategori untuk detail; pembulatan rupiah tetap mengikuti sumber alokasi.`;
+    const ns = 'http://www.w3.org/2000/svg';
+    const svg = document.createElementNS(ns, 'svg');
+    svg.setAttribute('viewBox', '0 0 260 260'); svg.setAttribute('class', 'op-donut-svg');
+    svg.setAttribute('role', 'group'); svg.setAttribute('aria-label', targetMode ? 'Diagram target alokasi, nominal belum terverifikasi' : 'Diagram sisa alokasi operasional');
+    let angle = -Math.PI / 2;
+    for (const cat of categories) {
+      const fraction = targetMode ? 1 / categories.length : total > 0 ? cat.remaining_amount / total : 0;
+      const end = angle + fraction * Math.PI * 2;
+      if (fraction > 0) {
+        const point = (radius, theta) => `${130 + radius * Math.cos(theta)} ${130 + radius * Math.sin(theta)}`;
+        const path = document.createElementNS(ns, 'path');
+        const safeEnd = fraction === 1 ? end - .00001 : end;
+        path.setAttribute('d', `M ${point(102,angle)} A 102 102 0 ${fraction>.5?1:0} 1 ${point(102,safeEnd)} L ${point(68,safeEnd)} A 68 68 0 ${fraction>.5?1:0} 0 ${point(68,angle)} Z`);
+        path.setAttribute('fill', cat.color); path.setAttribute('stroke', 'var(--bg-surface)'); path.setAttribute('stroke-width', '3');
+        path.setAttribute('class', 'op-donut-slice'); path.setAttribute('role', 'button'); path.setAttribute('tabindex', '0');
+        path.setAttribute('aria-label', `${cat.name}, target 20%, ${targetMode ? 'nominal belum ditetapkan' : formatRupiah(cat.remaining_amount)}`);
+        path.dataset.id = cat.id; path.dataset.dx = (Math.cos((angle+end)/2)*7).toFixed(2); path.dataset.dy = (Math.sin((angle+end)/2)*7).toFixed(2);
+        path.addEventListener('click', () => selectAllocationCategory(cat.id));
+        path.addEventListener('keydown', event => {
+          if (event.key === 'Enter' || event.key === ' ') { event.preventDefault(); selectAllocationCategory(cat.id); }
+          if (event.key === 'Escape') { opData.activeAllocationCategory = null; updateAllocationSelection(); }
+        });
+        svg.appendChild(path);
+      }
+      angle = end;
+      const button = document.createElement('button'); button.type = 'button'; button.className = 'op-donut-legend-btn'; button.dataset.id = cat.id;
+      button.innerHTML = `<span class="legend-dot"></span><span class="legend-copy">${escapeHtml(cat.name)}<small>${targetMode ? 'Target 20% · nominal belum ditetapkan' : `${formatRupiah(cat.remaining_amount)} · target 20%`}</small></span>`;
+      button.querySelector('.legend-dot').style.backgroundColor = cat.color;
+      button.addEventListener('click', () => selectAllocationCategory(cat.id));
+      button.addEventListener('keydown', event => { if (event.key === 'Escape') { opData.activeAllocationCategory = null; updateAllocationSelection(); } });
+      legend.appendChild(button);
     }
-
-    const size = 260;
-    const cx = size / 2;
-    const cy = size / 2;
-    const rOuter = 105;
-    const rInner = 68;
-
-    const svgNS = 'http://www.w3.org/2000/svg';
-    const svg = document.createElementNS(svgNS, 'svg');
-    svg.setAttribute('viewBox', `0 0 ${size} ${size}`);
-    svg.setAttribute('class', 'op-donut-svg');
-    svg.setAttribute('role', 'img');
-    svg.setAttribute('aria-label', `Grafik Donut Alokasi Sisa Dana. Total ${formatRupiah(totalVar)}`);
-
-    let currentAngle = -90; // Start at 12 o'clock
-
-    variableBudgets.filter(cat => cat.remaining_amount > 0).forEach((cat) => {
-      const sliceAngle = (cat.remaining_amount / totalVar) * 360;
-      const startAngle = currentAngle;
-      const endAngle = currentAngle + sliceAngle;
-      currentAngle = endAngle;
-
-      const pct = '20.00';
-
-      const startRad = (startAngle * Math.PI) / 180;
-      const endRad = (endAngle * Math.PI) / 180;
-
-      const x1Outer = cx + rOuter * Math.cos(startRad);
-      const y1Outer = cy + rOuter * Math.sin(startRad);
-      const x2Outer = cx + rOuter * Math.cos(endRad);
-      const y2Outer = cy + rOuter * Math.sin(endRad);
-
-      const x1Inner = cx + rInner * Math.cos(endRad);
-      const y1Inner = cy + rInner * Math.sin(endRad);
-      const x2Inner = cx + rInner * Math.cos(startRad);
-      const y2Inner = cy + rInner * Math.sin(startRad);
-
-      const largeArc = sliceAngle > 180 ? 1 : 0;
-
-      const pathData = [
-        `M ${x1Outer} ${y1Outer}`,
-        `A ${rOuter} ${rOuter} 0 ${largeArc} 1 ${x2Outer} ${y2Outer}`,
-        `L ${x1Inner} ${y1Inner}`,
-        `A ${rInner} ${rInner} 0 ${largeArc} 0 ${x2Inner} ${y2Inner}`,
-        'Z'
-      ].join(' ');
-
-      const path = document.createElementNS(svgNS, 'path');
-      path.setAttribute('d', pathData);
-      path.setAttribute('fill', cat.color);
-      path.setAttribute('class', 'op-donut-slice');
-      path.setAttribute('data-id', cat.id);
-      path.setAttribute('tabindex', '0');
-
-      const title = document.createElementNS(svgNS, 'title');
-      title.textContent = `${cat.name}: ${formatRupiah(cat.remaining_amount)} (target ${pct}%)`;
-      path.appendChild(title);
-
-      path.addEventListener('mouseenter', () => {
-        path.setAttribute('opacity', '0.85');
-        updateDonutCenterText(cat.name, formatRupiah(cat.remaining_amount), `Target ${pct}%`);
-      });
-
-      path.addEventListener('mouseleave', () => {
-        path.setAttribute('opacity', '1');
-        updateDonutCenterText('Sisa Dana', formatRupiah(totalVar), '100% (5 Pos)');
-      });
-
-      svg.appendChild(path);
-    });
-
-    // Donut Center Text
-    const textGroup = document.createElementNS(svgNS, 'g');
-    textGroup.setAttribute('id', 'op-donut-center-group');
-
-    const centerLabel = document.createElementNS(svgNS, 'text');
-    centerLabel.setAttribute('x', cx);
-    centerLabel.setAttribute('y', cy - 14);
-    centerLabel.setAttribute('text-anchor', 'middle');
-    centerLabel.setAttribute('font-size', '11');
-    centerLabel.setAttribute('font-weight', '600');
-    centerLabel.setAttribute('fill', 'var(--ink-secondary)');
-    centerLabel.setAttribute('id', 'op-donut-center-label');
-    centerLabel.textContent = 'Sisa Dana';
-
-    const centerVal = document.createElementNS(svgNS, 'text');
-    centerVal.setAttribute('x', cx);
-    centerVal.setAttribute('y', cy + 8);
-    centerVal.setAttribute('text-anchor', 'middle');
-    centerVal.setAttribute('font-size', '15');
-    centerVal.setAttribute('font-weight', '800');
-    centerVal.setAttribute('fill', 'var(--ink)');
-    centerVal.setAttribute('id', 'op-donut-center-val');
-    centerVal.textContent = formatRupiah(totalVar);
-
-    const centerSub = document.createElementNS(svgNS, 'text');
-    centerSub.setAttribute('x', cx);
-    centerSub.setAttribute('y', cy + 24);
-    centerSub.setAttribute('text-anchor', 'middle');
-    centerSub.setAttribute('font-size', '11');
-    centerSub.setAttribute('font-weight', '600');
-    centerSub.setAttribute('fill', '#10B981');
-    centerSub.setAttribute('id', 'op-donut-center-sub');
-    centerSub.textContent = totalVar > 0 ? '100% (5 Pos)' : 'Belum ada sisa dana';
-
-    textGroup.appendChild(centerLabel);
-    textGroup.appendChild(centerVal);
-    textGroup.appendChild(centerSub);
-    svg.appendChild(textGroup);
-
-    wrap.appendChild(svg);
-
-    // Legend for the 4 variable categories
-    variableBudgets.forEach(cat => {
-      const pct = '20.00';
-      const item = document.createElement('div');
-      item.style.cssText = 'display: flex; justify-content: space-between; align-items: center; font-size: 12px; padding: 3px 0;';
-      item.innerHTML = `
-        <div style="display: flex; align-items: center; gap: 8px;">
-          <span style="width: 10px; height: 10px; border-radius: 50%; background: ${cat.color}; flex-shrink: 0;"></span>
-          <span style="color: var(--ink); font-weight: 600;">${cat.name}</span>
-        </div>
-        <div style="text-align: right; font-weight: 700; color: var(--ink); font-variant-numeric: tabular-nums;">
-          ${formatRupiah(cat.remaining_amount)} <span style="font-size: 11px; color: var(--ink-secondary); font-weight: 500;">(target ${pct}%)</span>
-        </div>
-      `;
-      legendEl.appendChild(item);
-    });
+    if (!total && !targetMode) {
+      const circle = document.createElementNS(ns, 'circle');
+      for (const [key,value] of Object.entries({cx:130,cy:130,r:85,fill:'none',stroke:'var(--border-light)','stroke-width':34})) circle.setAttribute(key,value);
+      svg.appendChild(circle);
+    }
+    const group = document.createElementNS(ns, 'g'); group.id = 'op-donut-center-group'; group.style.pointerEvents = 'none';
+    for (const [id,y,size] of [['label',113,12],['val',137,14],['sub',158,10]]) {
+      const text = document.createElementNS(ns, 'text'); text.id = `op-donut-center-${id}`;
+      text.setAttribute('x',130); text.setAttribute('y',y); text.setAttribute('text-anchor','middle'); text.setAttribute('font-size',size); text.setAttribute('fill','var(--ink)');
+      group.appendChild(text);
+    }
+    svg.appendChild(group); wrap.appendChild(svg);
+    updateAllocationSelection();
   }
-
-  function updateDonutCenterText(label, value, sub) {
-    const elLabel = document.getElementById('op-donut-center-label');
-    const elVal = document.getElementById('op-donut-center-val');
-    const elSub = document.getElementById('op-donut-center-sub');
-    if (elLabel) elLabel.textContent = label;
-    if (elVal) elVal.textContent = value;
-    if (elSub) elSub.textContent = sub;
-  }
-
   function renderComparisonBars() {
     const container = document.getElementById('op-bars-container');
     const summaryLabel = document.getElementById('op-realization-summary');
@@ -506,6 +410,18 @@
 
       const row = document.createElement('div');
       row.className = 'op-bar-row';
+      row.dataset.id = cat.id;
+      if (cat.id === opData.activeAllocationCategory) row.classList.add('is-selected');
+      if (!cat.is_fixed_obligation) {
+        row.setAttribute('role', 'button'); row.tabIndex = 0;
+        row.setAttribute('aria-label', `Sorot alokasi ${cat.name}`);
+        row.setAttribute('aria-pressed', String(cat.id === opData.activeAllocationCategory));
+        row.addEventListener('click', () => selectAllocationCategory(cat.id));
+        row.addEventListener('keydown', event => {
+          if (event.key === 'Enter' || event.key === ' ') { event.preventDefault(); selectAllocationCategory(cat.id); }
+          if (event.key === 'Escape') { opData.activeAllocationCategory = null; updateAllocationSelection(); }
+        });
+      }
       row.style.cssText = 'display: flex; flex-direction: column; gap: 4px;';
 
       row.innerHTML = `
@@ -1631,6 +1547,22 @@
   }
 
   function setupEventListeners() {
+    const monthInput = document.getElementById('cf-month');
+    if (monthInput) {
+      monthInput.value = opData.cashflowMonth;
+      monthInput.addEventListener('change', () => {
+        if (!/^\d{4}-(0[1-9]|1[0-2])$/.test(monthInput.value)) {
+          monthInput.value = opData.cashflowMonth;
+          return;
+        }
+        opData.cashflowMonth = monthInput.value;
+        renderMonthlyCashflow();
+      });
+    }
+    document.getElementById('cf-category')?.addEventListener('change', event => {
+      opData.cashflowCategory = event.target.value;
+      renderMonthlyCashflow();
+    });
 
     // Mayar Monthly Withdrawal Actions & Form Listeners
     const btnRecordMayar = document.getElementById('btn-record-mayar-withdraw');
@@ -2097,7 +2029,7 @@
   function renderAll() {
     renderBookkeepingReferences();
     renderMayarMonthlyWithdrawals();
-    renderKPI();
+    renderMonthlyCashflow();
     renderDomainCard();
     renderDonutChart();
     renderComparisonBars();

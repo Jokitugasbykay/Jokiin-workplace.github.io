@@ -18,12 +18,13 @@ const context = vm.createContext({
   Date, Intl, console, alert() {}, confirm: () => false,
   formatRupiah: n => 'Rp' + Number(n).toLocaleString('id-ID'),
   getSupabase: async () => ({ from: table => ({
-    select() { return this; }, order() { return this; }, single() { return this; },
+    select() { return this; }, order() { return this; }, single() { return this; }, range() { return this; },
     then(resolve) { return Promise.resolve({ data: [], error: table === 'mayar_monthly_withdrawals' ? readError : null }).then(resolve); },
     insert(row) { writes.push(row); throw new Error('Unexpected write'); },
     update(row) { writes.push(row); throw new Error('Unexpected write'); }
   }) })
 });
+vm.runInContext(fs.readFileSync('js/monthly-cashflow.js', 'utf8'), context);
 vm.runInContext(source, context);
 const api = context.window.testMayar;
 const data = context.window.OperationalFund.getData();

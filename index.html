@@ -18,7 +18,7 @@
   <meta name="theme-color" content="#000000">
 
   <!-- Stylesheet -->
-  <link rel="stylesheet" href="./css/style.css?v=43">
+  <link rel="stylesheet" href="./css/style.css?v=44">
 
   <!-- Supabase JS Library -->
   <script defer src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
@@ -534,7 +534,7 @@
                 <div class="keuangan-metric-box">
                   <span style="font-size: 11px; color: var(--ink-secondary); font-weight: 600;">Saldo Awal Pembukuan</span>
                   <div id="op-bookkeeping-opening-balance" style="margin-top: 6px; font-size: 20px; font-weight: 800;">—</div>
-                  <span style="font-size: 11px; color: var(--ink-secondary); display: block; margin-top: 6px;">Nilai pembuka sudah termasuk dalam perhitungan saldo berjalan. Jangan ditambahkan lagi ke Saldo Kas Operasional.</span>
+                  <span style="font-size: 11px; color: var(--ink-secondary); display: block; margin-top: 6px;">Nilai pembuka sudah termasuk dalam saldo pembukuan pada rekonsiliasi. Jangan ditambahkan lagi sebagai pemasukan bulanan.</span>
                 </div>
               </div>
 
@@ -640,63 +640,30 @@
               </div>
             </article>
 
-            <!-- KPI Cards for Operational Fund -->
-            <div class="ac-12 keuangan-kpi-wrap" aria-label="Metrik Dana Operasional">
-              <div class="ac-12__grid" style="grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));">
-                <!-- Card 1: Saldo Kas Operasional -->
-                <article class="ac-12__card" style="border-left: 4px solid var(--accent-blue);">
-                  <div class="ac-12__top">
-                    <p class="ac-12__key">Saldo Kas Operasional</p>
-                    <span id="op-pill-balance" class="ac-12__pill ac-12__pill--flat">Rekonsiliasi</span>
-                  </div>
-                  <p class="ac-12__val">
-                    <span class="ac-12__cur">Rp</span>
-                    <span id="op-val-balance" class="ac-12__num">—</span>
-                  </p>
-                  <p class="ac-12__foot" id="op-foot-balance">Menunggu konfirmasi kas. Saldo awal sudah termasuk dalam saldo berjalan.</p>
-                </article>
-
-                <!-- Card 2: Total Dana Operasional -->
-                <article class="ac-12__card" style="border-left: 4px solid #10B981;">
-                  <div class="ac-12__top">
-                    <p class="ac-12__key">Total dana operasional</p>
-                    <span id="op-pill-fund" class="ac-12__pill ac-12__pill--flat">Awal + 10%</span>
-                  </div>
-                  <p class="ac-12__val">
-                    <span class="ac-12__cur">Rp</span>
-                    <span id="op-val-allocated" class="ac-12__num">0</span>
-                  </p>
-                  <p class="ac-12__foot" id="op-foot-fund">Alokasi awal Rp0 + akumulasi 10%</p>
-                </article>
-
-                <!-- Card 3: Total Pengeluaran Aktual -->
-                <article class="ac-12__card" style="border-left: 4px solid #EF4444;">
-                  <div class="ac-12__top">
-                    <p class="ac-12__key">Total pengeluaran aktual</p>
-                    <span id="op-pill-spent" class="ac-12__pill ac-12__pill--flat">Realisasi</span>
-                  </div>
-                  <p class="ac-12__val">
-                    <span class="ac-12__cur">Rp</span>
-                    <span id="op-val-spent" class="ac-12__num">0</span>
-                  </p>
-                  <p class="ac-12__foot" id="op-foot-spent">Berdasarkan transaksi nyata tercatat</p>
-                </article>
-
-                <!-- Card 4: Sisa Kas Tersedia -->
-                <article class="ac-12__card" style="border-left: 4px solid #F59E0B;">
-                  <div class="ac-12__top">
-                    <p class="ac-12__key">Dana Siap Dialokasikan</p>
-                    <span id="op-pill-remaining" class="ac-12__pill ac-12__pill--up">100% Sisa</span>
-                  </div>
-                  <p class="ac-12__val">
-                    <span class="ac-12__cur">Rp</span>
-                    <span id="op-val-remaining" class="ac-12__num">0</span>
-                  </p>
-                  <p class="ac-12__foot">Basis alokasi setelah kewajiban domain dipisahkan.</p>
-                </article>
+            <section id="monthly-cashflow" class="keuangan-card monthly-cashflow" aria-labelledby="cf-heading">
+              <div class="cf-header">
+                <div><h3 id="cf-heading" class="section-title">Ringkasan Arus Kas Bulanan</h3><p class="chart-caption">Transaksi tercatat dan pemindahan dana ditampilkan terpisah. Referensi pembukuan tidak dihitung ulang sebagai transaksi.</p></div>
+                <div class="cf-filters">
+                  <label for="cf-month">Bulan <input id="cf-month" type="month" class="form-input" required></label>
+                  <label for="cf-category">Kategori riwayat <select id="cf-category" class="form-input">
+                    <option value="all">Semua kategori</option><option value="sales">Omzet penjualan</option><option value="funding">Suntikan modal bisnis</option><option value="other">Sumber dana lain</option><option value="operational">Operasional</option><option value="mayar_fee">Biaya withdraw Mayar</option><option value="repayment">Pengembalian modal pribadi</option><option value="transfer">Transfer Mayar</option>
+                  </select></label>
+                </div>
               </div>
-            </div>
-
+              <dl class="cf-totals">
+                <div><dt>Total pemasukan bulan terpilih</dt><dd id="cf-income">—</dd><p id="cf-income-breakdown" class="chart-caption">Menunggu transaksi.</p></div>
+                <div><dt>Total pengeluaran bulan terpilih</dt><dd id="cf-expense">—</dd><p id="cf-expense-breakdown" class="chart-caption">Menunggu transaksi.</p></div>
+              </dl>
+              <div class="cf-reconciliation">
+                <strong>Rekonsiliasi saldo</strong><span id="cf-reconciliation" class="status-badge">Belum Direkonsiliasi</span>
+                <dl><div><dt>Saldo pembukuan operasional saat ini</dt><dd id="cf-book-balance">—</dd></div><div><dt>Saldo rekening aktual</dt><dd id="cf-bank-balance">—</dd></div></dl>
+                <p id="cf-reconciliation-note" class="chart-caption">Saldo rekening belum diverifikasi.</p>
+              </div>
+              <p id="cf-status" class="chart-caption" role="status" aria-live="polite">Menunggu data.</p>
+              <div class="keuangan-table-card cf-table-wrap" tabindex="0" role="region" aria-label="Riwayat arus kas bulanan, geser untuk melihat seluruh kolom">
+                <table class="op-table"><thead><tr><th scope="col">Tanggal</th><th scope="col">Jenis transaksi</th><th scope="col">Kategori</th><th scope="col">Nominal</th><th scope="col">Status</th><th scope="col">Keterangan</th></tr></thead><tbody id="cf-history"><tr><td colspan="6">Menunggu data arus kas.</td></tr></tbody></table>
+              </div>
+            </section>
             <!-- Kartu Kewajiban Perpanjangan Domain (Nominal Tetap & Terpisah) -->
             <div class="entry-card domain-obligation-banner" id="op-domain-card">
               <div class="domain-content-left">
@@ -980,7 +947,7 @@
                   <p id="op-history-caption" class="chart-caption" style="margin: 0;">Catatan audit pengeluaran kas operasional JOKI.IN.</p>
                 </div>
                 <div id="op-expenses-filter-controls" style="display: flex; gap: 10px; align-items: center; flex-wrap: wrap;">
-                  <select id="op-filter-category" class="form-select" style="height: 38px; font-size: 13px; padding: 0 14px; border-radius: 10px; min-width: 160px; border-color: var(--border);">
+                  <select id="op-filter-category" class="form-select" aria-label="Filter kategori pengeluaran" style="height: 38px; font-size: 13px; padding: 0 14px; border-radius: 10px; min-width: 160px; border-color: var(--border);">
                     <option value="all">Semua Kategori</option>
                     <option value="domain">Perpanjangan domain</option>
                     <option value="promo">Promo & diskon</option>
@@ -1195,7 +1162,7 @@
               Pilih pesanan yang berstatus <strong>paid</strong> untuk mengisi seluruh rincian invoice secara otomatis.
             </p>
             <div style="display: flex; gap: 10px; flex-wrap: wrap;">
-              <select id="invoice-order-picker" class="form-input" style="flex: 1; min-width: 220px; height: 46px; border-radius: 12px; font-size: 14px;">
+              <select id="invoice-order-picker" class="form-input" aria-label="Pesanan untuk invoice" style="flex: 1; min-width: 220px; height: 46px; border-radius: 12px; font-size: 14px;">
                 <option value="">-- Pilih Pesanan (Status: Paid) --</option>
               </select>
               <button id="btn-invoice-load-order" class="btn-primary" style="width: auto; padding: 0 20px; height: 46px; border-radius: 12px; font-size: 14px; background: #087C5B;">
@@ -2044,9 +2011,10 @@
   </audio>
 
   <!-- Application Main Script (Universal script for file://, localhost, & cloud hosting) -->
-  <script src="./js/app.js?v=42"></script>
+  <script src="./js/app.js?v=43"></script>
   <script src="./js/produk-promo.js?v=2"></script>
-  <script src="./js/operational-fund.js?v=9"></script>
+  <script src="./js/monthly-cashflow.js?v=1"></script>
+  <script src="./js/operational-fund.js?v=10"></script>
   <script src="./js/contribution-skyline.js?v=3"></script>
 
   <!-- Failsafe Watchdog & Service Worker -->
