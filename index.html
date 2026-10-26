@@ -18,7 +18,7 @@
   <meta name="theme-color" content="#000000">
 
   <!-- Stylesheet -->
-  <link rel="stylesheet" href="./css/style.css?v=45">
+  <link rel="stylesheet" href="./css/style.css?v=46">
 
   <!-- Supabase JS Library -->
   <script defer src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
@@ -683,20 +683,21 @@
                   <div class="domain-pills-row">
                     <span class="domain-pill-item">Kewajiban: <strong>Rp22.000 / tahun</strong></span>
                     <span class="domain-pill-item">Jatuh Tempo: <strong id="op-domain-due-date" style="color: var(--accent-blue);">12 September 2027</strong></span>
-                    <span class="domain-pill-item">Realisasi: <strong id="op-domain-payment-note" style="color: #10B981;">Saldo belum terpotong</strong></span>
+                    <span class="domain-pill-item">Status pencatatan: <strong id="op-domain-payment-note" style="color: var(--ink-secondary);">Saldo belum terpotong</strong></span>
                   </div>
                 </div>
               </div>
-              <div style="display: flex; gap: 8px; align-items: center;">
-                <button id="btn-pay-domain" class="btn-primary" style="height: 40px; padding: 0 18px; font-size: 13px; font-weight: 750; border-radius: 10px;">
-                  Bayar Domain (Rp22.000)
+              <div style="display: flex; gap: 12px; align-items: center; flex-wrap: wrap;">
+                <div class="chart-caption" aria-live="polite">Kas pembukuan: <strong id="op-domain-book-balance">—</strong><br>Cadangan domain: <strong id="op-domain-reserve">—</strong><br>Dana layak alokasi: <strong id="op-domain-available">Belum terverifikasi</strong></div>
+                <button id="btn-pay-domain" disabled class="btn-primary" style="height: 40px; padding: 0 18px; font-size: 13px; font-weight: 750; border-radius: 10px;">
+                  Menunggu verifikasi pembayaran
                 </button>
               </div>
             </div>
 
             <!-- Two Integrated Charts Grid -->
             <div class="op-charts-grid" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 280px), 1fr)); gap: 20px;">
-              <!-- Chart 1: Donut Chart Alokasi Sisa Dana (4 Kategori) -->
+              <!-- Chart 1: Donut Chart Alokasi Sisa Dana (5 Kategori) -->
               <article class="keuangan-card" style="display: flex; flex-direction: column;">
                 <div class="section-header" style="margin-bottom: 4px;">
                   <h4 class="section-title" style="font-size: 16px; font-weight: 800;">Alokasi Sisa Dana Operasional</h4>
@@ -2014,7 +2015,7 @@
   <script src="./js/app.js?v=45"></script>
   <script src="./js/produk-promo.js?v=2"></script>
   <script src="./js/monthly-cashflow.js?v=1"></script>
-  <script src="./js/operational-fund.js?v=11"></script>
+  <script src="./js/operational-fund.js?v=12"></script>
   <script src="./js/contribution-skyline.js?v=3"></script>
 
   <!-- Failsafe Watchdog & Service Worker -->

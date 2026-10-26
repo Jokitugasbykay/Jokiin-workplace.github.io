@@ -1,3 +1,6 @@
+-- Legacy integration fixture: disposable DB ONLY; never production.
+-- Its verified-path assertions require a test-only trusted gate; the hardened proposal intentionally stays closed.
+-- Run supabase/test-operational-server.cjs for executable isolated coverage of the proposed patch.
 BEGIN;
 DO $test$
 DECLARE amount integer; inflow numeric; s record; distributed numeric; smallest numeric; biggest numeric; i integer;

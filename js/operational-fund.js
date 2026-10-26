@@ -60,14 +60,45 @@
     { id: 'reseller', name: 'Modal reseller produk digital', allocated_amount: 0, percentage: 20.00, is_fixed_obligation: false, color: '#0EA5E9', icon: 'shopping-bag' }
   ];
 
+  const VARIABLE_CATEGORY_IDS = ['ai_tools', 'bonus', 'emergency', 'promo', 'reseller'];
+  const isRupiah = value => (typeof value === 'number' || typeof value === 'string' && /^-?\d+$/.test(value)) && Number.isSafeInteger(Number(value));
+  let expenseRequest = null;
+
   // Pembagian rata ke 5 kategori masing-masing tepat 20%, total 100%.
   // Sisa pembulatan rupiah didistribusikan secara deterministik dari kategori pertama.
   function calculateDeterministicAllocation(totalAmount, count = 5) {
-    const total = Math.max(0, Math.floor(Number(totalAmount) || 0));
-    if (count <= 0 || total === 0) return Array(count).fill(0);
+    if (!isRupiah(totalAmount) || !Number.isInteger(count) || count !== 5) throw new Error('Basis alokasi atau jumlah kategori tidak valid.');
+    const total = Math.max(0, Number(totalAmount));
+    if (total === 0) return Array(count).fill(0);
     const base = Math.floor(total / count);
     const remainder = total % count;
     return Array.from({ length: count }, (_, i) => base + (i < remainder ? 1 : 0));
+  }
+
+  function validateCategoryAllocations(rows, pool) {
+    if (!Array.isArray(rows) || !isRupiah(pool) || Number(pool) < 0) return false;
+    const expectedIds = ['domain', ...VARIABLE_CATEGORY_IDS];
+    if (rows.length !== expectedIds.length || new Set(rows.map(row => row.id)).size !== expectedIds.length
+        || rows.some(row => !expectedIds.includes(row.id))) return false;
+    const shares = calculateDeterministicAllocation(pool);
+    return VARIABLE_CATEGORY_IDS.every((id, i) => {
+      const row = rows.find(row => row.id === id);
+      return row.is_fixed_obligation === false && Number(row.percentage) === 20
+        && ['remaining_amount', 'allocated_amount', 'spent_amount'].every(key => isRupiah(row[key]) && Number(row[key]) >= 0)
+        && Number(row.remaining_amount) === shares[i]
+        && Number(row.allocated_amount) === Number(row.spent_amount) + shares[i];
+    }) && rows.find(row => row.id === 'domain').is_fixed_obligation === true;
+  }
+
+  function validateExpense(categoryId, amount) {
+    if (!isRupiah(amount) || Number(amount) <= 0) { alert('Nominal harus berupa rupiah bulat yang lebih besar dari Rp0.'); return false; }
+    const category = opData.budgets.find(row => row.id === categoryId);
+    if (!VARIABLE_CATEGORY_IDS.includes(categoryId) || !category || !isRupiah(category.remaining_amount)) {
+      alert('Kategori pengeluaran tidak valid. Gunakan tombol khusus untuk kewajiban domain.'); return false;
+    }
+    if (Number(amount) > category.remaining_amount || Number(amount) > opData.summary.allocation_basis
+        || Number(amount) > opData.summary.current_balance) { alert('Nominal melebihi sisa anggaran kategori atau dana operasional tersedia.'); return false; }
+    return true;
   }
 
   async function fetchOperationalData() {
@@ -121,7 +152,7 @@
           spent_amount: parseFloat(b.spent_amount) || 0,
           remaining_amount: parseFloat(b.remaining_amount) || 0,
           percent_spent: parseFloat(b.percent_spent) || 0,
-          percentage: b.is_fixed_obligation ? null : 20.00,
+          percentage: b.percentage == null ? null : Number(b.percentage),
           is_fixed_obligation: Boolean(b.is_fixed_obligation),
           due_date: b.due_date || '2027-09-12',
           payment_status: b.payment_status || 'unpaid'
@@ -140,14 +171,23 @@
       opData.cashflowError = errExpenses || errResellerTx || errBookkeeping || errMayarWd || errCfOrders || errCfCheckouts || errCfPayments
         ? 'Sumber transaksi belum lengkap. Total arus kas belum dapat dihitung.' : '';
       opData.summaryLoaded = !errSummary && summaryData && !Array.isArray(summaryData)
-        && ['initial_fund', 'current_balance', 'total_fund'].every(key => summaryData[key] != null && Number.isFinite(Number(summaryData[key])));
+        && ['initial_fund', 'total_inflow', 'total_spent', 'current_balance', 'total_fund', 'domain_reserved', 'allocation_basis'].every(key => isRupiah(summaryData[key]));
       opData.allocationError = !opData.summaryLoaded || errBudgets || errExpenses || errInflows || errBookkeeping
         ? 'Diperlukan rekonsiliasi: sumber data keuangan belum dapat diverifikasi.'
         : summaryData.allocation_ready !== true
           ? 'Diperlukan rekonsiliasi: saldo buku belum dikonfirmasi sebagai dana operasional tersedia.' : '';
-      const projectedRemaining = opData.budgets.filter(b => !b.is_fixed_obligation).reduce((sum, b) => sum + b.remaining_amount, 0);
-      if (!opData.allocationError && projectedRemaining !== Number(summaryData.allocation_basis)) {
+      const signedBalance = opData.summaryLoaded ? Number(summaryData.initial_fund) + Number(summaryData.total_inflow) - Number(summaryData.total_spent) : null;
+      if (!opData.allocationError && (Number(summaryData.domain_reserved) < 0 || Number(summaryData.total_spent) < 0 || Number(summaryData.total_inflow) < 0
+          || Number(summaryData.total_fund) !== Number(summaryData.initial_fund) + Number(summaryData.total_inflow)
+          || Number(summaryData.current_balance) !== signedBalance
+          || Number(summaryData.allocation_basis) !== Math.floor(Math.max(0, signedBalance - Number(summaryData.domain_reserved))))) {
+        opData.allocationError = 'Data berubah saat dimuat. Basis alokasi tidak cocok dengan saldo buku dan kewajiban.';
+      }
+      if (!opData.allocationError && !validateCategoryAllocations(budgetsData, summaryData.allocation_basis)) {
         opData.allocationError = 'Data berubah saat dimuat. Segarkan Keuangan untuk mencocokkan seluruh alokasi.';
+      }
+      if (!opData.allocationError && (summaryData.allocation_guard_version !== 1 || summaryData.reconciliation_status !== 'verified')) {
+        opData.allocationError = 'Alokasi diblokir: backend dan bukti rekonsiliasi belum memenuhi pemeriksaan keamanan.';
       }
       if (opData.allocationError) {
         opData.budgets.forEach(b => {
@@ -200,14 +240,19 @@
         profit_margin: profitMargin
       };
 
-      // All money projections come from the database summary used by category allocations.
+      const bookBalance = ['initial_fund', 'total_inflow', 'total_spent'].every(key => isRupiah(summaryData?.[key]))
+        ? Number(summaryData.initial_fund) + Number(summaryData.total_inflow) - Number(summaryData.total_spent) : null;
+      if (bookBalance !== null && bookBalance !== Number(summaryData.current_balance)) {
+        opData.allocationError = 'Alokasi diblokir: saldo buku berbeda dari proyeksi backend. Perlu sinkronisasi view keuangan.';
+      }
+      // Signed accounting identity, from the same database summary; never hide a deficit.
       opData.summary = {
         initial_fund: Number(summaryData?.initial_fund) || 0,
         total_inflow: Number(summaryData?.total_inflow) || 0,
         total_fund: Number(summaryData?.total_fund) || 0,
         total_allocated: Number(summaryData?.total_allocated) || 0,
         total_spent: Number(summaryData?.total_spent) || 0,
-        current_balance: Number(summaryData?.current_balance) || 0,
+        current_balance: bookBalance ?? (Number(summaryData?.current_balance) || 0),
         allocation_basis: opData.allocationError ? 0 : Number(summaryData?.allocation_basis) || 0,
         allocation_ready: !opData.allocationError,
         domain_reserved: Number(summaryData?.domain_reserved) || 0,
@@ -245,51 +290,27 @@
 
   function renderDomainCard() {
     const s = opData.summary;
-    const badge = document.getElementById('op-domain-status-badge');
-    const dueDateEl = document.getElementById('op-domain-due-date');
-    const noteEl = document.getElementById('op-domain-payment-note');
-    const btnPay = document.getElementById('btn-pay-domain');
-
-    if (dueDateEl) dueDateEl.textContent = '12 September 2027';
-
-    if (badge) {
-      if (s.domain_status === 'paid') {
-        badge.textContent = 'Sudah dibayar';
-        badge.style.background = '#E6F8F0';
-        badge.style.color = '#10B981';
-      } else if (s.domain_status === 'overdue') {
-        badge.textContent = 'Jatuh tempo';
-        badge.style.background = '#FEE2E2';
-        badge.style.color = '#EF4444';
-      } else {
-        badge.textContent = 'Belum dibayar';
-        badge.style.background = '#FFF2DC';
-        badge.style.color = '#895000';
-      }
+    const known = opData.summaryLoaded && !opData.cashflowError;
+    const hasRecordedPayment = known && opData.expenses.some(row => row.category_id === 'domain');
+    const text = {
+      'op-domain-status-badge': !known ? 'Menunggu data' : hasRecordedPayment ? 'Pembayaran tercatat, belum diverifikasi' : 'Belum dibayar',
+      'op-domain-due-date': known ? new Date(s.domain_due_date + 'T00:00:00+07:00').toLocaleDateString('id-ID', {timeZone:'Asia/Jakarta',day:'numeric',month:'long',year:'numeric'}) : '—',
+      'op-domain-payment-note': !known ? 'Status pembayaran belum dapat diverifikasi.' : hasRecordedPayment
+        ? 'Pengeluaran sudah tercatat; bukti pembayaran belum memiliki sumber verifikasi. Cadangan tidak dipotong ulang.'
+        : 'Cadangan kewajiban, belum menjadi pengeluaran. Klik tombol bukan bukti pembayaran.',
+      'op-domain-book-balance': opData.summaryLoaded ? formatRupiah(s.current_balance) : '—',
+      'op-domain-reserve': known ? formatRupiah(s.domain_reserved) : '—',
+      'op-domain-available': opData.allocationError ? 'Belum terverifikasi' : formatRupiah(s.allocation_basis)
+    };
+    for (const [id, value] of Object.entries(text)) {
+      const element = document.getElementById(id);
+      if (element) element.textContent = value;
     }
-
-    if (noteEl) {
-      if (s.domain_status === 'paid') {
-        noteEl.textContent = 'Terbayar Rp22.000 (Saldo terpotong)';
-        noteEl.style.color = '#10B981';
-      } else {
-        noteEl.textContent = 'Saldo belum terpotong (Kewajiban Rp22.000)';
-        noteEl.style.color = 'var(--ink-secondary)';
-      }
-    }
-
-    if (btnPay) {
-      if (s.domain_status === 'paid') {
-        btnPay.textContent = 'Lunas';
-        btnPay.disabled = true;
-        btnPay.style.opacity = '0.6';
-        btnPay.style.cursor = 'not-allowed';
-      } else {
-        btnPay.textContent = 'Bayar Domain (Rp22.000)';
-        btnPay.disabled = false;
-        btnPay.style.opacity = '1';
-        btnPay.style.cursor = 'pointer';
-      }
+    const button = document.getElementById('btn-pay-domain');
+    if (button) {
+      button.disabled = true;
+      button.textContent = 'Menunggu verifikasi pembayaran';
+      button.title = 'Sumber bukti pembayaran dan konfirmasi backend belum tersedia. Tidak ada pengeluaran yang dibuat.';
     }
   }
 
@@ -883,63 +904,28 @@
   }
 
   async function payDomainObligation() {
-    if (!allocationConfirmed()) return false;
-    if (opData.summary.current_balance < 22000) {
-      alert(`Saldo kas operasional tidak mencukupi untuk membayar kewajiban domain Rp22.000. Saldo saat ini: ${formatRupiah(opData.summary.current_balance)}.`);
-      return false;
-    }
-
-    try {
-      const supabase = await getSupabase();
-      const currentAdmin = (typeof state !== 'undefined' && state.admin) ? state.admin : {};
-      const adminName = currentAdmin.name || currentAdmin.email?.split('@')[0] || 'Kayla';
-
-      const { data, error } = await supabase.rpc('pay_domain_obligation', {
-        p_admin_name: adminName,
-        p_notes: 'Pembayaran perpanjangan domain jokiin.my.id (Jatuh tempo 12 September 2027)'
-      });
-
-      if (error) {
-        alert('Gagal membayar kewajiban domain: ' + error.message);
-        return false;
-      }
-
-      await fetchOperationalData();
-      renderAll();
-      alert('Kewajiban perpanjangan domain Rp22.000 berhasil dibayar dan dicatat ke pengeluaran.');
-      return true;
-    } catch (err) {
-      alert('Terjadi kesalahan: ' + err.message);
-      return false;
-    }
+    alert('Pembayaran domain belum dapat dicatat: diperlukan bukti pembayaran yang sah dan konfirmasi backend. Tidak ada saldo yang dipotong.');
+    return false;
   }
 
   async function addExpense(categoryId, amount, description, recipient, notes) {
     if (!allocationConfirmed()) return false;
-    if (amount <= 0) {
-      alert('Nominal pengeluaran harus lebih besar dari Rp0.');
-      return false;
-    }
+    if (!validateExpense(categoryId, amount)) return false;
 
-    if (amount > opData.summary.current_balance) {
-      alert(`Saldo tidak mencukupi. Saldo tersedia saat ini: ${formatRupiah(opData.summary.current_balance)}.`);
-      return false;
-    }
-
+    if (expenseRequest?.inFlight) return false;
+    if (!window.crypto?.randomUUID) { alert('Perangkat belum mendukung identitas pengajuan yang aman.'); return false; }
+    const fingerprint = JSON.stringify([categoryId, Number(amount), description, recipient || null, notes || null]);
+    if (expenseRequest?.fingerprint !== fingerprint) expenseRequest = { fingerprint, id: window.crypto.randomUUID() };
+    expenseRequest.inFlight = true;
     try {
       const supabase = await getSupabase();
-      const currentAdmin = (typeof state !== 'undefined' && state.admin) ? state.admin : {};
-      const adminName = currentAdmin.name || currentAdmin.email?.split('@')[0] || 'Kayla';
-      const adminId = currentAdmin.id || null;
-
-      const { data, error } = await supabase.rpc('record_operational_expense', {
+      const { data, error } = await supabase.rpc('workplace_record_operational_expense', {
         p_category_id: categoryId,
-        p_amount: amount,
+        p_amount: Number(amount),
         p_description: description,
         p_recipient: recipient || null,
         p_notes: notes || null,
-        p_admin_id: adminId,
-        p_admin_name: adminName
+        p_request_id: expenseRequest.id
       });
 
       if (error) {
@@ -955,20 +941,14 @@
     } catch (err) {
       alert('Terjadi kesalahan: ' + err.message);
       return false;
+    } finally {
+      if (expenseRequest) expenseRequest.inFlight = false;
     }
   }
 
   async function addPromoSubsidy(promoName, amount, description) {
     if (!allocationConfirmed()) return false;
-    if (amount <= 0) {
-      alert('Nominal subsidi harus lebih besar dari Rp0.');
-      return false;
-    }
-
-    if (amount > opData.summary.current_balance) {
-      alert(`Saldo tidak mencukupi. Saldo tersedia saat ini: ${formatRupiah(opData.summary.current_balance)}.`);
-      return false;
-    }
+    if (!validateExpense('promo', amount)) return false;
 
     try {
       const supabase = await getSupabase();
@@ -1000,15 +980,7 @@
 
   async function createTeamBonus(adminId, amount, reason, period) {
     if (!allocationConfirmed()) return false;
-    if (amount <= 0) {
-      alert('Nominal bonus harus lebih besar dari Rp0.');
-      return false;
-    }
-
-    if (amount > opData.summary.current_balance) {
-      alert(`Saldo tidak mencukupi. Saldo tersedia saat ini: ${formatRupiah(opData.summary.current_balance)}.`);
-      return false;
-    }
+    if (!validateExpense('bonus', amount)) return false;
 
     try {
       const supabase = await getSupabase();
@@ -1019,8 +991,7 @@
         p_admin_id: adminId,
         p_amount: amount,
         p_reason: reason,
-        p_period: period,
-        p_created_by_name: adminName
+        p_period: period
       });
 
       if (error) {
@@ -1043,10 +1014,7 @@
     if (!allocationConfirmed()) return false;
     if (!targetBonus) return;
 
-    if (targetBonus.amount > opData.summary.current_balance) {
-      alert(`Saldo kas operasional tidak mencukupi. Saldo saat ini: ${formatRupiah(opData.summary.current_balance)}.`);
-      return;
-    }
+    if (!validateExpense('bonus', targetBonus.amount)) return false;
 
     try {
       const supabase = await getSupabase();
@@ -1055,7 +1023,7 @@
 
       const { data, error } = await supabase.rpc('confirm_and_pay_team_bonus', {
         p_bonus_id: targetBonus.id,
-        p_confirmed_by_name: adminName
+        p_confirmed_by: adminName
       });
 
       if (error) {
@@ -1073,7 +1041,9 @@
 
   async function recordResellerPurchase(productName, category, qty, unitCost, notes) {
     if (!allocationConfirmed()) return false;
-    const totalNeeded = Math.round(qty * unitCost);
+    if (!Number.isSafeInteger(qty) || qty <= 0 || !isRupiah(unitCost) || Number(unitCost) <= 0) { alert('Jumlah dan harga modal harus berupa bilangan bulat positif.'); return false; }
+    const totalNeeded = qty * Number(unitCost);
+    if (!validateExpense('reseller', totalNeeded)) return false;
     if (totalNeeded <= 0) {
       alert('Total modal pengadaan harus lebih besar dari Rp0.');
       return false;
@@ -1230,7 +1200,7 @@
   function populateExpenseCategorySelect() {
     const select = document.getElementById('expense-category-input');
     if (!select) return;
-    select.innerHTML = opData.budgets.map(b => `
+    select.innerHTML = opData.budgets.filter(b => VARIABLE_CATEGORY_IDS.includes(b.id)).map(b => `
       <option value="${b.id}">${escapeHtml(b.name)} (Sisa: ${formatRupiah(b.remaining_amount || 0)})</option>
     `).join('');
   }
@@ -1653,6 +1623,8 @@
     const btnExpense = document.getElementById('btn-add-expense');
     if (btnExpense) {
       btnExpense.addEventListener('click', () => {
+        if (expenseRequest?.inFlight) return;
+        expenseRequest = null;
         populateExpenseCategorySelect();
         openModal('modal-add-expense');
       });
@@ -1727,16 +1699,7 @@
     // Pay Domain Button
     const btnDomain = document.getElementById('btn-pay-domain');
     if (btnDomain) {
-      btnDomain.addEventListener('click', () => {
-        if (opData.summary.domain_status === 'paid') return;
-        showConfirm(
-          'Konfirmasi Pembayaran Domain',
-          'Apakah Anda yakin ingin mencatat pembayaran perpanjangan domain sebesar Rp22.000? Saldo kas operasional akan terpotong secara nyata.',
-          async () => {
-            await payDomainObligation();
-          }
-        );
-      });
+      btnDomain.addEventListener('click', payDomainObligation);
     }
 
     // Modal Form Submissions
@@ -1745,7 +1708,7 @@
       formExpense.addEventListener('submit', async (e) => {
         e.preventDefault();
         const cat = document.getElementById('expense-category-input').value;
-        const amt = parseFloat(document.getElementById('expense-amount-input').value) || 0;
+        const amt = Number(document.getElementById('expense-amount-input').value);
         const desc = document.getElementById('expense-desc-input').value.trim();
         const rec = document.getElementById('expense-recipient-input').value.trim();
         const notes = document.getElementById('expense-notes-input').value.trim();
@@ -1764,7 +1727,7 @@
       formPromo.addEventListener('submit', async (e) => {
         e.preventDefault();
         const name = document.getElementById('promo-name-input').value.trim();
-        const amt = parseFloat(document.getElementById('promo-amount-input').value) || 0;
+        const amt = Number(document.getElementById('promo-amount-input').value);
         const desc = document.getElementById('promo-desc-input').value.trim();
 
         if (!name || !desc) {
@@ -1781,7 +1744,7 @@
       formBonus.addEventListener('submit', async (e) => {
         e.preventDefault();
         const adminId = document.getElementById('bonus-admin-input').value;
-        const amt = parseFloat(document.getElementById('bonus-amount-input').value) || 0;
+        const amt = Number(document.getElementById('bonus-amount-input').value);
         const reason = document.getElementById('bonus-reason-input').value.trim();
         const period = document.getElementById('bonus-period-input').value.trim();
 
@@ -1815,7 +1778,7 @@
         e.preventDefault();
         const name = document.getElementById('reseller-buy-name-input').value.trim();
         const cat = document.getElementById('reseller-buy-category-input').value.trim();
-        const qty = parseInt(buyQtyInput.value, 10) || 0;
+        const qty = Number(buyQtyInput.value);
         const cost = parseFloat(buyCostInput.value) || 0;
         const notes = document.getElementById('reseller-buy-notes-input').value.trim();
 
@@ -1916,6 +1879,9 @@
 
   let realtimeChannel = null;
   let realtimeDebounceTimer = null;
+  let realtimeRefreshPending = false;
+  let realtimeRefreshing = false;
+  let realtimeOrdersDirty = false;
 
   function updateRealtimeBadge(status) {
     const badge = document.getElementById('op-realtime-badge');
@@ -1960,10 +1926,12 @@
 
   async function setupRealtimeSubscription() {
     if (realtimeChannel) return;
+    realtimeChannel = { pending: true };
 
     try {
       const supabase = await getSupabase();
       if (!supabase || typeof supabase.channel !== 'function') {
+        realtimeChannel = null;
         console.warn('[OperationalFund Realtime] Supabase channel tidak tersedia.');
         return;
       }
@@ -1980,6 +1948,8 @@
         .on('postgres_changes', { event: '*', schema: 'public', table: 'operational_reseller_inventory' }, handleRealtimeChange)
         .on('postgres_changes', { event: '*', schema: 'public', table: 'operational_reseller_transactions' }, handleRealtimeChange)
         .on('postgres_changes', { event: '*', schema: 'public', table: 'orders' }, handleRealtimeChange)
+        .on('postgres_changes', { event: '*', schema: 'public', table: 'payment_orders' }, handleRealtimeChange)
+        .on('postgres_changes', { event: '*', schema: 'public', table: 'payments' }, handleRealtimeChange)
         .on('postgres_changes', { event: '*', schema: 'public', table: 'mayar_monthly_withdrawals' }, handleRealtimeChange)
         .on('postgres_changes', { event: '*', schema: 'public', table: 'business_bookkeeping_records' }, handleRealtimeChange)
         .subscribe((status, err) => {
@@ -1991,6 +1961,7 @@
           }
         });
     } catch (err) {
+      realtimeChannel = null;
       console.warn('[OperationalFund Realtime] Inisialisasi subscription gagal:', err);
     }
   }
@@ -1999,21 +1970,28 @@
     console.log('[OperationalFund Realtime] Perubahan diterima dari tabel:', payload?.table, payload?.eventType);
     flashRealtimeBadge();
 
+    realtimeOrdersDirty ||= payload?.table === 'orders' || payload?.table === 'operational_inflows';
+    realtimeRefreshPending = true;
     if (realtimeDebounceTimer) clearTimeout(realtimeDebounceTimer);
-    realtimeDebounceTimer = setTimeout(async () => {
-      if (payload?.table === 'orders' || payload?.table === 'operational_inflows') {
-        const loadFn = window.loadData || (typeof loadData === 'function' ? loadData : null);
-        if (loadFn) {
-          try {
-            await loadFn();
-          } catch (e) {
-            console.warn('[OperationalFund] Gagal memperbarui loadData:', e);
-          }
+    realtimeDebounceTimer = setTimeout(flushRealtimeChanges, 150);
+  }
+
+  async function flushRealtimeChanges() {
+    realtimeDebounceTimer = null;
+    if (realtimeRefreshing) return;
+    realtimeRefreshing = true;
+    try {
+      while (realtimeRefreshPending) {
+        realtimeRefreshPending = false;
+        if (realtimeOrdersDirty) {
+          realtimeOrdersDirty = false;
+          const loadFn = window.loadData || (typeof loadData === 'function' ? loadData : null);
+          if (loadFn) { try { await loadFn(); } catch (error) { console.warn('Gagal memperbarui pesanan:', error); } }
         }
+        await fetchOperationalData();
+        renderAll();
       }
-      await fetchOperationalData();
-      renderAll();
-    }, 150);
+    } finally { realtimeRefreshing = false; }
   }
 
   function allocationConfirmed() {

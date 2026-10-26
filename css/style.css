@@ -2868,9 +2868,9 @@ body:has(#modal-order-detail.open) { overflow:hidden; }
   border-radius: 8px;
   padding: 5px 12px;
   color: var(--ink-secondary);
-  display: inline-flex;
-  align-items: center;
-  gap: 5px;
+  display: block;
+  max-width: 100%;
+  overflow-wrap: normal;
 }
 
 .domain-pill-item strong {
