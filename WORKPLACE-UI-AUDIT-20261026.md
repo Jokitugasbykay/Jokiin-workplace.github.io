@@ -29,7 +29,7 @@ Pemeriksaan akhir: 6 baris pembukuan tetap ada, modal bisnis Rp400.000, talangan
 
 ## Audit seluruh dropdown
 
-Ditemukan **11 lokasi definisi select**: 10 elemen statis dan 1 template berulang. Seluruhnya sekarang menggunakan aturan `select:is(.form-input, .form-select)` yang sama; enam lokasi `form-select` sebelumnya tidak dicakup styling picker lama.
+Ditemukan **12 lokasi definisi select**: 10 elemen statis dan 1 template berulang. Seluruhnya sekarang menggunakan aturan `select:is(.form-input, .form-select)` yang sama; enam lokasi `form-select` sebelumnya tidak dicakup styling picker lama.
 
 | Lokasi | Kontrol |
 | --- | --- |
@@ -41,6 +41,7 @@ Ditemukan **11 lokasi definisi select**: 10 elemen statis dan 1 template berulan
 | Modal bonus | `bonus-admin-input` |
 | Modal penjualan reseller | `reseller-sale-product-select` |
 | Modal Mayar | `mayar-withdraw-status-select`, `update-mayar-status-select` |
+| Ekstensi Chrome | `extension/popup/popup.html`: `select-auto-refresh` |
 | Kartu pesanan dinamis | `.order-status-select` pada `createOrderCard` |
 
 Perbaikan bersama: warna/border/radius/arrow, lebar aman, target sentuh minimal 44px, focus ring, hover, disabled, error yang tidak dikalahkan border inline, dan pembungkusan teks opsi panjang. Label aksesibel ditambahkan pada filter operasional, invoice, dan status pesanan. Nilai/opsi bisnis tidak diubah.
@@ -57,17 +58,23 @@ Saat rekonsiliasi tertunda, cincin berwarna menggambarkan **target 20%**, disert
 
 ## Tes dan bukti
 
-- Seluruh **13 berkas `test-*.cjs`** lulus, termasuk tes baru arus kas, pembukuan, alokasi, invoice, autentikasi, navigasi, notifikasi, peran, dan grafik.
+- Seluruh **15 berkas `test-*.cjs`** lulus, termasuk tes baru arus kas, pembukuan, alokasi, invoice, autentikasi, navigasi, notifikasi, peran, dan grafik.
 - `test-monthly-cashflow.cjs`: sumber dana terpisah, salinan checkout/payment/order tidak ganda, laba/talangan tidak menjadi penerimaan, Mayar transfer/fee sekali, referensi ganda ditandai, tanggal WIB melewati batas bulan, nilai/tanggal tidak diketahui, pembacaan >1.000 baris, error sumber, kartu lama hilang.
 - Pemeriksaan sintaks JS dan `git diff --check` lulus.
-- Chrome/Playwright pada viewport **320, 375, 390, 768, 1366px**: semua 11 definisi select diuji pilihan/nilai/opsi tidak hilang/fokus/disabled/error/validasi; picker asli dalam modal diuji buka, pilih dengan keyboard, Escape, klik di luar picker, dan lebar viewport. Diagram diuji klik/keyboard/toggle/highlight/reduced motion. Filter bulan/kategori dan total memakai snapshot baca DB aktual. Drawer diuji Escape dan navigasi invoice lalu menutup. Tidak ada error JavaScript, horizontal overflow halaman, atau pemanggilan write.
+- Chrome/Playwright pada viewport **320, 375, 390, 768, 1366px**: 11 definisi Workplace dan 1 definisi ekstensi select diuji pilihan/nilai/opsi tidak hilang/fokus/disabled/error/validasi; picker asli dalam modal diuji buka, pilih dengan keyboard, Escape, klik di luar picker, dan lebar viewport. Diagram diuji klik/keyboard/toggle/highlight/reduced motion. Filter bulan/kategori dan total memakai snapshot baca DB aktual. Drawer diuji Escape dan navigasi invoice lalu menutup. Tidak ada error JavaScript, horizontal overflow halaman, atau pemanggilan write.
 - Screenshot ditinjau langsung: `../outputs/chart-interactive-390.png`, `../outputs/dropdown-modal-320.png`, `../outputs/monthly-cashflow-1366.png`. Bukti ukuran lain disimpan pada folder outputs yang sama.
 - Skrip browser: `../work/verify-workplace-ui.cjs`, dengan fixture audit baca `../work/cashflow-db-fixture.json`; tidak memuat sesi auth, API secret atau data kontak pelanggan. Ini bukan pengujian keyboard virtual pada perangkat fisik.
 
 ## File di repo
 
-`index.html`, `css/style.css`, `js/app.js` (label aksesibel), `js/operational-fund.js`, `js/monthly-cashflow.js` (baru), `service-worker.js`, `test-monthly-cashflow.cjs` (baru), `test-bookkeeping.cjs`, `test-operational-allocation.cjs`, dan laporan ini.
+`index.html`, `css/style.css`, `js/app.js` (label aksesibel dan integrasi navigasi terbaru), `js/operational-fund.js`, `js/monthly-cashflow.js` (baru), `service-worker.js`, `test-monthly-cashflow.cjs` (baru), `test-bookkeeping.cjs`, `test-operational-allocation.cjs`, `test-finance-reconciliation.cjs`, `extension/popup/popup.css`, dan laporan ini.
 
 ## Yang masih memerlukan data
 
 Waktu penerimaan lima order PAID, biaya gateway penjualan yang cocok dengan bukti, dan saldo rekening aktual belum tersedia. Ditandai untuk rekonsiliasi; tidak dikarang atau ditulis balik ke produksi. Popup native pada browser yang belum mendukung customizable select mengikuti OS. Perubahan fungsi/policy transaksi yang tertunda dari audit sebelumnya tidak dijalankan dalam pekerjaan UI ini.
+
+## Integrasi pembaruan GitHub
+
+Perubahan terbaru hingga `c86f5ee` digabungkan dengan mempertahankan ekstensi, perbaikan swipe-back/bfcache, layout invoice, dan kontrol operasional responsif. Sumber ringkasan bulanan yang membuat entri dari angka referensi/fallback diganti dengan pembacaan transaksi aktual yang dipaginasi; tes rekonsiliasi diperbarui agar menolak transaksi buatan. Tidak ada penulisan database.
+
+Dropdown ekstensi mendapat tinggi 44px, batas viewport, picker native yang konsisten, focus/disabled/error state; lebar popup aman pada 320px. `../work/verify-extension-select.cjs` lulus pada lima viewport yang sama: nilai, empat opsi, fokus, Escape, dan ukuran kontrol. Audit ulang seluruh file HTML/JS terlacak menemukan total 12 definisi select. Seluruh 15 berkas tes dan pengujian browser Workplace lulus setelah penggabungan.

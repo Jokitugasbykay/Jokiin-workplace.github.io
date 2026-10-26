@@ -3391,3 +3391,61 @@ body:has(#modal-order-detail.open) { overflow:hidden; }
     align-items: flex-start;
   }
 }
+
+
+/* Controls for operational filters and invoice selector */
+#op-expenses-filter-controls {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+  flex-wrap: wrap;
+}
+
+#op-expenses-filter-controls select {
+  flex: 1 1 180px;
+  min-width: 140px;
+}
+
+#op-expenses-filter-controls input {
+  flex: 1 1 200px;
+  min-width: 160px;
+}
+
+@media (max-width: 640px) {
+  #op-expenses-filter-controls {
+    flex-direction: column !important;
+    align-items: stretch !important;
+    gap: 8px !important;
+    width: 100%;
+  }
+
+  #op-expenses-filter-controls select,
+  #op-expenses-filter-controls input {
+    width: 100% !important;
+    min-width: 0 !important;
+    max-width: 100% !important;
+  }
+
+  .invoice-selector-row {
+    flex-direction: column !important;
+    align-items: stretch !important;
+  }
+
+  .invoice-selector-row select,
+  .invoice-selector-row .btn-primary {
+    width: 100% !important;
+  }
+}
+
+
+@media (max-width: 640px) {
+  .op-charts-grid,
+  .keuangan-subsystems-grid {
+    grid-template-columns: 1fr !important;
+  }
+
+  .keuangan-card {
+    padding: 16px 14px !important;
+    border-radius: 14px !important;
+  }
+}

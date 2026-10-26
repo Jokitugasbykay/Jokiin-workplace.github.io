@@ -60,6 +60,16 @@
     { id: 'reseller', name: 'Modal reseller produk digital', allocated_amount: 0, percentage: 20.00, is_fixed_obligation: false, color: '#0EA5E9', icon: 'shopping-bag' }
   ];
 
+  // Pembagian rata ke 5 kategori masing-masing tepat 20%, total 100%.
+  // Sisa pembulatan rupiah didistribusikan secara deterministik dari kategori pertama.
+  function calculateDeterministicAllocation(totalAmount, count = 5) {
+    const total = Math.max(0, Math.floor(Number(totalAmount) || 0));
+    if (count <= 0 || total === 0) return Array(count).fill(0);
+    const base = Math.floor(total / count);
+    const remainder = total % count;
+    return Array.from({ length: count }, (_, i) => base + (i < remainder ? 1 : 0));
+  }
+
   async function fetchOperationalData() {
     opData.loading = true;
     try {
@@ -111,7 +121,7 @@
           spent_amount: parseFloat(b.spent_amount) || 0,
           remaining_amount: parseFloat(b.remaining_amount) || 0,
           percent_spent: parseFloat(b.percent_spent) || 0,
-          percentage: b.percentage ? parseFloat(b.percentage) : null,
+          percentage: b.is_fixed_obligation ? null : 20.00,
           is_fixed_obligation: Boolean(b.is_fixed_obligation),
           due_date: b.due_date || '2027-09-12',
           payment_status: b.payment_status || 'unpaid'
@@ -439,7 +449,7 @@
         </div>
         <div style="display: flex; justify-content: space-between; align-items: center; font-size: 11px; color: var(--ink-secondary);">
           <span>Terpakai: <strong style="color: ${spent > 0 ? 'var(--balance-red)' : 'var(--ink)'};">${formatRupiah(spent)}</strong> (${pctSpent.toFixed(1)}%)</span>
-          <span>Sisa: <strong style="color: #10B981;">${opData.allocationError && !cat.is_fixed_obligation ? '—' : formatRupiah(remaining)}</strong></span>
+          <span>Sisa: <strong style="color: #10B981;">${opData.allocationError && !cat.is_fixed_obligation ? '-' : formatRupiah(remaining)}</strong></span>
         </div>
       `;
 
@@ -459,7 +469,7 @@
 
     if (elBudgetBadge) elBudgetBadge.textContent = opData.allocationError ? 'Anggaran menunggu rekonsiliasi' : `Anggaran: ${formatRupiah(promoCat.allocated_amount)}`;
     if (elSpent) elSpent.textContent = formatRupiah(spent);
-    if (elRem) elRem.textContent = opData.allocationError ? '—' : formatRupiah(remaining);
+    if (elRem) elRem.textContent = opData.allocationError ? '-' : formatRupiah(remaining);
 
     if (historyContainer) {
       if (opData.promos.length === 0) {
@@ -493,7 +503,7 @@
 
     if (elBudgetBadge) elBudgetBadge.textContent = opData.allocationError ? 'Anggaran menunggu rekonsiliasi' : `Anggaran: ${formatRupiah(bonusCat.allocated_amount)}`;
     if (elSpent) elSpent.textContent = formatRupiah(spent);
-    if (elRem) elRem.textContent = opData.allocationError ? '—' : formatRupiah(remaining);
+    if (elRem) elRem.textContent = opData.allocationError ? '-' : formatRupiah(remaining);
 
     if (historyContainer) {
       if (opData.bonuses.length === 0) {
@@ -579,7 +589,7 @@
     const captionEl = document.getElementById('op-reseller-table-caption');
 
     if (badge) badge.textContent = opData.allocationError ? 'Anggaran menunggu rekonsiliasi' : `Anggaran: ${formatRupiah(s.budget_allocated)} (target 20%)`;
-    if (elCash) elCash.textContent = opData.allocationError ? '—' : Math.round(s.capital_remaining).toLocaleString('id-ID');
+    if (elCash) elCash.textContent = opData.allocationError ? '-' : Math.round(s.capital_remaining).toLocaleString('id-ID');
     if (elSpentNote) elSpentNote.textContent = `Belanja stok: ${formatRupiah(s.capital_spent)}`;
     if (elValuation) elValuation.textContent = Math.round(s.stock_valuation).toLocaleString('id-ID');
     if (elStockNote) elStockNote.textContent = `${s.total_units} unit produk tersedia`;
@@ -1321,7 +1331,7 @@
     const unverifiedCount = opData.mayarWithdrawals.filter(w => w.status === 'success' && !confirmedMayarWithdrawal(w)).length;
     const totalNetSuccess = successList.reduce((sum, w) => sum + Number(w.net_amount), 0);
     if (totalNetEl) {
-      totalNetEl.textContent = opData.mayarWithdrawalsError ? '—' : totalNetSuccess.toLocaleString('id-ID');
+      totalNetEl.textContent = opData.mayarWithdrawalsError ? '-' : totalNetSuccess.toLocaleString('id-ID');
     }
     if (countNoteEl) {
       const allCount = (opData.mayarWithdrawals || []).length;
@@ -2022,7 +2032,7 @@
       const element = document.getElementById(id);
       const records = opData.bookkeepingRecords.filter(row => row.category === category);
       if (element) element.textContent = records.length === 1 && Number.isFinite(Number(records[0].net_amount))
-        ? Number(records[0].net_amount).toLocaleString('id-ID') : '—';
+        ? Number(records[0].net_amount).toLocaleString('id-ID') : '-';
     }
   }
 
@@ -2062,6 +2072,9 @@
     },
     getData: function () {
       return opData;
+    },
+    calculateAllocation: function (totalAmount, count = 5) {
+      return calculateDeterministicAllocation(totalAmount, count);
     }
   };
 

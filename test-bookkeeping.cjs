@@ -62,7 +62,7 @@ const confirmed = { id: 'one', scheduled_date: '2026-10-25', gross_amount: 10000
   readError = { message: 'Permission denied' };
   await api.fetchOperationalData();
   api.renderMayarMonthlyWithdrawals();
-  assert.equal(elements.get('op-mayar-total-success-net').textContent, '—');
+  assert.equal(elements.get('op-mayar-total-success-net').textContent, '-');
   assert.match(elements.get('op-mayar-total-count-note').textContent, /belum dapat diverifikasi/);
   assert.equal(await api.recordMayarWithdrawal('2026-10-25', 100000, '', 'pending', ''), false);
   assert.equal(writes.length, 0);

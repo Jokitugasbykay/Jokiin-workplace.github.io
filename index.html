@@ -18,7 +18,7 @@
   <meta name="theme-color" content="#000000">
 
   <!-- Stylesheet -->
-  <link rel="stylesheet" href="./css/style.css?v=44">
+  <link rel="stylesheet" href="./css/style.css?v=45">
 
   <!-- Supabase JS Library -->
   <script defer src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
@@ -604,7 +604,7 @@
                   <span style="font-size: 11px; color: var(--ink-secondary); font-weight: 600; display: block;">Total Pencairan Terkonfirmasi</span>
                   <div style="display: flex; align-items: baseline; gap: 4px; margin-top: 6px;">
                     <span style="font-size: 13px; font-weight: 700; color: #10B981;">Rp</span>
-                    <strong id="op-mayar-total-success-net" style="font-size: 20px; font-weight: 800; color: #10B981; font-variant-numeric: tabular-nums;">—</strong>
+                    <strong id="op-mayar-total-success-net" style="font-size: 20px; font-weight: 800; color: #10B981; font-variant-numeric: tabular-nums;">-</strong>
                   </div>
                   <span id="op-mayar-total-count-note" role="status" style="font-size: 11px; color: var(--ink-secondary); display: block; margin-top: 6px;">Menunggu data pencairan.</span>
                 </div>
@@ -695,7 +695,7 @@
             </div>
 
             <!-- Two Integrated Charts Grid -->
-            <div class="op-charts-grid" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: 20px;">
+            <div class="op-charts-grid" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 280px), 1fr)); gap: 20px;">
               <!-- Chart 1: Donut Chart Alokasi Sisa Dana (4 Kategori) -->
               <article class="keuangan-card" style="display: flex; flex-direction: column;">
                 <div class="section-header" style="margin-bottom: 4px;">
@@ -728,7 +728,7 @@
             </div>
 
             <!-- Subsystems: Promo & Bonus Tim Side by Side -->
-            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: 20px;">
+            <div class="keuangan-subsystems-grid" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 280px), 1fr)); gap: 20px;">
               <!-- Promo Pelanggan Panel -->
               <article class="keuangan-card">
                 <div class="keuangan-card-header">
@@ -946,8 +946,8 @@
                   </div>
                   <p id="op-history-caption" class="chart-caption" style="margin: 0;">Catatan audit pengeluaran kas operasional JOKI.IN.</p>
                 </div>
-                <div id="op-expenses-filter-controls" style="display: flex; gap: 10px; align-items: center; flex-wrap: wrap;">
-                  <select id="op-filter-category" class="form-select" aria-label="Filter kategori pengeluaran" style="height: 38px; font-size: 13px; padding: 0 14px; border-radius: 10px; min-width: 160px; border-color: var(--border);">
+                <div id="op-expenses-filter-controls">
+                  <select id="op-filter-category" class="form-select form-select-sm" aria-label="Filter kategori operasional">
                     <option value="all">Semua Kategori</option>
                     <option value="domain">Perpanjangan domain</option>
                     <option value="promo">Promo & diskon</option>
@@ -956,7 +956,7 @@
                     <option value="emergency">Dana darurat</option>
                     <option value="reseller">Modal reseller</option>
                   </select>
-                  <input type="text" id="op-filter-search" class="form-input" placeholder="Cari keterangan/penerima..." style="height: 38px; font-size: 13px; padding: 0 14px; border-radius: 10px; width: 220px; border-color: var(--border);">
+                  <input type="text" id="op-filter-search" class="form-input" placeholder="Cari keterangan/penerima..." style="height: 38px; font-size: 13px; padding: 0 14px; border-radius: 10px; border-color: var(--border);">
                 </div>
               </div>
 
@@ -1123,7 +1123,7 @@
         <section id="view-violations" class="tab-view" style="display:none;">
           <h2 class="section-title">Pelanggaran admin</h2>
           <form id="violation-form" class="entry-card">
-            <div class="form-group"><label class="form-label" for="violation-admin">Admin</label><select id="violation-admin" class="form-input" required></select></div>
+            <div class="form-group"><label class="form-label" for="violation-admin">Admin</label><select id="violation-admin" class="form-input form-select" required></select></div>
             <div class="form-group"><label class="form-label" for="violation-date">Tanggal</label><input id="violation-date" class="form-input" type="date" required></div>
             <div class="form-group"><label class="form-label" for="violation-description">Keterangan</label><textarea id="violation-description" class="form-input" rows="3" maxlength="2000" required></textarea></div>
             <div class="form-group"><label class="form-label" for="violation-days">Durasi sanksi (hari)</label><input id="violation-days" class="form-input" name="sanction_days" type="number" inputmode="numeric" min="1" max="3650" step="1" value="1" required><small>Sanksi dimulai pada tanggal di atas, pukul 00.00 WIB.</small></div>
@@ -1132,7 +1132,7 @@
               <label><input id="violation-freeze-balance" type="checkbox" checked> Pembekuan rekening</label>
               <label><input id="violation-block-withdrawals" type="checkbox" checked> Tidak dapat mengajukan pencairan</label>
             </fieldset>
-            <div class="form-group"><label class="form-label" for="violation-status">Status penyelesaian</label><select id="violation-status" class="form-input"><option value="false">Belum selesai - sanksi aktif sesuai durasi</option><option value="true">Selesai - akhiri sanksi</option></select></div>
+            <div class="form-group"><label class="form-label" for="violation-status">Status penyelesaian</label><select id="violation-status" class="form-input form-select"><option value="false">Belum selesai - sanksi aktif sesuai durasi</option><option value="true">Selesai - akhiri sanksi</option></select></div>
             <button class="btn-primary" type="submit">Simpan pelanggaran</button>
             <p id="violation-form-status" role="status"></p>
           </form>
@@ -1161,11 +1161,11 @@
             <p style="font-size: 12.5px; color: var(--ink-secondary); margin-bottom: 12px;">
               Pilih pesanan yang berstatus <strong>paid</strong> untuk mengisi seluruh rincian invoice secara otomatis.
             </p>
-            <div style="display: flex; gap: 10px; flex-wrap: wrap;">
-              <select id="invoice-order-picker" class="form-input" aria-label="Pesanan untuk invoice" style="flex: 1; min-width: 220px; height: 46px; border-radius: 12px; font-size: 14px;">
+            <div class="invoice-selector-row">
+              <select id="invoice-order-picker" class="form-input form-select" aria-label="Pilih pesanan paid untuk invoice">
                 <option value="">-- Pilih Pesanan (Status: Paid) --</option>
               </select>
-              <button id="btn-invoice-load-order" class="btn-primary" style="width: auto; padding: 0 20px; height: 46px; border-radius: 12px; font-size: 14px; background: #087C5B;">
+              <button id="btn-invoice-load-order" class="btn-primary" style="background: #087C5B;">
                 Isi Otomatis
               </button>
             </div>
@@ -1705,7 +1705,7 @@
       <form id="form-add-expense" style="display: flex; flex-direction: column; gap: 14px;">
         <div class="form-group">
           <label class="form-label" for="expense-category-input" style="font-size: 12px; font-weight: 700; color: var(--ink);">Kategori Anggaran</label>
-          <select id="expense-category-input" class="form-select" required style="width: 100%; height: 42px; border-radius: 10px; border: 1px solid var(--border); padding: 0 12px; font-size: 13px; margin-top: 4px;"></select>
+          <select id="expense-category-input" class="form-select" required style="width: 100%; height: 42px; border-radius: 10px; border: 1px solid var(--border); font-size: 13px; margin-top: 4px;"></select>
         </div>
         <div class="form-group">
           <label class="form-label" for="expense-amount-input" style="font-size: 12px; font-weight: 700; color: var(--ink);">Nominal Pengeluaran (Rp)</label>
@@ -1775,7 +1775,7 @@
       <form id="form-add-team-bonus" style="display: flex; flex-direction: column; gap: 14px;">
         <div class="form-group">
           <label class="form-label" for="bonus-admin-input" style="font-size: 12px; font-weight: 700; color: var(--ink);">Admin Penerima</label>
-          <select id="bonus-admin-input" class="form-select" required style="width: 100%; height: 42px; border-radius: 10px; border: 1px solid var(--border); padding: 0 12px; font-size: 13px; margin-top: 4px;"></select>
+          <select id="bonus-admin-input" class="form-select" required style="width: 100%; height: 42px; border-radius: 10px; border: 1px solid var(--border); font-size: 13px; margin-top: 4px;"></select>
         </div>
         <div class="form-group">
           <label class="form-label" for="bonus-amount-input" style="font-size: 12px; font-weight: 700; color: var(--ink);">Nominal Bonus (Rp)</label>
@@ -1852,7 +1852,7 @@
       <form id="form-add-reseller-sale" style="display: flex; flex-direction: column; gap: 14px;">
         <div class="form-group">
           <label class="form-label" for="reseller-sale-product-select" style="font-size: 12px; font-weight: 700; color: var(--ink);">Pilih Produk dari Stok</label>
-          <select id="reseller-sale-product-select" class="form-select" required style="width: 100%; height: 42px; border-radius: 10px; border: 1px solid var(--border); padding: 0 12px; font-size: 13px; margin-top: 4px;"></select>
+          <select id="reseller-sale-product-select" class="form-select" required style="width: 100%; height: 42px; border-radius: 10px; border: 1px solid var(--border); font-size: 13px; margin-top: 4px;"></select>
         </div>
         <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
           <div class="form-group">
@@ -1949,7 +1949,7 @@
         </div>
         <div class="form-group">
           <label class="form-label" for="mayar-withdraw-status-select" style="font-size: 12px; font-weight: 700; color: var(--ink);">Status Transaksi</label>
-          <select id="mayar-withdraw-status-select" class="form-select" style="width: 100%; height: 42px; border-radius: 10px; border: 1px solid var(--border); padding: 0 12px; font-size: 13px; margin-top: 4px;">
+          <select id="mayar-withdraw-status-select" class="form-select" style="width: 100%; height: 42px; border-radius: 10px; border: 1px solid var(--border); font-size: 13px; margin-top: 4px;">
             <option value="pending" selected>Pending (Menunggu konfirmasi / pemrosesan)</option>
             <option value="processing">Processing (Sedang diproses)</option>
             <option value="success">Success (Terkonfirmasi berhasil)</option>
@@ -1985,7 +1985,7 @@
         </div>
         <div class="form-group">
           <label class="form-label" for="update-mayar-status-select" style="font-size: 12px; font-weight: 700; color: var(--ink);">Status Terbaru</label>
-          <select id="update-mayar-status-select" class="form-select" required style="width: 100%; height: 42px; border-radius: 10px; border: 1px solid var(--border); padding: 0 12px; font-size: 13px; margin-top: 4px;">
+          <select id="update-mayar-status-select" class="form-select" required style="width: 100%; height: 42px; border-radius: 10px; border: 1px solid var(--border); font-size: 13px; margin-top: 4px;">
             <option value="pending">Pending (Menunggu)</option>
             <option value="processing">Processing (Sedang diproses)</option>
             <option value="success">Success (Pencairan Berhasil)</option>
@@ -2011,10 +2011,10 @@
   </audio>
 
   <!-- Application Main Script (Universal script for file://, localhost, & cloud hosting) -->
-  <script src="./js/app.js?v=43"></script>
+  <script src="./js/app.js?v=45"></script>
   <script src="./js/produk-promo.js?v=2"></script>
   <script src="./js/monthly-cashflow.js?v=1"></script>
-  <script src="./js/operational-fund.js?v=10"></script>
+  <script src="./js/operational-fund.js?v=11"></script>
   <script src="./js/contribution-skyline.js?v=3"></script>
 
   <!-- Failsafe Watchdog & Service Worker -->

@@ -495,6 +495,39 @@ function stopLiveUpdates() {
 // View Rendering & Tab Switching
 // ========================================================
 const BOTTOM_TABS = ['home', 'orders', 'services', 'payments'];
+const HIDE_NAVBAR_TABS = ['reviews', 'products', 'integration', 'task-files', 'performance', 'keuangan', 'operational', 'users', 'invoice', 'violations', 'withdrawals'];
+
+function syncNavbarVisibility(tabName = state.activeTab) {
+  const shouldHideNav = HIDE_NAVBAR_TABS.includes(tabName);
+  const bottomNavContainer = document.querySelector ? document.querySelector('.bottom-nav-container') : null;
+  if (bottomNavContainer && bottomNavContainer.classList) {
+    if (typeof bottomNavContainer.classList.toggle === 'function') {
+      bottomNavContainer.classList.toggle('nav-hidden', shouldHideNav);
+    } else if (shouldHideNav) {
+      bottomNavContainer.classList.add('nav-hidden');
+    } else {
+      bottomNavContainer.classList.remove('nav-hidden');
+    }
+  }
+  const appContainer = document.getElementById('app-container');
+  if (appContainer && appContainer.classList) {
+    if (typeof appContainer.classList.toggle === 'function') {
+      appContainer.classList.toggle('nav-hidden', shouldHideNav);
+    } else if (shouldHideNav) {
+      appContainer.classList.add('nav-hidden');
+    } else {
+      appContainer.classList.remove('nav-hidden');
+    }
+  }
+  const headerBackBtn = document.getElementById('btn-header-back');
+  const headerDrawerBtn = document.getElementById('btn-open-drawer');
+  if (headerBackBtn && headerBackBtn.style) {
+    headerBackBtn.style.display = shouldHideNav ? 'inline-flex' : 'none';
+  }
+  if (headerDrawerBtn && headerDrawerBtn.style) {
+    headerDrawerBtn.style.display = shouldHideNav ? 'none' : 'inline-flex';
+  }
+}
 
 let restoringActivity = false;
 let activityHistoryReady = false;
@@ -519,26 +552,96 @@ function saveActivity(modal = null) {
 }
 
 function restoreActivity(event) {
-  if (!activityHistoryReady || !state.admin) return;
+  if (!state.admin) return;
   const activity = event.state;
-  if (!activity?.workplace) return;
   activePageTransition?.();
   restoringActivity = true;
   try {
     document.querySelectorAll('.modal-overlay.open').forEach(modal => modal.classList.remove('open'));
-    let targetTab = activity.tab;
+    let targetTab = activity?.tab;
+    if (!targetTab) {
+      const urlParams = new URLSearchParams(window.location.search);
+      targetTab = urlParams.get('tab') || 'home';
+    }
     if (targetTab === 'operational') targetTab = 'keuangan';
+    const validTabs = ['home', 'orders', 'services', 'payments', 'reviews', 'products', 'integration', 'task-files', 'performance', 'keuangan', 'operational', 'users', 'invoice', 'violations', 'withdrawals'];
+    if (!validTabs.includes(targetTab)) targetTab = 'home';
     const isSupervisorOrFounder = isOrderSupervisor(state.admin) || isFounder(state.admin);
-    const tab = ['performance', 'keuangan', 'users'].includes(targetTab) && !isSupervisorOrFounder ? 'home' : targetTab;
+    const tab = ['performance', 'keuangan', 'users', 'withdrawals'].includes(targetTab) && !isSupervisorOrFounder
+      ? 'home'
+      : (targetTab === 'violations' && !isFounder(state.admin) ? 'home' : targetTab);
     switchTab(tab, 'left');
-    if (activity.view) Object.assign(state, activity.view);
-    document.getElementById('global-search-input').value = state.searchQuery;
+    syncNavbarVisibility(tab);
+    if (activity?.view) Object.assign(state, activity.view);
+    const searchInput = document.getElementById('global-search-input');
+    if (searchInput) searchInput.value = state.searchQuery || '';
     renderActiveTab();
-    if (activity.modal) openModal(activity.modal);
+    if (activity?.modal) openModal(activity.modal);
   } finally { restoringActivity = false; }
-  if (activity.root) saveActivity();
+  if (activity?.root) saveActivity();
 }
 window.addEventListener('popstate', restoreActivity);
+
+window.addEventListener('pageshow', (event) => {
+  activePageTransition?.();
+  if (!state.admin) return;
+
+  const currentState = window.history?.state;
+  let targetTab = currentState?.tab;
+  if (!targetTab) {
+    const urlParams = new URLSearchParams(window.location.search);
+    targetTab = urlParams.get('tab') || state.activeTab || 'home';
+  }
+  if (targetTab === 'operational') targetTab = 'keuangan';
+
+  const validTabs = ['home', 'orders', 'services', 'payments', 'reviews', 'products', 'integration', 'task-files', 'performance', 'keuangan', 'operational', 'users', 'invoice', 'violations', 'withdrawals'];
+  if (!validTabs.includes(targetTab)) targetTab = 'home';
+
+  const isSupervisorOrFounder = isOrderSupervisor(state.admin) || isFounder(state.admin);
+  const tab = ['performance', 'keuangan', 'users', 'withdrawals'].includes(targetTab) && !isSupervisorOrFounder
+    ? 'home'
+    : (targetTab === 'violations' && !isFounder(state.admin) ? 'home' : targetTab);
+
+  state.activeTab = tab;
+  syncNavbarVisibility(tab);
+
+  if (event.persisted) {
+    const pageNames = { home: 'Beranda', orders: 'Pesanan', services: 'Layanan', payments: 'Pembayaran', reviews: 'Ulasan', performance: 'Performa tim', keuangan: 'Keuangan', operational: 'Keuangan', products: 'Produk & promo', integration: 'Integrasi', 'task-files': 'Folder lampiran', users: 'Daftar pengguna', invoice: 'Invoice', violations: 'Pelanggaran', withdrawals: 'Pengajuan pencairan dana' };
+    const titleEl = document.getElementById('header-page-title');
+    if (titleEl) titleEl.textContent = pageNames[tab] || 'Workplace';
+    const welcomeCard = document.querySelector ? document.querySelector('.welcome-card') : null;
+    if (welcomeCard) welcomeCard.style.display = tab === 'home' ? 'block' : 'none';
+
+    document.querySelectorAll('.tab-view').forEach(view => {
+      view.style.display = 'none';
+      view.classList.remove('slide-right', 'slide-left', 'fade-in');
+    });
+    const activeView = document.getElementById('view-' + tab);
+    if (activeView) activeView.style.display = 'block';
+
+    document.querySelectorAll('.drawer-item').forEach(btn => {
+      btn.classList.toggle('active', btn.dataset.tab === tab);
+      if (btn.dataset.tab === tab) btn.setAttribute('aria-current', 'page');
+      else btn.removeAttribute('aria-current');
+    });
+
+    document.querySelectorAll('.nav-tab-btn').forEach(btn => {
+      btn.classList.toggle('active', btn.dataset.tab === tab);
+    });
+
+    const pill = document.getElementById('nav-active-pill');
+    const bottomTabs = ['home', 'orders', 'services', 'payments'];
+    const tabIndex = bottomTabs.indexOf(tab);
+    if (pill) {
+      if (tabIndex !== -1) {
+        pill.style.opacity = '1';
+        pill.style.transform = 'translateX(' + (tabIndex * 100) + '%)';
+      } else {
+        pill.style.opacity = '0';
+      }
+    }
+  }
+});
 
 let activePageTransition = null;
 function switchTab(tabName, forcedDirection = null) {
@@ -625,29 +728,8 @@ function performSwitchTab(tabName, forcedDirection = null) {
     }
   }
 
-  // Hide Bottom Navigation on secondary tabs: ulasan, produk & promo, folder lampiran, peforma tim, keuangan, daftar pengguna, invoice
-  const HIDE_NAVBAR_TABS = ['reviews', 'products', 'integration', 'task-files', 'performance', 'keuangan', 'operational', 'users', 'invoice', 'violations', 'withdrawals'];
-  const shouldHideNav = HIDE_NAVBAR_TABS.includes(tabName);
-
-  const bottomNavContainer = document.querySelector('.bottom-nav-container');
-  if (bottomNavContainer) {
-    bottomNavContainer.classList.toggle('nav-hidden', shouldHideNav);
-  }
-
-  const appContainer = document.getElementById('app-container');
-  if (appContainer) {
-    appContainer.classList.toggle('nav-hidden', shouldHideNav);
-  }
-
-  // Header Back Button & Drawer Button toggle
-  const headerBackBtn = document.getElementById('btn-header-back');
-  const headerDrawerBtn = document.getElementById('btn-open-drawer');
-  if (headerBackBtn) {
-    headerBackBtn.style.display = shouldHideNav ? 'inline-flex' : 'none';
-  }
-  if (headerDrawerBtn) {
-    headerDrawerBtn.style.display = shouldHideNav ? 'none' : 'inline-flex';
-  }
+  // Synchronize bottom navigation and header back/drawer button visibility
+  syncNavbarVisibility(tabName);
 
   // Update Drawer Nav
   document.querySelectorAll('.drawer-item').forEach(btn => {
@@ -1163,7 +1245,7 @@ function createOrderCard(ord) {
     statusSelectorHtml = `
       <div style="display: flex; align-items: center; gap: 8px; margin-top: 4px;">
         <span style="font-size: 13px; font-weight: 600;">Ubah status:</span>
-        <select class="form-input order-status-select" aria-label="Ubah status pesanan ${escapeHtml(String(ord.order_code || ord.id))}" data-order-id="${ord.id}" data-current-status="${ord.status || 'pending'}" style="height: 38px; padding: 0 10px; font-size: 13px; border-radius: 10px; flex: 1;">
+        <select class="form-input form-select order-status-select" aria-label="Ubah status pesanan ${escapeHtml(String(ord.order_code || ord.id))}" data-order-id="${ord.id}" data-current-status="${ord.status || 'pending'}" style="height: 38px; font-size: 13px; border-radius: 10px; flex: 1; min-width: 0;">
           <option value="" disabled selected>Pilih Status</option>
           ${targets.map(s => `<option value="${s}">${statusLabel(s)}</option>`).join('')}
         </select>
@@ -2461,7 +2543,7 @@ function populateInvoiceOrderPicker(selectedOrderId = null) {
   allOrders.forEach(o => {
     const code = o.order_code || String(o.id || '');
     if (!code || seen.has(code)) return;
-    const isPaid = (o.payment_status || '').toLowerCase() === 'paid' || 
+    const isPaid = (o.payment_status || '').toLowerCase() === 'paid' ||
                    (o.status || '').toLowerCase() === 'completed';
     if (isPaid) {
       seen.add(code);
@@ -2606,8 +2688,8 @@ function renderInvoice() {
   // If the invoice is completely unpopulated, check if there is a paid order in state.orders or state.paymentOrders
   if (itemsTable && itemsTable.rows.length === 0 && (!freelancerInput || !freelancerInput.value.trim())) {
     const allOrders = [...(state.orders || []), ...(state.paymentOrders || [])];
-    const paidOrders = allOrders.filter(o => 
-      (o.payment_status || '').toLowerCase() === 'paid' || 
+    const paidOrders = allOrders.filter(o =>
+      (o.payment_status || '').toLowerCase() === 'paid' ||
       (o.status || '').toLowerCase() === 'completed'
     );
     if (paidOrders.length > 0) {
@@ -2882,7 +2964,7 @@ function setupEventListeners() {
   // Header Actions
   document.getElementById('btn-header-avatar')?.addEventListener('click', openDrawer);
   document.getElementById('btn-header-back')?.addEventListener('click', () => {
-    if (activityHistoryReady) window.history.back();
+    if (activityHistoryReady && window.history.length > 1) window.history.back();
     else switchTab('home', 'left');
   });
 
@@ -3432,6 +3514,14 @@ function setupSwipeGestures() {
     if (document.getElementById('drawer-panel')?.classList.contains('open')) return;
     if (document.querySelector('.modal-overlay.open')) return;
 
+    // Do not intercept edge swipes meant for browser native swipe-back / swipe-forward gestures
+    // Mobile browsers (iOS Safari, Android Chrome) reserve ~40px from screen edges for back/forward navigation
+    const edgeMargin = 40;
+    const screenWidth = window.innerWidth || 360;
+    if (clientX <= edgeMargin || clientX >= screenWidth - edgeMargin) {
+      return;
+    }
+
     // Don't intercept inputs, toggles, buttons, chart or selector pills
     if (target.closest('input, textarea, select, button, label.toggle-switch, .toggle-switch, .countdown-row, #perf-chart-svg-wrapper, .mode-selector, .search-container')) {
       return;
@@ -3477,9 +3567,14 @@ function setupSwipeGestures() {
           switchTab(BOTTOM_TABS[idx - 1], 'left');
         }
       } else {
-        // On hidden-nav tabs (reviews, products, task-files, performance, users): swipe right returns to home
+        // Pada tab sekunder (ulasan, produk & promo sampai pelanggaran):
+        // Geser ke kanan kembali ke riwayat sebelumnya, bukan paksa ke home
         if (dx > 45) {
-          switchTab('home', 'left');
+          if (activityHistoryReady && window.history && window.history.length > 1) {
+            window.history.back();
+          } else {
+            switchTab('home', 'left');
+          }
         }
       }
     }
