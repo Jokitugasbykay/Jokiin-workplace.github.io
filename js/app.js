@@ -1409,8 +1409,14 @@ function renderPagination(totalPages) {
   container.innerHTML = '';
 
   const prevBtn = document.createElement('button');
-  prevBtn.className = 'page-btn';
-  prevBtn.textContent = '‹';
+  prevBtn.type = 'button';
+  prevBtn.className = 'page-btn page-nav-btn prev-btn';
+  prevBtn.setAttribute('aria-label', 'Halaman sebelumnya');
+  prevBtn.innerHTML = `
+    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+      <path d="M15 18l-6-6 6-6"></path>
+    </svg>
+  `;
   prevBtn.disabled = state.orderPage <= 1;
   prevBtn.onclick = () => { state.orderPage--; renderOrders(); };
   container.appendChild(prevBtn);
@@ -1425,23 +1431,31 @@ function renderPagination(totalPages) {
   pages.forEach(val => {
     if (val - last > 1) {
       const dots = document.createElement('span');
+      dots.className = 'page-dots';
       dots.textContent = '…';
-      dots.style.padding = '0 4px';
-      dots.style.color = 'var(--ink-muted)';
       container.appendChild(dots);
     }
 
     const btn = document.createElement('button');
+    btn.type = 'button';
     btn.className = `page-btn ${val === p ? 'active' : ''}`;
     btn.textContent = val;
+    btn.setAttribute('aria-label', `Halaman ${val}`);
+    if (val === p) btn.setAttribute('aria-current', 'page');
     btn.onclick = () => { state.orderPage = val; renderOrders(); };
     container.appendChild(btn);
     last = val;
   });
 
   const nextBtn = document.createElement('button');
-  nextBtn.className = 'page-btn';
-  nextBtn.textContent = '›';
+  nextBtn.type = 'button';
+  nextBtn.className = 'page-btn page-nav-btn next-btn';
+  nextBtn.setAttribute('aria-label', 'Halaman berikutnya');
+  nextBtn.innerHTML = `
+    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+      <path d="M9 18l6-6-6-6"></path>
+    </svg>
+  `;
   nextBtn.disabled = state.orderPage >= totalPages;
   nextBtn.onclick = () => { state.orderPage++; renderOrders(); };
   container.appendChild(nextBtn);
