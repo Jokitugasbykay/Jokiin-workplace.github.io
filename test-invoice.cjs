@@ -43,11 +43,14 @@ if (!indexHtml.includes('https://jokiin.my.id')) {
 if (!styleCss.includes('.invoice-sheet {\n  max-width: 1040px;\n  margin: 0 auto 36px;\n  padding: 36px;\n  background: #FFFFFF;\n  border-radius: 20px;\n  box-shadow: 0 12px 40px rgba(24, 56, 42, 0.08);\n  color: #17211D;\n  display: flex;\n  flex-direction: column;\n  min-height: 750px;\n}')) {
   throw new Error('Missing flex column and min-height in screen .invoice-sheet');
 }
-if (!styleCss.includes('min-height: 282mm !important;')) {
-  throw new Error('Missing min-height: 282mm in print .invoice-sheet');
+if (!styleCss.includes('position: fixed !important;')) {
+  throw new Error('Missing position: fixed in print .invoice-footer-bar');
 }
-if (!styleCss.includes('margin-top: auto !important;')) {
-  throw new Error('Missing margin-top: auto in print .invoice-footer-bar');
+if (!styleCss.includes('bottom: 14mm !important;')) {
+  throw new Error('Missing bottom: 14mm in print .invoice-footer-bar');
+}
+if (!styleCss.includes('padding: 14mm 16mm 28mm !important;')) {
+  throw new Error('Missing padding: 14mm 16mm 28mm in print .invoice-sheet');
 }
 
 console.log('PASS: invoice modal transition, customer name fallback, print spans and CSS print layout are verified.');

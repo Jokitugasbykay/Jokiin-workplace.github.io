@@ -2391,11 +2391,9 @@ p { text-wrap: pretty; }
   .invoice-sheet {
     max-width: none !important;
     width: 100% !important;
-    min-height: 282mm !important;
-    display: flex !important;
-    flex-direction: column !important;
+    min-height: 0 !important;
     margin: 0 !important;
-    padding: 14mm 16mm 14mm !important;
+    padding: 14mm 16mm 28mm !important;
     border: 0 !important;
     border-radius: 0 !important;
     box-shadow: none !important;
@@ -2485,14 +2483,22 @@ p { text-wrap: pretty; }
     margin-bottom: 24px !important;
   }
   .invoice-footer-bar {
+    position: fixed !important;
+    bottom: 14mm !important;
+    left: 16mm !important;
+    right: 16mm !important;
+    width: auto !important;
+    box-sizing: border-box !important;
     break-inside: avoid;
     page-break-inside: avoid;
-    margin-top: auto !important;
+    margin: 0 !important;
     padding-top: 12px !important;
     display: flex !important;
     justify-content: space-between !important;
     align-items: center !important;
     border-top: 1px solid #DBE5DE !important;
+    background: #FFFFFF !important;
+    z-index: 999 !important;
   }
   .invoice-footer-bar .invoice-note {
     margin: 0 !important;
