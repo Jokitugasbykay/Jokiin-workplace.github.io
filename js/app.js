@@ -1065,7 +1065,7 @@ function renderHome() {
           <span style="font-weight: 700;">${escapeHtml(po.order_code)}${renderOrderTypeBadge(po)}</span>
           ${checkoutPaymentBadge(po)}
         </div>
-        <div style="font-size: 13px; color: var(--ink-secondary);">${escapeHtml(po.customer?.name || 'Pelanggan')} • ${po.customer?.email || '-'}</div>
+        <div style="font-size: 13px; color: var(--ink-secondary);">${escapeHtml(po.customer?.name || 'Pelanggan')} • ${escapeHtml(po.customer?.email || '-')}</div>
         <div style="font-size: 15px; font-weight: 800;">${formatRupiah(po.total_price)}</div>
         ${checkoutDetailButton(po)}
       `;
@@ -1371,12 +1371,6 @@ function createOrderCard(ord) {
     <div class="odc-product-wrapper">
       <span class="odc-section-label odc-mobile-only">ITEM PESANAN</span>
       <div class="odc-product-row">
-        <div class="odc-product-icon">
-          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#1F4D45" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-            <path d="M6 7h12l1 13H5L6 7z"></path>
-            <path d="M9 7a3 3 0 0 1 6 0"></path>
-          </svg>
-        </div>
         <div class="odc-product-details">
           <span class="odc-product-name">${escapeHtml(productName)}</span>
           <span class="odc-product-desc">${escapeHtml(productNotes)}</span>
@@ -1494,8 +1488,24 @@ function openOrderDetail(orderId, checkout = null) {
 
   const workerEl = document.getElementById('detail-order-worker');
   if (workerEl) {
-    const workerName = order.worker_id ? (state.profiles?.[order.worker_id]?.name || 'Worker') : null;
-    workerEl.textContent = workerName || 'Belum diklaim';
+    let workerName = null;
+    const assignedId = order.assigned_to || order.worker_id;
+    if (assignedId) {
+      const worker = Array.isArray(state.profiles)
+        ? state.profiles.find(p => String(p.id) === String(assignedId))
+        : (state.profiles?.[assignedId] || null);
+      if (worker) {
+        if (worker.name && worker.name.startsWith('Admin ')) {
+          workerName = worker.name;
+        } else {
+          const nick = profileNickname(worker);
+          workerName = nick.startsWith('Admin ') ? nick : `Admin ${nick}`;
+        }
+      } else {
+        workerName = 'Admin';
+      }
+    }
+    workerEl.textContent = workerName || 'Belum diambil';
   }
 
   // WhatsApp
@@ -1761,7 +1771,7 @@ function renderPayments() {
           <span style="font-weight: 800;">${escapeHtml(po.order_code)}${renderOrderTypeBadge(po)}</span>
           ${checkoutPaymentBadge(po)}
         </div>
-        <div style="font-size: 13px;">${escapeHtml(po.customer?.name || 'Pelanggan')} • <a href="mailto:${po.customer?.email || ''}" style="color: var(--accent-blue);">${po.customer?.email || '-'}</a></div>
+        <div style="font-size: 13px;">${escapeHtml(po.customer?.name || 'Pelanggan')} • <a href="mailto:${encodeURIComponent(po.customer?.email || '')}" style="color: var(--accent-blue);">${escapeHtml(po.customer?.email || '-')}</a></div>
         <div style="font-size: 15px; font-weight: 800; color: var(--ink);">${formatRupiah(po.total_price)}</div>
         ${checkoutDetailButton(po)}
       `;
@@ -2327,7 +2337,7 @@ function renderPromoCampaigns() {
 
     card.innerHTML = `
       <div style="display: flex; justify-content: space-between; align-items: center;">
-        <span style="font-size: 17px; font-weight: 800;">${promo.coupon}</span>
+        <span style="font-size: 17px; font-weight: 800;">${escapeHtml(promo.coupon)}</span>
         <span class="status-badge ${promo.active ? 'active' : 'inactive'}">${promo.active ? 'Aktif' : 'Nonaktif'}</span>
       </div>
       <div style="font-weight: 800; color: var(--revenue-green);">Diskon s.d ${promo.discount_percent}%</div>
