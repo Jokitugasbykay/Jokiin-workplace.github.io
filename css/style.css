@@ -4309,24 +4309,27 @@ body:has(#modal-order-detail.open) {
 
 .odc-btn-detail {
   flex: 1;
-  height: 48px;
-  border: 1px solid var(--border-light);
+  min-height: 52px;
+  height: 52px;
+  padding: 0 24px;
+  border: 1.5px solid var(--border-light);
   background: #FFFFFF;
-  border-radius: 16px;
+  border-radius: 16px !important;
   font-family: inherit;
   font-size: 15px;
-  font-weight: 600;
+  font-weight: 700;
   color: #1E1B16;
   cursor: pointer;
-  transition: background 0.15s ease, border-color 0.15s ease;
+  transition: background 0.15s ease, border-color 0.15s ease, box-shadow 0.15s ease;
   display: flex;
   align-items: center;
   justify-content: center;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.04);
 }
 
 .odc-btn-detail:hover {
   background: #F1F5F9;
-  border-color: #C8BEAC;
+  border-color: #CBD5E1;
 }
 
 .odc-status-control {
@@ -4347,14 +4350,16 @@ body:has(#modal-order-detail.open) {
 .odc-status-select {
   flex: 1;
   min-width: 0;
-  height: 48px;
-  border: 1px solid var(--border-light);
+  min-height: 52px;
+  height: 52px;
+  border: 1.5px solid var(--border-light);
   background: var(--bg-primary);
-  border-radius: 16px;
-  padding: 0 14px;
+  border-radius: 16px !important;
+  padding: 0 16px;
   font-family: inherit;
   font-size: 15px;
-  color: #4F493F;
+  font-weight: 600;
+  color: #1E1B16;
   cursor: pointer;
   outline: none;
   transition: border-color 0.15s ease, background 0.15s ease;
@@ -4367,12 +4372,22 @@ body:has(#modal-order-detail.open) {
 
 .odc-btn-claim {
   flex: 1;
-  height: 48px;
+  min-height: 52px;
+  height: 52px;
+  padding: 0 24px;
   border: none;
   background: #1F4D45;
   color: #FFFFFF;
-  border-radius: 16px;
+  border-radius: 16px !important;
   font-family: inherit;
+  font-size: 15px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: filter 0.15s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
   font-size: 15px;
   font-weight: 600;
   cursor: pointer;
@@ -4458,8 +4473,12 @@ body:has(#modal-order-detail.open) {
   .odc-actions-row {
     flex-direction: column;
     gap: 12px;
+    width: 100%;
   }
   .odc-btn-detail, .odc-status-control, .odc-btn-claim {
-    width: 100%;
+    width: 100% !important;
+    min-height: 52px;
+    height: 52px;
+    border-radius: 16px !important;
   }
 }
