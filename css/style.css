@@ -2553,65 +2553,641 @@ p { text-wrap: pretty; }
 .withdrawal-footer { padding:12px 24px calc(16px + var(--safe-bottom)); background:#fff; border-top:1px solid var(--border-light); }
 .withdrawal-footer #withdrawal-error:empty { display:none; }
 
-/* Task content leads; payment and customer metadata share a quieter side column. */
-#modal-order-detail { align-items:center; padding:24px; backdrop-filter:none; -webkit-backdrop-filter:none; background:rgba(17,27,42,.48); }
-#modal-order-detail .modal-sheet { max-width:960px; max-height:calc(100dvh - 48px); padding:0; gap:0; border-radius:16px; overflow:hidden; box-shadow:0 20px 64px rgba(17,27,42,.22); }
-.detail-header { padding:24px 28px; gap:20px; flex-shrink:0; border-bottom:1px solid var(--border-light); align-items:flex-start; }
-.detail-header > div { min-width:0; }
-#detail-modal-title { font-size:22px; font-weight:750; line-height:1.3; }
-#detail-order-code { margin-top:6px; color:var(--ink-secondary); font-size:13px; font-weight:500; overflow-wrap:anywhere; line-height:1.5; }
-#modal-order-detail .modal-close-btn { width:44px; height:44px; flex-shrink:0; border-radius:8px; background:#f1f4f8; }
-.detail-body { display:grid; grid-template-columns:minmax(0,1.6fr) minmax(0,1fr); overflow-y:auto; min-height:0; overscroll-behavior:contain; }
-.detail-main { padding:28px; min-width:0; }
-.detail-summary { padding:28px; background:#f5f7fa; border-left:1px solid var(--border-light); min-width:0; }
-#modal-order-detail h3 { font-size:18px; line-height:1.4; font-weight:700; margin-bottom:20px; }
-.detail-field { display:grid; gap:6px; margin-top:20px; }
-.detail-label { color:var(--ink-secondary); font-size:14px; line-height:1.5; }
-.detail-field p, .detail-summary p { font-size:15px; line-height:1.6; overflow-wrap:anywhere; }
-#detail-task-title { font-size:21px; font-weight:650; line-height:1.4; }
-#detail-task-notes { white-space:pre-wrap; }
-#detail-task-drive-links { display:grid; gap:10px; margin-top:24px; }
-#detail-task-drive-links a { min-height:46px; height:auto; padding:12px 16px; border-radius:8px; font-size:15px; line-height:1.4; text-align:center; overflow-wrap:anywhere; }
-#detail-task-drive-links a:first-child { background:var(--accent-blue); border-color:var(--accent-blue); color:#fff; font-weight:650; }
-.detail-items-section { margin-top:28px; padding-top:24px; border-top:1px solid var(--border-light); }
-.detail-item-head, .detail-item-row { display:grid; grid-template-columns:minmax(0,1fr) 64px 112px; gap:12px; align-items:start; font-size:14px; line-height:1.5; }
-.detail-item-head { color:var(--ink-secondary); padding-bottom:12px; }
-.detail-item-row { padding:16px 0; border-top:1px solid var(--border-light); overflow-wrap:anywhere; }
-.detail-item-row > :nth-child(2), .detail-item-head > :nth-child(2) { text-align:center; }
-.detail-item-row > :last-child, .detail-item-head > :last-child { text-align:right; }
-.detail-item-row strong { font-weight:600; }
-#detail-order-total { display:block; margin-top:6px; font-size:32px; line-height:1.2; letter-spacing:-.6px; font-weight:750; overflow-wrap:anywhere; font-variant-numeric:tabular-nums; }
-#detail-order-payment { margin-top:16px; padding:10px 12px; border-radius:6px; font-size:14px; font-weight:600; }
-#detail-order-payment.payment-pending { background:#fff2dc; color:#895000; }
-#detail-order-payment.payment-paid { background:#e8efff; color:#244ba5; }
-#detail-order-payment.payment-other { background:#e9edf3; color:#4b5768; }
-.detail-contact-section, .detail-estimate-section { margin-top:24px; padding-top:24px; border-top:1px solid var(--border-light); }
-.detail-contact-section h3, .detail-estimate-section h3 { margin-bottom:10px !important; }
-#detail-customer-name { font-size:17px; font-weight:650; overflow-wrap:anywhere; }
-#detail-customer-email { margin-top:4px; color:var(--ink-secondary); }
-.detail-whatsapp { display:flex; flex-direction:column; align-items:center; justify-content:center; gap:2px; min-height:46px; margin-top:16px; padding:10px; border:1px solid var(--accent-blue); border-radius:8px; color:var(--accent-blue); text-decoration:none; text-align:center; overflow-wrap:anywhere; font-size:15px; font-weight:600; }
-.detail-whatsapp small { font-size:12px; font-weight:400; }
-#detail-deadline-hint { font-size:13px; color:var(--ink-secondary); margin-top:6px; }
-.detail-footer { display:flex; align-items:center; justify-content:flex-end; gap:12px; padding:16px 28px; border-top:1px solid var(--border-light); flex-shrink:0; background:#fff; }
-.detail-footer button { width:auto; min-width:104px; min-height:44px; padding:10px 20px; border-radius:8px; }
-.detail-footer #btn-order-create-invoice { margin-right:auto; background:var(--accent-blue); }
-#modal-order-detail :is(button,a):focus-visible { outline:3px solid var(--accent-blue); outline-offset:3px; }
-body:has(#modal-order-detail.open) { overflow:hidden; }
-@media(max-width:640px) {
- #modal-order-detail { padding:0; }
- #modal-order-detail .modal-sheet { height:100dvh; max-height:100dvh; max-width:none; border-radius:0; }
- .detail-header { padding:18px 20px; gap:12px; }
- #detail-modal-title { font-size:20px; }
- #detail-order-code { font-size:12px; }
- .detail-body { display:block; }
- .detail-main, .detail-summary { padding:24px 20px; }
- .detail-summary { border-left:0; border-top:1px solid var(--border-light); }
- .detail-field p, .detail-summary p, .detail-item-row { font-size:16px; }
- .detail-item-head, .detail-item-row { grid-template-columns:minmax(0,1fr) 48px 100px; gap:8px; }
- .detail-item-head { font-size:12px; }
- .detail-footer { padding:12px 20px calc(12px + var(--safe-bottom)); }
- .detail-footer button { min-width:88px; font-size:14px; padding-inline:12px; }
- .detail-footer #btn-order-create-invoice { flex:1; }
+/* ========================================================
+   Order Detail Modal (Desktop & Mobile Reference Design)
+   ======================================================== */
+#modal-order-detail {
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+  backdrop-filter: none;
+  -webkit-backdrop-filter: none;
+  background: rgba(30, 27, 22, 0.45);
+  font-family: 'Manrope', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  color: #1E1B16;
+}
+
+#modal-order-detail .modal-sheet {
+  max-width: 900px;
+  width: 100%;
+  max-height: calc(100dvh - 48px);
+  padding: 0;
+  gap: 0;
+  border-radius: 28px;
+  overflow: hidden;
+  box-shadow: 0 30px 80px rgba(30, 27, 22, 0.35);
+  background: #FFFFFF;
+  display: flex;
+  flex-direction: column;
+}
+
+/* Header */
+.detail-header {
+  padding: 24px 28px;
+  gap: 16px;
+  flex-shrink: 0;
+  border-bottom: 1px solid #E9E4D9;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  background: #FFFFFF;
+}
+
+.detail-header-text {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  min-width: 0;
+}
+
+#detail-modal-title {
+  font-family: 'Fraunces', Georgia, serif;
+  font-size: 24px;
+  font-weight: 600;
+  letter-spacing: -0.01em;
+  color: #1E1B16;
+  margin: 0;
+  line-height: 1.2;
+}
+
+#detail-order-code {
+  font-family: ui-monospace, Menlo, Monaco, Consolas, monospace;
+  font-size: 11px;
+  color: #6B6459;
+  word-break: break-all;
+  margin: 0;
+  line-height: 1.4;
+}
+
+#modal-order-detail .modal-close-btn {
+  flex: none;
+  width: 44px;
+  height: 44px;
+  border: 0;
+  background: #F3EFE7;
+  border-radius: 14px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #1E1B16;
+  transition: background 0.15s ease;
+}
+
+#modal-order-detail .modal-close-btn:hover {
+  background: #E8E3DA;
+}
+
+/* Modal Body */
+.detail-body {
+  display: grid;
+  grid-template-columns: minmax(0, 1.4fr) minmax(0, 1fr);
+  overflow-y: auto;
+  min-height: 0;
+  overscroll-behavior: contain;
+  background: #FFFFFF;
+}
+
+.detail-main {
+  padding: 28px;
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+  min-width: 0;
+}
+
+.detail-summary {
+  padding: 28px;
+  background: #FAF8F5;
+  border-left: 1px solid #E9E4D9;
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+  min-width: 0;
+}
+
+/* Headings */
+.odm-section-heading {
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  color: #1F4D45;
+  text-transform: uppercase;
+  margin: 0 0 12px 0;
+}
+
+/* Total Section */
+.detail-total-section {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.odm-total-block {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.detail-label {
+  font-size: 13px;
+  color: #6B6459;
+  line-height: 1.4;
+}
+
+#detail-order-total {
+  font-family: ui-monospace, Menlo, Monaco, Consolas, monospace;
+  font-size: 34px;
+  font-weight: 600;
+  line-height: 1.1;
+  letter-spacing: -0.02em;
+  color: #1E1B16;
+  display: block;
+}
+
+#detail-order-payment {
+  align-self: flex-start;
+  font-size: 13px;
+  font-weight: 700;
+  padding: 8px 14px;
+  border-radius: 999px;
+  display: inline-block;
+  line-height: 1.2;
+  margin: 0;
+}
+
+#detail-order-payment.payment-paid {
+  background: #E4EFEB;
+  color: #1F4D45;
+}
+
+#detail-order-payment.payment-pending {
+  background: #FEF3C7;
+  color: #B45309;
+}
+
+#detail-order-payment.payment-other {
+  background: #FEE2E2;
+  color: #B91C1C;
+}
+
+/* Meta Box */
+.odm-meta-box {
+  background: #F7F4EE;
+  border-radius: 18px;
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.odm-meta-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 8px;
+}
+
+.odm-meta-label {
+  font-size: 13px;
+  color: #6B6459;
+}
+
+.odm-meta-val {
+  font-size: 14px;
+  font-weight: 600;
+  color: #1E1B16;
+}
+
+#detail-order-worker.odm-meta-val {
+  font-weight: 700;
+}
+
+/* Detail Tugas */
+.detail-task-section {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.detail-field {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+#detail-task-title {
+  font-family: 'Fraunces', Georgia, serif;
+  font-size: 22px;
+  font-weight: 600;
+  line-height: 1.25;
+  color: #1E1B16;
+  margin: 0;
+  overflow-wrap: anywhere;
+}
+
+#detail-task-deadline {
+  font-size: 15px;
+  font-weight: 600;
+  color: #1E1B16;
+  margin: 0;
+}
+
+.odm-task-notes-wrapper {
+  background: #F7F4EE;
+  border-radius: 16px;
+  padding: 14px 16px;
+}
+
+#detail-task-notes {
+  font-size: 15px;
+  line-height: 1.6;
+  color: #1E1B16;
+  margin: 0;
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+
+#detail-task-drive-links {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-top: 4px;
+}
+
+#detail-task-drive-links a {
+  background: #FFFFFF;
+  border: 1px solid #D9D2C3;
+  border-radius: 14px;
+  padding: 12px 16px;
+  font-size: 14px;
+  font-weight: 600;
+  text-decoration: none;
+  color: #1F4D45;
+  text-align: center;
+  transition: background 0.15s ease;
+}
+
+#detail-task-drive-links a:first-child {
+  background: #1F4D45;
+  border-color: #1F4D45;
+  color: #FFFFFF;
+  font-weight: 700;
+}
+
+#detail-task-drive-links a:hover {
+  filter: brightness(1.08);
+}
+
+/* Items Section */
+.detail-items-section {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+#detail-order-items {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.odm-item-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+  border: 1px solid #E9E4D9;
+  border-radius: 16px;
+  padding: 14px 16px;
+  background: #FFFFFF;
+}
+
+.odm-item-info {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  min-width: 0;
+}
+
+.odm-item-name {
+  font-size: 15px;
+  font-weight: 700;
+  color: #1E1B16;
+  overflow-wrap: anywhere;
+}
+
+.odm-item-qty {
+  font-size: 13px;
+  color: #6B6459;
+}
+
+.odm-item-price {
+  font-family: ui-monospace, Menlo, Monaco, Consolas, monospace;
+  font-size: 15px;
+  font-weight: 700;
+  color: #1E1B16;
+  flex-shrink: 0;
+}
+
+/* Contact Section */
+.detail-contact-section {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.odm-customer-row {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+
+.odm-avatar {
+  width: 48px;
+  height: 48px;
+  border-radius: 50%;
+  background: #1F4D45;
+  color: #FFFFFF;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-family: 'Fraunces', Georgia, serif;
+  font-size: 18px;
+  font-weight: 600;
+  flex-shrink: 0;
+}
+
+.odm-customer-info {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+
+#detail-customer-name {
+  font-size: 16px;
+  font-weight: 700;
+  color: #1E1B16;
+  overflow-wrap: anywhere;
+}
+
+#detail-customer-email {
+  font-size: 14px;
+  color: #6B6459;
+  margin: 0;
+  overflow-wrap: anywhere;
+}
+
+.odm-whatsapp-btn {
+  height: 56px;
+  border: 1px solid #1F4D45;
+  background: #FFFFFF;
+  border-radius: 16px;
+  color: #1F4D45;
+  text-decoration: none;
+  cursor: pointer;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 2px;
+  transition: background 0.15s ease;
+}
+
+.odm-whatsapp-btn:hover {
+  background: #E4EFEB;
+}
+
+.odm-whatsapp-title {
+  font-size: 14px;
+  font-weight: 700;
+  line-height: 1;
+}
+
+.odm-whatsapp-number {
+  font-size: 12px;
+  line-height: 1;
+}
+
+.odm-no-wa {
+  font-size: 13px;
+  color: #6B6459;
+}
+
+/* Estimate Section */
+.detail-estimate-section {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.odm-estimate-info {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+#detail-order-deadline {
+  font-size: 15px;
+  font-weight: 600;
+  color: #1E1B16;
+  margin: 0;
+}
+
+#detail-deadline-hint {
+  font-size: 12px;
+  color: #6B6459;
+  margin: 0;
+}
+
+#btn-open-estimate-edit {
+  height: 48px;
+  border: 1px solid #D9D2C3;
+  background: #FFFFFF;
+  border-radius: 16px;
+  font-size: 14px;
+  font-weight: 600;
+  color: #1E1B16;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background 0.15s ease;
+}
+
+#btn-open-estimate-edit:hover {
+  background: #F3EFE7;
+}
+
+#detail-estimate-editor {
+  background: #F7F4EE;
+  border-radius: 16px;
+  padding: 12px;
+}
+
+#btn-cancel-estimate {
+  height: 40px;
+  border-radius: 12px;
+  font-size: 13px;
+  font-weight: 600;
+  border: 1px solid #D9D2C3;
+  background: #FFFFFF;
+  color: #1E1B16;
+}
+
+#btn-save-estimate {
+  height: 40px;
+  border-radius: 12px;
+  font-size: 13px;
+  font-weight: 700;
+  background: #1F4D45;
+  color: #FFFFFF;
+  border: 0;
+}
+
+/* Footer */
+.detail-footer {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 12px;
+  padding: 18px 28px;
+  border-top: 1px solid #E9E4D9;
+  flex-shrink: 0;
+  background: #FFFFFF;
+}
+
+.detail-footer button {
+  min-width: 104px;
+  height: 48px;
+  padding: 0 20px;
+  border-radius: 16px;
+  font-size: 15px;
+  font-weight: 600;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  transition: filter 0.15s ease, background 0.15s ease;
+}
+
+.detail-footer .btn-outline {
+  border: 1px solid #D9D2C3;
+  background: #FFFFFF;
+  color: #1E1B16;
+}
+
+.detail-footer .btn-outline:hover {
+  background: #F3EFE7;
+}
+
+.detail-footer #btn-order-create-invoice {
+  margin-right: auto;
+  background: #1F4D45;
+  border: 0;
+  color: #FFFFFF;
+  font-weight: 700;
+}
+
+.detail-footer #btn-order-create-invoice:hover {
+  filter: brightness(1.12);
+}
+
+#modal-order-detail :is(button, a):focus-visible {
+  outline: 3px solid #1F4D45;
+  outline-offset: 2px;
+}
+
+body:has(#modal-order-detail.open) {
+  overflow: hidden;
+}
+
+/* ========================================================
+   Mobile-specific Modal Styling (matches PopupMobile.dc.html)
+   ======================================================== */
+@media (max-width: 768px) {
+  #modal-order-detail {
+    padding: 12px;
+    align-items: flex-start;
+  }
+
+  #modal-order-detail .modal-sheet {
+    max-width: 440px;
+    width: 100%;
+    max-height: calc(100dvh - 24px);
+    border-radius: 28px;
+    margin: auto;
+  }
+
+  .detail-header {
+    padding: 20px;
+  }
+
+  .detail-body {
+    display: flex;
+    flex-direction: column;
+    padding: 20px;
+    gap: 24px;
+  }
+
+  .detail-main,
+  .detail-summary {
+    display: contents;
+  }
+
+  /* Specific section order matching PopupMobile mockup */
+  .detail-total-section {
+    order: 1;
+    border-bottom: none;
+    padding: 0;
+    gap: 16px;
+  }
+
+  .detail-task-section {
+    order: 2;
+    border-bottom: 1px solid #E9E4D9;
+    padding-bottom: 24px;
+    margin: 0;
+  }
+
+  .detail-items-section {
+    order: 3;
+    border-bottom: 1px solid #E9E4D9;
+    padding-bottom: 24px;
+    margin: 0;
+  }
+
+  .detail-contact-section {
+    order: 4;
+    border-bottom: 1px solid #E9E4D9;
+    padding-bottom: 24px;
+    margin: 0;
+  }
+
+  .detail-estimate-section {
+    order: 5;
+    border-bottom: none;
+    padding: 0;
+    margin: 0;
+  }
+
+  .detail-footer {
+    padding: 16px 20px calc(20px + var(--safe-bottom, 0px));
+    flex-direction: column;
+    gap: 10px;
+  }
+
+  .detail-footer button {
+    width: 100%;
+    height: 52px;
+    border-radius: 16px;
+    font-size: 15px;
+  }
+
+  .detail-footer #btn-order-create-invoice {
+    margin-right: 0;
+  }
 }
 
 /* ======================================================== */

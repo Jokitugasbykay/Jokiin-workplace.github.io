@@ -1482,22 +1482,51 @@ function openOrderDetail(orderId, checkout = null) {
   detailReturnFocus = document.activeElement;
 
   document.getElementById('detail-order-code').textContent = order.order_code || '#' + order.id;
-  document.getElementById('detail-customer-name').textContent = getCustomerName(order);
+  const custName = getCustomerName(order);
+  document.getElementById('detail-customer-name').textContent = custName;
   document.getElementById('detail-customer-email').textContent = order.customer?.email || '-';
+
+  const avatarEl = document.getElementById('detail-customer-avatar');
+  if (avatarEl) {
+    const initials = (custName || 'U').split(/\s+/).filter(Boolean).slice(0, 2).map(n => n[0]).join('').toUpperCase() || 'U';
+    avatarEl.textContent = initials;
+  }
+
+  const workerEl = document.getElementById('detail-order-worker');
+  if (workerEl) {
+    const workerName = order.worker_id ? (state.profiles?.[order.worker_id]?.name || 'Worker') : null;
+    workerEl.textContent = workerName || 'Belum diklaim';
+  }
 
   // WhatsApp
   const rawWa = order.customer?.whatsapp || '';
   const waContainer = document.getElementById('detail-customer-wa');
   const waUrl = getWhatsAppUrl(rawWa);
   if (waUrl) {
-    waContainer.innerHTML = `<a href="${waUrl}" target="_blank" rel="noopener" class="detail-whatsapp"><span>Chat via WhatsApp</span><small>${escapeHtml(rawWa)}</small></a>`;
+    waContainer.innerHTML = `<a href="${waUrl}" target="_blank" rel="noopener" class="odm-whatsapp-btn"><span class="odm-whatsapp-title">Chat via WhatsApp</span><span class="odm-whatsapp-number">${escapeHtml(rawWa)}</span></a>`;
   } else {
-    waContainer.textContent = rawWa || '-';
+    waContainer.innerHTML = rawWa ? `<span class="odm-no-wa">${escapeHtml(rawWa)}</span>` : '<span class="odm-no-wa">-</span>';
   }
 
   // Summary
   document.getElementById('detail-order-total').textContent = formatRupiah(order.total_price);
-  document.getElementById('detail-order-status-badge').innerHTML = renderStatusBadge(order.status || 'pending');
+
+  const statusMap = {
+    completed: { label: 'Selesai', pillClass: 'status-completed', dotClass: 'dot-completed' },
+    processing: { label: 'Diproses', pillClass: 'status-processing', dotClass: 'dot-processing' },
+    revision: { label: 'Revisi', pillClass: 'status-revision', dotClass: 'dot-revision' },
+    pending: { label: 'Menunggu', pillClass: 'status-pending', dotClass: 'dot-pending' },
+    cancelled: { label: 'Dibatalkan', pillClass: 'status-cancelled', dotClass: 'dot-cancelled' }
+  };
+  const statusKey = (order.status || 'pending').toLowerCase();
+  const statusInfo = statusMap[statusKey] || { label: statusLabel(order.status), pillClass: 'status-pending', dotClass: 'dot-pending' };
+  document.getElementById('detail-order-status-badge').innerHTML = `
+    <span class="odc-status-pill ${statusInfo.pillClass}">
+      <span class="odc-status-dot ${statusInfo.dotClass}"></span>
+      ${statusInfo.label}
+    </span>
+  `;
+
   const paymentStatus = String(order.payment_status || '').toUpperCase();
   const paymentLabel = { PAID: 'Sudah dibayar', PENDING: 'Menunggu pembayaran', CANCELED: 'Pembayaran dibatalkan', CANCELLED: 'Pembayaran dibatalkan' }[paymentStatus] || order.payment_status || 'Status pembayaran belum tersedia';
   const paymentElement = document.getElementById('detail-order-payment');
@@ -1530,15 +1559,17 @@ function openOrderDetail(orderId, checkout = null) {
   itemsContainer.innerHTML = '';
   const items = Array.isArray(order.items) ? order.items : [];
   if (items.length === 0) {
-    itemsContainer.innerHTML = '<span style="font-size: 13px; color: var(--ink-muted);">Tidak ada item.</span>';
+    itemsContainer.innerHTML = '<span style="font-size: 13px; color: #6B6459;">Tidak ada item.</span>';
   } else {
     items.forEach(it => {
       const row = document.createElement('div');
-      row.className = 'detail-item-row';
+      row.className = 'odm-item-row';
       row.innerHTML = `
-        <strong>${escapeHtml(it.name || 'Item')}</strong>
-        <span>${escapeHtml(String(it.quantity || 1))}</span>
-        <span>${formatRupiah(it.price ?? it.unit_price)}</span>
+        <div class="odm-item-info">
+          <span class="odm-item-name">${escapeHtml(it.name || 'Item')}</span>
+          <span class="odm-item-qty">Jumlah ${escapeHtml(String(it.quantity || 1))}</span>
+        </div>
+        <span class="odm-item-price">${formatRupiah(it.price ?? it.unit_price)}</span>
       `;
       itemsContainer.appendChild(row);
     });
@@ -1580,7 +1611,7 @@ function openOrderDetail(orderId, checkout = null) {
   });
 
   if (!gDrive && attachments.length === 0) {
-    linksContainer.innerHTML = '<span style="font-size: 12px; color: var(--ink-muted);">Belum ada lampiran.</span>';
+    linksContainer.innerHTML = '<span style="font-size: 12px; color: #6B6459;">Belum ada lampiran.</span>';
   }
 
   // Invoice button in order detail modal for paid orders

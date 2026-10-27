@@ -1493,45 +1493,70 @@
   <div id="modal-order-detail" class="modal-overlay">
     <div class="modal-sheet" role="dialog" aria-modal="true" aria-labelledby="detail-modal-title" aria-describedby="detail-order-code">
       <div class="modal-header detail-header">
-        <div>
+        <div class="detail-header-text">
           <h2 id="detail-modal-title">Detail pesanan</h2>
           <p id="detail-order-code">#0000</p>
         </div>
         <button class="modal-close-btn" data-close-modal="modal-order-detail" aria-label="Tutup">
-          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
-            <line x1="18" y1="6" x2="6" y2="18"></line>
-            <line x1="6" y1="6" x2="18" y2="18"></line>
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true">
+            <path d="M6 6l12 12M18 6L6 18"></path>
           </svg>
         </button>
       </div>
       <div class="detail-body">
         <div class="detail-main">
           <section class="detail-task-section">
-            <h3>Detail tugas</h3>
+            <h3 class="odm-section-heading">DETAIL TUGAS</h3>
             <div class="detail-field"><span class="detail-label">Judul tugas</span><p id="detail-task-title"></p></div>
             <div class="detail-field"><span class="detail-label">Deadline pelanggan</span><p id="detail-task-deadline">-</p></div>
-            <div class="detail-field"><span class="detail-label">Catatan pelanggan</span><p id="detail-task-notes"></p></div>
+            <div class="detail-field"><span class="detail-label">Catatan pelanggan</span><div class="odm-task-notes-wrapper"><p id="detail-task-notes"></p></div></div>
             <div id="detail-task-drive-links"></div>
           </section>
           <section class="detail-items-section">
-            <h3>Item pesanan</h3>
-            <div class="detail-item-head" aria-hidden="true"><span>Nama item</span><span>Jumlah</span><span>Harga satuan</span></div>
+            <h3 class="odm-section-heading">ITEM PESANAN</h3>
+            <div class="detail-item-head" aria-hidden="true" style="display: none;"><span>Nama item</span><span>Jumlah</span><span>Harga satuan</span></div>
             <div id="detail-order-items"></div>
           </section>
         </div>
         <aside class="detail-summary" aria-label="Ringkasan pesanan">
           <section class="detail-total-section">
-            <span class="detail-label">Total pesanan</span><strong id="detail-order-total">Rp0</strong>
-            <p id="detail-order-payment"></p>
-            <div class="detail-field"><span class="detail-label">Status pengerjaan</span><span id="detail-order-status-badge"></span></div>
-            <div class="detail-field"><span class="detail-label">Tanggal pesanan</span><p id="detail-order-date">-</p></div>
+            <div class="odm-total-block">
+              <span class="detail-label">Total pesanan</span>
+              <strong id="detail-order-total">Rp0</strong>
+              <p id="detail-order-payment"></p>
+            </div>
+            <div class="odm-meta-box">
+              <div class="odm-meta-row">
+                <span class="odm-meta-label">Status pengerjaan</span>
+                <span id="detail-order-status-badge"></span>
+              </div>
+              <div class="odm-meta-row">
+                <span class="odm-meta-label">Dikerjakan oleh</span>
+                <span id="detail-order-worker" class="odm-meta-val">-</span>
+              </div>
+              <div class="odm-meta-row">
+                <span class="odm-meta-label">Tanggal pesanan</span>
+                <span id="detail-order-date" class="odm-meta-val">-</span>
+              </div>
+            </div>
           </section>
           <section class="detail-contact-section">
-            <h3>Pelanggan</h3><strong id="detail-customer-name">-</strong><p id="detail-customer-email">-</p><div id="detail-customer-wa"></div>
+            <h3 class="odm-section-heading">PELANGGAN</h3>
+            <div class="odm-customer-row">
+              <div id="detail-customer-avatar" class="odm-avatar">U</div>
+              <div class="odm-customer-info">
+                <strong id="detail-customer-name">-</strong>
+                <p id="detail-customer-email">-</p>
+              </div>
+            </div>
+            <div id="detail-customer-wa"></div>
           </section>
           <section class="detail-estimate-section">
-            <h3>Estimasi selesai</h3><p id="detail-order-deadline">-</p>
-            <p id="detail-deadline-hint">Maksimal estimasi: <span id="detail-max-estimate-label">4 hari</span></p>
+            <h3 class="odm-section-heading">ESTIMASI SELESAI</h3>
+            <div class="odm-estimate-info">
+              <p id="detail-order-deadline">-</p>
+              <p id="detail-deadline-hint">Maksimal estimasi: <span id="detail-max-estimate-label">4 hari</span></p>
+            </div>
             <div id="detail-estimate-editor" style="display: none; flex-direction: column; gap: 8px; margin-top: 8px;">
               <div style="display: flex; gap: 6px;" id="estimate-buttons-container"></div>
               <div style="display: flex; gap: 8px; margin-top: 4px;">
