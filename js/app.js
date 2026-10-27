@@ -1220,21 +1220,75 @@ function renderOrders() {
   renderPagination(totalPages);
 }
 
+function getInitials(name) {
+  const parts = String(name || '').trim().split(/\s+/).filter(Boolean);
+  if (!parts.length) return 'P';
+  if (parts.length === 1) return parts[0].slice(0, 2).toUpperCase();
+  return (parts[0][0] + parts[parts.length - 1][0]).toUpperCase();
+}
+
+function formatCardDate(isoStr) {
+  if (!isoStr) return '-';
+  try {
+    const d = new Date(isoStr);
+    if (isNaN(d.getTime())) return '-';
+    return d.toLocaleDateString('id-ID', { day: 'numeric', month: 'short', year: 'numeric' });
+  } catch (_) {
+    return isoStr;
+  }
+}
+
 function createOrderCard(ord) {
   const card = document.createElement('div');
-  card.className = 'entry-card';
+  card.className = 'entry-card order-responsive-card';
 
   const custName = getCustomerName(ord);
-  const custEmail = ord.customer?.email || '-';
-  const workerLabel = getWorkerLabel(ord);
-  const isSupervisor = isOrderSupervisor(state.admin);
+  const custEmail = ord.customer?.email || ord.gmail || '-';
+  const initials = getInitials(custName);
   const canEdit = canChangeOrder(state.admin, ord);
   const targets = allowedOrderStatusTargets(state.admin, ord);
+
+  const status = (ord.status || 'pending').toLowerCase();
+  const statusMap = {
+    processing: { label: 'Diproses', pillClass: 'status-processing', dotClass: 'dot-processing' },
+    completed: { label: 'Selesai', pillClass: 'status-completed', dotClass: 'dot-completed' },
+    pending: { label: 'Baru', pillClass: 'status-pending', dotClass: 'dot-pending' },
+    revision: { label: 'Revisi', pillClass: 'status-revision', dotClass: 'dot-revision' },
+    cancelled: { label: 'Dibatalkan', pillClass: 'status-cancelled', dotClass: 'dot-cancelled' }
+  };
+  const currentStatusInfo = statusMap[status] || { label: statusLabel(status), pillClass: '', dotClass: '' };
+
+  let workerHtml = '';
+  if (ord.assigned_to) {
+    const worker = state.profiles.find(p => p.id === ord.assigned_to);
+    const wName = worker ? profileNickname(worker) : 'Admin';
+    workerHtml = `Dikerjakan oleh <b style="color: #1E1B16">Admin ${escapeHtml(wName)}</b>`;
+  } else {
+    workerHtml = `Dikerjakan oleh <b style="color: #6B6459">Belum diambil</b>`;
+  }
+
+  // Type badge (Reguler / Spesial)
+  const isSpesial = String(ord.order_code || '').startsWith('SPCL') || ord.tipe === 'SPESIAL';
+  const typeBadgeHtml = isSpesial
+    ? `<span class="odc-type-badge spesial">SPESIAL</span>`
+    : `<span class="odc-type-badge">REGULER</span>`;
+
+  // Product Row
+  const items = Array.isArray(ord.items) && ord.items.length > 0 ? ord.items : [];
+  const firstItem = items[0] || {};
+  let productName = firstItem.name || ord.service_title || ord.layanan || ord.task?.title || (isSpesial ? 'Penawaran Spesial' : 'Layanan JOKI.IN');
+  if (items.length > 1) {
+    productName += ` (+${items.length - 1} item)`;
+  }
+  const productNotes = ord.task?.notes || ord.catatan || ord.task?.description || ord.notes || 'Catatan pengerjaan pesanan';
+  const qty = (firstItem.quantity || 1) + 'x';
+  const priceFormatted = formatRupiah(ord.total_price);
+  const dateFormatted = formatCardDate(ord.created_at);
 
   let claimBtnHtml = '';
   if (ord.status === 'pending' && !ord.assigned_to) {
     claimBtnHtml = `
-      <button class="btn-primary btn-claim-order" data-order-id="${ord.id}" style="height: 42px; margin-top: 4px;">
+      <button type="button" class="odc-btn-claim btn-claim-order" data-order-id="${ord.id}">
         Ambil Pesanan
       </button>
     `;
@@ -1243,46 +1297,108 @@ function createOrderCard(ord) {
   let statusSelectorHtml = '';
   if (canEdit && targets.length > 0) {
     statusSelectorHtml = `
-      <div style="display: flex; align-items: center; gap: 8px; margin-top: 4px;">
-        <span style="font-size: 13px; font-weight: 600;">Ubah status:</span>
-        <select class="form-input form-select order-status-select" aria-label="Ubah status pesanan ${escapeHtml(String(ord.order_code || ord.id))}" data-order-id="${ord.id}" data-current-status="${ord.status || 'pending'}" style="height: 38px; font-size: 13px; border-radius: 10px; flex: 1; min-width: 0;">
+      <div class="odc-status-control">
+        <label for="ubah-status-${ord.id}" class="odc-status-label">Ubah status</label>
+        <select id="ubah-status-${ord.id}" class="form-input form-select order-status-select odc-status-select" aria-label="Ubah status pesanan ${escapeHtml(String(ord.order_code || ord.id))}" data-order-id="${ord.id}" data-current-status="${ord.status || 'pending'}">
           <option value="" disabled selected>Pilih Status</option>
           ${targets.map(s => `<option value="${s}">${statusLabel(s)}</option>`).join('')}
         </select>
       </div>
     `;
   } else if (!canEdit && ord.status !== 'pending') {
-    statusSelectorHtml = `<div style="font-size: 11px; color: var(--ink-muted); text-align: center;">Status dikunci untuk pengambil order</div>`;
+    statusSelectorHtml = `<div style="flex: 1; font-size: 13px; color: #6B6459; text-align: center;">Status dikunci untuk pengambil order</div>`;
   }
 
   card.innerHTML = `
-    <div style="display: flex; justify-content: space-between; align-items: flex-start;">
-      <div>
-        <h4 style="font-size: 16px; font-weight: 800;">${escapeHtml(ord.order_code || String(ord.id))}${renderOrderTypeBadge(ord)}</h4>
-        <div style="font-size: 13px; font-weight: 600; color: var(--ink);">${escapeHtml(custName)}</div>
-        <a href="mailto:${escapeHtml(custEmail)}" style="font-size: 12px; color: var(--accent-blue); text-decoration: none;">${escapeHtml(custEmail)}</a>
+    <!-- MOBILE-ONLY TOP (screen <= 768px) -->
+    <div class="odc-mobile-top">
+      <div class="odc-mobile-meta">
+        ${typeBadgeHtml}
+        <span class="odc-date-val">${dateFormatted}</span>
       </div>
-      <div style="text-align: right;">
-        <div style="font-size: 16px; font-weight: 800; color: var(--ink);">${formatRupiah(ord.total_price)}</div>
-        <div style="font-size: 11px; color: var(--ink-muted);">${formatShortDate(ord.created_at)}</div>
+      <div class="odc-mobile-total">
+        <span class="odc-section-label">TOTAL PEMBAYARAN</span>
+        <span class="odc-price-val odc-price-mobile">${priceFormatted}</span>
+      </div>
+      <div class="odc-code-box">
+        ${escapeHtml(ord.order_code || String(ord.id))}
+      </div>
+      <div class="odc-mobile-customer-row">
+        <div class="odc-user-section">
+          <div class="odc-avatar">${escapeHtml(initials)}</div>
+          <div class="odc-user-info">
+            <span class="odc-customer-name">${escapeHtml(custName)}</span>
+            <a href="mailto:${escapeHtml(custEmail)}" class="odc-customer-email">${escapeHtml(custEmail)}</a>
+          </div>
+        </div>
+        <span class="odc-status-pill ${currentStatusInfo.pillClass}">
+          <span class="odc-status-dot ${currentStatusInfo.dotClass}"></span>
+          ${currentStatusInfo.label}
+        </span>
       </div>
     </div>
 
-    <div style="display: flex; align-items: center; gap: 8px; margin: 4px 0;">
-      <span style="font-size: 13px; color: var(--ink-secondary);">Status kerja:</span>
-      ${renderStatusBadge(ord.status || 'pending')}
+    <!-- DESKTOP-ONLY TOP (screen > 768px) -->
+    <div class="odc-desktop-top">
+      <div class="odc-user-section">
+        <div class="odc-avatar">${escapeHtml(initials)}</div>
+        <div class="odc-user-info">
+          <div class="odc-code-row">
+            <span class="odc-code">${escapeHtml(ord.order_code || String(ord.id))}</span>
+            ${typeBadgeHtml}
+          </div>
+          <div class="odc-customer-meta">
+            <b>${escapeHtml(custName)}</b> · <a href="mailto:${escapeHtml(custEmail)}" class="odc-customer-email">${escapeHtml(custEmail)}</a>
+          </div>
+        </div>
+      </div>
+
+      <div class="odc-status-section">
+        <span class="odc-status-pill ${currentStatusInfo.pillClass}">
+          <span class="odc-status-dot ${currentStatusInfo.dotClass}"></span>
+          ${currentStatusInfo.label}
+        </span>
+        <span class="odc-worker-info">${workerHtml}</span>
+      </div>
+
+      <div class="odc-price-section">
+        <span class="odc-price-val">${priceFormatted}</span>
+        <span class="odc-date-val">${dateFormatted}</span>
+      </div>
     </div>
 
-    <div style="font-size: 12px; color: var(--ink-secondary);">${workerLabel}</div>
+    <!-- MIDDLE PRODUCT ROW (Shared) -->
+    <div class="odc-product-wrapper">
+      <span class="odc-section-label odc-mobile-only">ITEM PESANAN</span>
+      <div class="odc-product-row">
+        <div class="odc-product-icon">
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#1F4D45" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <path d="M6 7h12l1 13H5L6 7z"></path>
+            <path d="M9 7a3 3 0 0 1 6 0"></path>
+          </svg>
+        </div>
+        <div class="odc-product-details">
+          <span class="odc-product-name">${escapeHtml(productName)}</span>
+          <span class="odc-product-desc">${escapeHtml(productNotes)}</span>
+        </div>
+        <span class="odc-product-qty">${qty}</span>
+        <span class="odc-product-price">${priceFormatted}</span>
+      </div>
+    </div>
 
-    <div style="display: flex; gap: 8px; margin-top: 4px;">
-      <button class="btn-outline btn-detail-order" data-order-id="${ord.id}" style="height: 38px; flex: 1;">
+    <!-- MOBILE-ONLY WORKER ROW -->
+    <div class="odc-worker-info odc-mobile-only">
+      ${workerHtml}
+    </div>
+
+    <!-- ACTIONS ROW (Shared) -->
+    <div class="odc-actions-row">
+      <button type="button" class="btn btn-outline btn-detail-order odc-btn-detail" data-order-id="${ord.id}">
         Lihat detail
       </button>
+      ${claimBtnHtml}
+      ${statusSelectorHtml}
     </div>
-
-    ${claimBtnHtml}
-    ${statusSelectorHtml}
   `;
 
   return card;
