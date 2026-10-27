@@ -1833,6 +1833,9 @@ input:checked + .toggle-slider:before {
   border-radius: 20px;
   box-shadow: 0 12px 40px rgba(24, 56, 42, 0.08);
   color: #17211D;
+  display: flex;
+  flex-direction: column;
+  min-height: 750px;
 }
 
 .invoice-header {
@@ -2098,7 +2101,7 @@ input:checked + .toggle-slider:before {
 }
 
 .invoice-footer-bar {
-  margin-top: 36px;
+  margin-top: auto;
   padding-top: 16px;
   border-top: 1px solid #DBE5DE;
   display: flex;
@@ -2388,7 +2391,9 @@ p { text-wrap: pretty; }
   .invoice-sheet {
     max-width: none !important;
     width: 100% !important;
-    min-height: 0 !important;
+    min-height: 282mm !important;
+    display: flex !important;
+    flex-direction: column !important;
     margin: 0 !important;
     padding: 14mm 16mm 14mm !important;
     border: 0 !important;
@@ -2477,11 +2482,12 @@ p { text-wrap: pretty; }
     break-inside: avoid;
     page-break-inside: avoid;
     margin-top: 18px !important;
+    margin-bottom: 24px !important;
   }
   .invoice-footer-bar {
     break-inside: avoid;
     page-break-inside: avoid;
-    margin-top: 24px !important;
+    margin-top: auto !important;
     padding-top: 12px !important;
     display: flex !important;
     justify-content: space-between !important;
