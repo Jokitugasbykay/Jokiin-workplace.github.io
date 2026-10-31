@@ -890,6 +890,16 @@
             await sb.from('products').update({
               is_active: input.checked
             }).eq('slug', prod.slug || slugify(prod.nama));
+
+            if (prod.is_limited_edition || prod.slug === 'gemini-pro-18-bulan' || pid === 21) {
+              if (!input.checked) {
+                catalogState.penawaranSpesialAktif = false;
+                await sb.from('promo_settings').update({
+                  value: 'false',
+                  updated_at: new Date().toISOString()
+                }).eq('key', 'penawaran_spesial_aktif');
+              }
+            }
           }
         } catch (_) {}
 
@@ -1255,6 +1265,16 @@
               is_active: isActive,
               is_limited_edition: isLimited
             }).eq('slug', sel.slug || slugify(nama));
+
+            if (isLimited || sel.slug === 'gemini-pro-18-bulan' || sel.id === 21) {
+              if (!isActive) {
+                catalogState.penawaranSpesialAktif = false;
+                await sb.from('promo_settings').update({
+                  value: 'false',
+                  updated_at: new Date().toISOString()
+                }).eq('key', 'penawaran_spesial_aktif');
+              }
+            }
           }
         } catch (_) {}
 

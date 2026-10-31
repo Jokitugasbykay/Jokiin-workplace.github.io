@@ -62,7 +62,7 @@
   ];
 
   const VARIABLE_CATEGORY_IDS = ['ai_tools', 'bonus', 'emergency', 'promo', 'reseller'];
-  const isRupiah = value => (typeof value === 'number' || typeof value === 'string' && /^-?\d+$/.test(value)) && Number.isSafeInteger(Number(value));
+  const isRupiah = value => (typeof value === 'number' || typeof value === 'string' && /^-?\d+(\.0+)?$/.test(String(value).trim())) && Number.isSafeInteger(Number(value));
   let expenseRequest = null;
   let domainConfirmationPending = false;
   const supportedCashContract = summary => [2,3].includes(summary?.allocation_guard_version);

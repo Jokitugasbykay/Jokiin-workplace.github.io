@@ -54,23 +54,19 @@
         </button>
       </div>
 
-      <form id="login-form">
+      <form id="login-form" autocomplete="off">
         <div class="form-group">
           <label class="form-label" for="login-email">Email Admin</label>
-          <input type="email" id="login-email" class="form-input" placeholder="admin@jokiin.com" required autocomplete="username">
+          <input type="email" id="login-email" class="form-input" placeholder="admin@jokiin.com" required autocomplete="off" value="">
         </div>
         <div class="form-group" style="margin-top: 12px;">
           <label class="form-label" for="login-password">Password</label>
           <div class="password-field">
-            <input type="password" id="login-password" class="form-input" placeholder="••••••••" required autocomplete="current-password">
+            <input type="password" id="login-password" class="form-input" placeholder="••••••••" required autocomplete="new-password" value="">
             <button type="button" id="btn-toggle-password" class="password-toggle" aria-label="Tampilkan password" aria-pressed="false" aria-controls="login-password">
               <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7S2 12 2 12Z"/><circle cx="12" cy="12" r="3"/><path id="password-eye-slash" d="m3 3 18 18" hidden/></svg>
             </button>
           </div>
-        </div>
-        <div style="display: flex; align-items: center; gap: 8px; margin-top: 14px;">
-          <input type="checkbox" id="remember-me" checked style="width: 18px; height: 18px; accent-color: #000;">
-          <label for="remember-me" style="font-size: 13px; color: var(--ink-secondary);">Ingat email di perangkat ini</label>
         </div>
 
         <div id="login-error-box" style="display: none; padding: 12px; background: #FFEDEE; border-radius: 12px; color: #B42332; font-size: 13px; margin-top: 14px;"></div>
@@ -2053,10 +2049,10 @@
   </audio>
 
   <!-- Application Main Script (Universal script for file://, localhost, & cloud hosting) -->
-  <script src="./js/app.js?v=45"></script>
-  <script src="./js/produk-promo.js?v=2"></script>
+  <script src="./js/app.js?v=46"></script>
+  <script src="./js/produk-promo.js?v=3"></script>
   <script src="./js/monthly-cashflow.js?v=3"></script>
-  <script src="./js/operational-fund.js?v=15"></script>
+  <script src="./js/operational-fund.js?v=16"></script>
   <script src="./js/contribution-skyline.js?v=3"></script>
 
   <!-- Failsafe Watchdog & Service Worker -->

@@ -237,13 +237,18 @@ async function checkInitialSession() {
     errorBox.textContent = 'Akun ini tidak memiliki hak akses admin Workplace.';
     errorBox.style.display = 'block';
   }
-  const rememberedEmail = localStorage.getItem('workplace_remembered_email');
-  if (rememberedEmail) document.getElementById('login-email').value = rememberedEmail;
+  try {
+    localStorage.removeItem('workplace_remembered_email');
+  } catch (_) {}
   showLoginView();
 }
 
 function showLoginView() {
   document.getElementById('app-shell').style.display = 'none';
+  const emailInput = document.getElementById('login-email');
+  const passInput = document.getElementById('login-password');
+  if (emailInput) emailInput.value = '';
+  if (passInput) passInput.value = '';
   document.getElementById('login-view').style.display = 'flex';
 }
 
@@ -331,11 +336,9 @@ async function handleLogin(email, password, rememberMe) {
 
     // Success
     await recordLogin(supabase);
-    if (rememberMe) {
-      localStorage.setItem('workplace_remembered_email', email.trim());
-    } else {
+    try {
       localStorage.removeItem('workplace_remembered_email');
-    }
+    } catch (_) {}
 
     state.admin = { ...profile, avatar_url: data.user.user_metadata?.avatar_url || data.user.user_metadata?.picture || profile.avatar_url };
     showAppShell();
@@ -3094,7 +3097,7 @@ function setupEventListeners() {
     e.preventDefault();
     const email = document.getElementById('login-email').value;
     const pass = document.getElementById('login-password').value;
-    const rem = document.getElementById('remember-me').checked;
+    const rem = document.getElementById('remember-me')?.checked || false;
     await handleLogin(email, pass, rem);
   });
 
