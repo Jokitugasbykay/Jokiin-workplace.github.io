@@ -1189,7 +1189,11 @@ function renderOrders() {
   const isProcessMode = state.orderMode === 'process';
 
   // Filter by mode and query
-  const filtered = state.orders.filter(ord => {
+  const orderCodes = new Set(state.orders.map(order => order.order_code).filter(Boolean));
+  const pendingCheckouts = state.paymentOrders
+    .filter(order => String(order.payment_status || '').toUpperCase() === 'PENDING' && !orderCodes.has(order.order_code))
+    .map(order => ({ ...order, checkoutOnly: true }));
+  const filtered = [...state.orders, ...pendingCheckouts].filter(ord => {
     const status = (ord.status || 'pending').toLowerCase();
     const inMode = isProcessMode
       ? ['pending', 'processing', 'revision'].includes(status)
@@ -1215,7 +1219,17 @@ function renderOrders() {
     container.innerHTML = '<div class="entry-card" style="text-align: center; color: var(--ink-secondary);">Tidak ada pesanan ditemukan.</div>';
   } else {
     pageItems.forEach(ord => {
-      const card = createOrderCard(ord);
+      let card;
+      if (ord.checkoutOnly) {
+        card = document.createElement('div');
+        card.className = 'entry-card';
+        card.innerHTML = `<div><strong>${escapeHtml(ord.order_code || String(ord.id))}</strong> ${renderOrderTypeBadge(ord)}</div>
+          <div>${escapeHtml(getCustomerName(ord))}</div>
+          <div>${formatRupiah(ord.total_price)} · <strong>Menunggu pembayaran</strong></div>
+          ${checkoutDetailButton(ord)}`;
+      } else {
+        card = createOrderCard(ord);
+      }
       container.appendChild(card);
     });
   }
