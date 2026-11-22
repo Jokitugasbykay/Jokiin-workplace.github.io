@@ -1,7 +1,7 @@
 // JOKI.IN Workplace Monitor - Configuration Constants
 export const CONFIG = {
-  SUPABASE_URL: 'https://xdbnwjvxqtpkoaigedsk.supabase.co',
-  SUPABASE_PUBLISHABLE_KEY: 'sb_publishable_WuihnHZo0ZJbVGCMe1sWJg_QVdRKw4z',
+  SUPABASE_URL: 'https://jokiin.my.id/api/supabase',
+  SUPABASE_PUBLISHABLE_KEY: 'public-proxy',
   DEFAULT_WORKPLACE_URL: 'https://jokitugasbykay.github.io/Jokiin-workplace.github.io/',
   STORAGE_KEY_AUTH: 'jokiin_monitor_auth_session',
   STORAGE_KEY_CREDENTIALS: 'jokiin_monitor_saved_credentials',

@@ -3,9 +3,9 @@
 (function () {
   'use strict';
 
-  const CATALOG_API = 'https://xdbnwjvxqtpkoaigedsk.supabase.co/functions/v1/jokiin-catalog';
-  const SUPABASE_REST_SERVICES = 'https://xdbnwjvxqtpkoaigedsk.supabase.co/rest/v1/services';
-  const SUPABASE_KEY = 'sb_publishable_WuihnHZo0ZJbVGCMe1sWJg_QVdRKw4z';
+  const CATALOG_API = 'https://jokiin.my.id/api/supabase/functions/v1/jokiin-catalog';
+  const SUPABASE_REST_SERVICES = 'https://jokiin.my.id/api/supabase/rest/v1/services';
+  const SUPABASE_KEY = 'public-proxy';
   const DEFAULT_CATALOG_URL = 'https://jokiin.my.id';
 
   // Seed default 21 layanan riil dari database Supabase public.services
@@ -432,8 +432,8 @@
     if (oldDiscEl) oldDiscEl.textContent = String(discountCount);
     if (oldBannerEl) {
       oldBannerEl.textContent = catalogState.penawaranSpesialAktif
-        ? '● Banner promo sedang aktif'
-        : '○ Banner promo tidak aktif';
+        ? 'Banner promo sedang aktif'
+        : 'Banner promo tidak aktif';
     }
 
     let mount = document.getElementById('catalog-workplace-mount');

@@ -3,9 +3,9 @@
 // ========================================================
 // Supabase Client & Permissions
 // ========================================================
-const SUPABASE_URL = 'https://xdbnwjvxqtpkoaigedsk.supabase.co';
+const SUPABASE_URL = 'https://jokiin.my.id/api/supabase';
 const WORKPLACE_REDIRECT_URL = 'https://jokitugasbykay.github.io/Jokiin-workplace.github.io/';
-const SUPABASE_PUBLISHABLE_KEY = 'sb_publishable_WuihnHZo0ZJbVGCMe1sWJg_QVdRKw4z';
+const SUPABASE_PUBLISHABLE_KEY = 'public-proxy';
 
 let supabaseClient = null;
 
@@ -1121,7 +1121,7 @@ function renderHomeSkyline() {
       return {
         id: a.id,
         name: nickname,
-        label: isMe ? `👤 Saya (${nickname})` : `Admin ${nickname}`,
+        label: isMe ? `Saya (${nickname})` : `Admin ${nickname}`,
         count: count
       };
     });

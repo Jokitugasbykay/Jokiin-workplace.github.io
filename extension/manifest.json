@@ -30,6 +30,7 @@
     "scripting"
   ],
   "host_permissions": [
+    "https://jokiin.my.id/*",
     "https://xdbnwjvxqtpkoaigedsk.supabase.co/*",
     "https://jokitugasbykay.github.io/*",
     "http://localhost/*",
